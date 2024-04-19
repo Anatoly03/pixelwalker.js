@@ -42,7 +42,7 @@ client.connect('WORLD ID')
 | `playerJoined` |  | |
 | `playerLeft` |  | |
 | `playerMoved` |  | |
-| `coinCollected`<sup>2</sup> | `id`, `coins` | Fires when a user collects a coin. Note: Delayed Fire. If a player falls or glides by momentum through a coin, the coin event will only fire once the player moves again. |
+| `coinCollected`<sup>2</sup> | `id`, `coins` | Fires when a user collects a coin. Note: Delayed Fire. If a player falls or glides by momentum through a coin, the coin event will only fire once the player moves again. Not good event for checking when a player touched a coin. |
 | `blueCoinCollected`<sup>2</sup> | `id`, `blue_coins` |  |
 | `playerFace` |  | |
 | `playerGodMode` |  | |
