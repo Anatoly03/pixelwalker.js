@@ -7,7 +7,7 @@ import Client from 'pixelwalker.js'
 
 const client = new Client({ token: 'YOUR TOKEN HERE' })
 
-client.on('init', () => world.say('🤖 Connected!'))
+client.on('start', () => world.say('🤖 Connected!'))
 
 client.on('error', ([message]) => {
     console.log('error', message)
@@ -28,7 +28,8 @@ client.connect('WORLD ID')
 
 | Event | Data | Description |
 |:-:|-|-|
-| `init` | `id`, `cuid`, `username`, `face`, `isAdmin`, `x`<sup>1</sup>, `y`<sup>1</sup>, `can_edit`, `can_god`, `title`, `plays`, `owner`, `width`, `height` | Client joined the room |
+| `init` | `id`, `cuid`, `username`, `face`, `isAdmin`, `x`<sup>1</sup>, `y`<sup>1</sup>, `can_edit`, `can_god`, `title`, `plays`, `owner`, `width`, `height` | Client joined the room. **Do not use. Instead use `start`!** |
+| `start`<sup>2</sup> | `id` | Client joined the room after init. |
 | `error`<sup>2</sup> | `err` | Called on API errors |
 | `updateRights` |  | |
 | `worldMetadata` |  | |
@@ -46,8 +47,6 @@ client.connect('WORLD ID')
 | `placeBlock` |  | |
 | `crownTouched` |  | |
 | `keyPressed` |  | |
-
-<!-- | `start` | TODO | Used to announce a successful connection (Use instead of `init`) | -->
 
 - <sup>1</sup> This integer needs to be divided by 16 for downscale
 - <sup>2</sup> This is a pseudo event (Created by the API for quality-of-life and not emitted by the game)

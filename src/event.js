@@ -141,6 +141,8 @@ export default class Client extends EventEmitter {
         this.players.set(id, {
             cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode: false, mod_mode: false, has_crown: false
         })
+
+        this.emit('start', [id])
     }
 
     /**
@@ -242,7 +244,7 @@ export default class Client extends EventEmitter {
     block(x, y, layer, id) {
         if (typeof id == 'string')
             id = this.block_mappings[id]
-        
+
         this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(id))
     }
 
