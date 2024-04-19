@@ -62,11 +62,11 @@ export default class Client extends EventEmitter {
                 return this.accept_event(buffer.subarray(1))
             }
 
-            this.emit('error', new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`))
+            this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
         })
 
         this.socket.on('error', (err) => {
-            this.emit('err', err)
+            this.emit('err', [err])
         })
 
         this.on('init', this.internal_player_init)
