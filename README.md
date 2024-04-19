@@ -32,6 +32,22 @@ client.connect('WORLD ID')
 | Event | Data |
 |:-:|-|
 | `init` |  |
+| `updateRights` |  |
+| `worldMetadata` |  |
+| `worldCleared` |  |
+| `chatMessage` |  |
+| `systemMessage` |  |
+| `playerJoined` |  |
+| `playerLeft` |  |
+| `playerMoved` |  |
+| `playerFace` |  |
+| `playerGodMode` |  |
+| `playerModMode` |  |
+| `playerCheckpoint` |  |
+| `playerRespawn` |  |
+| `placeBlock` |  |
+| `crownTouched` |  |
+| `keyPressed` |  |
 
 ## Events: Send
 
