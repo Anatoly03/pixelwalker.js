@@ -7,7 +7,7 @@ import Client from 'pixelwalker.js'
 
 const client = new Client({ token: 'YOUR TOKEN HERE' })
 
-client.on('init', () => world.say('Connected!'))
+client.on('init', () => world.say('🤖 Connected!'))
 
 client.on('error', (message) => {
     console.log('error', message)
@@ -17,7 +17,7 @@ client.on('chatMessage', ([user, message]) => {
     const { username } = client.players.get(user)
 
     if (message == 'ping')
-        client.say(`Hello, User ${username}`)
+        client.say(`🤖 Hello, ${username}! `)
 })
 
 client.connect('WORLD ID')

@@ -21,7 +21,7 @@ export default class Client extends EventEmitter {
 
         this.pocketbase = new PocketBase(API_ACCOUNT_LINK)
         this.socket = null
-        this.initted = false
+        // this.initted = false
 
         /**
          * @type {Map<number, Player>}
