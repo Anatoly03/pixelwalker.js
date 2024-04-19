@@ -123,8 +123,9 @@ export default class Client extends EventEmitter {
      * @private
      */
     internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height]) {
+        this.init()
         this.players.set(id, {
-            cuid, username, face, isAdmin, x: x/16, y: y/16, god_mode: false, mod_mode: false, has_crown: false
+            cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode: false, mod_mode: false, has_crown: false
         })
     }
 
