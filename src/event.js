@@ -8,6 +8,7 @@ import { EventEmitter } from 'events'
 import { read7BitInt, deserialise } from './math.js'
 import { MessageType } from './consts.js'
 import { Magic, Bit7, String, Int32 } from './types.js'
+import World from './world.js'
 
 const API_ACCOUNT_LINK = 'lgso0g8.116.202.52.27.sslip.io'
 const API_ROOM_LINK = 'po4swc4.116.202.52.27.sslip.io'
@@ -21,7 +22,7 @@ export default class Client extends EventEmitter {
 
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
         this.socket = null
-        // this.initted = false
+        this.world = null
 
         /**
          * @type {Map<number, Player>}
@@ -77,6 +78,7 @@ export default class Client extends EventEmitter {
         this.on('playerGodMode', this.internal_player_godmode)
         this.on('playerModMode', this.internal_player_modmode)
         this.on('crownTouched', this.internal_player_crown)
+        this.on('crownTouched', this.internal_player_block)
 
         this.create_block_mappings()
     }
@@ -138,12 +140,15 @@ export default class Client extends EventEmitter {
     /**
      * @private
      */
-    async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height]) {
+    async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height, buffer]) {
         await this.init()
+        this.world = new World(width, height)
 
         this.players.set(id, {
             cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode: false, mod_mode: false, has_crown: false
         })
+
+        this.world.init(buffer)
 
         this.emit('start', [id])
     }
@@ -214,6 +219,14 @@ export default class Client extends EventEmitter {
         this.players.forEach((p) => p.has_crown = p.id == id)
     }
 
+    /**
+     * @private
+     */
+    async internal_player_block([x, y, layer, id]) {
+        await this.wait(() => this.world)
+        this.world.place(x, y, layer, id)
+    }
+
     //
     // Communication
     //
@@ -255,9 +268,10 @@ export default class Client extends EventEmitter {
      * @param {number | string} id Numeric Id or string name
      */
     async block(x, y, layer, id) {
-        if (typeof id == 'string')
+        if (typeof id == 'string') {
             this.wait(() => this.block_mappings)
-                id = this.block_mappings[id]
+            id = this.block_mappings[id]
+        }
 
         await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(id))
     }
