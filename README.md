@@ -7,10 +7,7 @@ import Client from 'pixelwalker.js'
 
 const client = new Client({ token: 'YOUR TOKEN HERE' })
 
-client.on('init', () => {
-    client.init()
-    world.say('Connected!')
-})
+client.on('init', () => world.say('Connected!'))
 
 client.on('error', (message) => {
     console.log('error', message)
@@ -48,6 +45,12 @@ client.connect('WORLD ID')
 | `placeBlock` |  | |
 | `crownTouched` |  | |
 | `keyPressed` |  | |
+
+Pseudo Events
+
+| Event | Data | Description |
+|:-:|-|-|
+| `error` | `err` | Called on API errors |
 
 ## Events: Send
 
