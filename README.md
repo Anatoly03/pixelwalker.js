@@ -51,6 +51,7 @@ Pseudo Events
 | Event | Data | Description |
 |:-:|-|-|
 | `error` | `err` | Called on API errors |
+<!-- | `start` | TODO | Used to announce a successful connection (Use instead of `init`) | -->
 
 ## Events: Send
 
