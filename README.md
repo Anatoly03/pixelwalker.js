@@ -14,6 +14,9 @@ client.on('error', ([message]) => {
 })
 
 client.on('chatMessage', ([user, message]) => {
+    // Force the event to wait this the player is loaded (dependency information)
+    client.wait(() => client.players.get(user))
+    // Retrieve information
     const { username } = client.players.get(user)
 
     if (message == 'ping')
@@ -39,6 +42,8 @@ client.connect('WORLD ID')
 | `playerJoined` |  | |
 | `playerLeft` |  | |
 | `playerMoved` |  | |
+| `coinCollected`<sup>2</sup> | `id`, `coins` | Fires when a user collects a coin. Note: Delayed Fire. If a player falls or glides by momentum through a coin, the coin event will only fire once the player moves again. |
+| `blueCoinCollected`<sup>2</sup> | `id`, `blue_coins` |  |
 | `playerFace` |  | |
 | `playerGodMode` |  | |
 | `playerModMode` |  | |

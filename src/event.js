@@ -97,6 +97,9 @@ export default class Client extends EventEmitter {
      * @param {number | () => any} condition
      */
     async wait(condition) {
+        if (condition == undefined)
+            condition = 2
+
         if (typeof condition == 'number')
             return new Promise(res => setTimeout(res, condition))
         else if (typeof condition == 'function') {
@@ -135,8 +138,8 @@ export default class Client extends EventEmitter {
     /**
      * @private
      */
-    internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height]) {
-        this.init()
+    async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height]) {
+        await this.init()
 
         this.players.set(id, {
             cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode: false, mod_mode: false, has_crown: false
@@ -165,10 +168,19 @@ export default class Client extends EventEmitter {
      * @private
      */
     async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id, coins, blue_coins]) {
-        await this.wait(() => this.players.get(id))
+        let player = await this.wait(() => this.players.get(id))
 
-        this.players.get(id).x = x / 16
-        this.players.get(id).y = y / 16
+        if (player.coins != undefined && player.coins != coins)
+            this.emit('coinCollected', [id, coins])
+
+        if (player.blue_coins != undefined && player.blue_coins != blue_coins)
+            this.emit('blueCoinCollected', [id, blue_coins])
+
+        player.coins = coins
+        player.blue_coins = blue_coins
+
+        player.x = x / 16
+        player.y = y / 16
     }
 
     /**
@@ -208,22 +220,23 @@ export default class Client extends EventEmitter {
 
     /**
      * @param  {...Buffer} args 
-     * @returns {boolean} True, if socket was disconnected and message was not sent.
+     * @returns {Promise<boolean>} True, if socket was disconnected and message was not sent.
      */
-    send(...args) {
-        if (!this.socket) return true
-        const buffer = Buffer.concat(args)
-        this.socket.send(buffer)
-        // this.socket.send(buffer, (err) => this.emit('error', err))
-        return false
+    async send(...args) {
+        return new Promise((res, rej) => {
+            if (!this.socket) return true
+            const buffer = Buffer.concat(args)
+            this.socket.send(buffer, (err) => {if (err) rej(err); else res(true)})
+            // this.socket.send(buffer, (err) => this.emit('error', err))
+        })
     }
 
     /**
      * @public
      * Respond to the init protocol
      */
-    init() {
-        this.send(Magic(0x6B), Bit7(MessageType['init']))
+    async init() {
+        await this.send(Magic(0x6B), Bit7(MessageType['init']))
     }
 
     /**
@@ -241,12 +254,12 @@ export default class Client extends EventEmitter {
      * @param {number} layer
      * @param {number | string} id Numeric Id or string name
      */
-    block(x, y, layer, id) {
+    async block(x, y, layer, id) {
         if (typeof id == 'string')
-            id = this.block_mappings[id]
+            this.wait(() => this.block_mappings)
+                id = this.block_mappings[id]
 
-        this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(id))
+        await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(id))
     }
-
 
 }
