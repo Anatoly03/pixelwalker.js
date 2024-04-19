@@ -9,7 +9,7 @@ const client = new Client({ token: 'YOUR TOKEN HERE' })
 
 client.on('init', () => world.say('🤖 Connected!'))
 
-client.on('error', (message) => {
+client.on('error', ([message]) => {
     console.log('error', message)
 })
 
