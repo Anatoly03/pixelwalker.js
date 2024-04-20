@@ -315,8 +315,6 @@ export default class Client extends EventEmitter {
             const block = id
             const bid = block.id
 
-            console.log(layer, 'L', block, bid, World.reverseMapping[bid])
-
             switch (World.reverseMapping[bid]) {
                 case 'coin_gate':
                 case 'blue_coin_gate':
@@ -334,7 +332,6 @@ export default class Client extends EventEmitter {
                     break
 
                 default:
-                    console.log('called')
                     await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid))
                     break
             }
@@ -367,11 +364,9 @@ export default class Client extends EventEmitter {
     async fill(xt, yt, world, args) {
         for (let x = 0; x < world.width; x++)
             for (let y = 0; y < world.height; y++) {
-                console.log(x, y, 'FG', world.blockAt(x, y, 1), 'BG', world.blockAt(x, y, 0))
                 await this.block(xt + x, yt + y, 1, world.blockAt(x, y, 1))
-                await this.wait(100)
                 await this.block(xt + x, yt + y, 0, world.blockAt(x, y, 0))
-                await this.wait(100)
+                await this.wait(20)
             }
     }
 
