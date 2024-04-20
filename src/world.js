@@ -128,16 +128,48 @@ export default class World {
     }
 
     /**
-     * @param {*} buffer 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {0 | 1} l 
+     * @param {number} id 
      */
     place(x, y, l, id) {
         const layer = l == 1 ? this.foreground : this.background
         layer[x][y] = new Block(id)
     }
 
+    /**
+     * 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {0 | 1} l 
+     * @returns 
+     */
     blockAt(x, y, l) {
         const layer = l == 1 ? this.foreground : this.background
         return layer[x][y]
+    }
+
+    /**
+     * @param {number} x1 
+     * @param {number} y1 
+     * @param {number} x2 
+     * @param {number} y2 
+     * @returns {World}
+     */
+    copy(x1, y1, x2, y2) {
+        if (x2 < x1) {let tmp = x2; x2 = x1; x1 = tmp }
+        if (y2 < y1) {let tmp = y2; y2 = y1; y1 = tmp }
+
+        const world = new World(x2 - x1, y2 - y1)
+
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height; y++) {
+                world.background[x][y] = this.background[x][y]
+                world.foreground[x][y] = this.foreground[x][y]
+            }
+
+        return world
     }
 }
 
