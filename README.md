@@ -10,12 +10,11 @@ const client = new Client({ token: 'YOUR TOKEN HERE' })
 client.on('start', () => world.say('🤖 Connected!'))
 client.on('error', ([error]) => {throw error})
 
-client.on('cmd:ping', ([user, message]) => {
-    // Force the event to wait this the player is loaded (dependency information)
-    client.wait(() => client.players.get(user))
-    // Retrieve information
-    const { username } = client.players.get(user)
-    // Say Hi!
+client.on('cmd:hello', async ([user, message]) => {
+    // Wait the event till the player is loaded
+    // (dependency information), and get the 
+    // players' username. Then, greet every "!hello"
+    const { username } = await client.wait(() => client.players.get(user))
     client.say(`🤖 Hello, ${username}! `)
 })
 
