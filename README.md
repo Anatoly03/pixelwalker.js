@@ -64,5 +64,7 @@ npm i --save TBA
 | `.send(buffer[])` | Send raw binaries. |
 | `.say(string)` | Write into chat |
 | `.block(x, y, layer, id)` | Place a block |
+| `.god(value, mode)` | Set god mode. If `mode` is true, then mod mode. |
+| `.face(value)` | Change player face. |
 | `.wait(time)` | Wait for a specific amount of time in miliseconds |
 | `.wait(callback)` | Wait till `callback` is a value. If awaited, this function will block the current function and busy wait for callback to be true. Use only for events that will eventually come true, or you create memory leaks. |

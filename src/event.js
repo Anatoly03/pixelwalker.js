@@ -313,6 +313,13 @@ export default class Client extends EventEmitter {
     }
 
     /**
+     * @param {number} value 
+     */
+    async face(value) {
+        await this.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
+    }
+
+    /**
      * @param {number} x 
      * @param {number} y 
      * @param {World} world 
