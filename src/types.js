@@ -130,7 +130,7 @@ export function Bit7(value) {
 /**
  * @param {Client} client 
  */
-function Player(client) {
+export function Player(client) {
     _client = client
     id = null
     cuid = null
