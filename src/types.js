@@ -1,3 +1,4 @@
+import Client from "./event.js"
 import { length7BitInt, write7BitInt } from "./math.js"
 
 //
@@ -100,7 +101,6 @@ export function ByteArray(value) {
     // offset = this.write7BitEncodedInt(buffer, value.byteLength, offset);
     // for (let j = 0; j < value.byteLength; j++) {
     //     buffer.writeUInt8(value[j], offset++);
-    // }
 }
 
 /**
@@ -119,4 +119,27 @@ export function Bit7(value) {
     const buf = Buffer.alloc(length7BitInt(value))
     write7BitInt(buf, value, 0)
     return buf
+}
+
+//
+//
+// API Internals
+//
+//
+
+/**
+ * @param {Client} client 
+ */
+function Player(client) {
+    _client = client
+    id = null
+    cuid = null
+    username = null
+    face = null
+    isAdmin = false
+    x = null
+    y = null
+    god_mode = false
+    mod_mode = false
+    has_crown = false
 }
