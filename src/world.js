@@ -163,10 +163,10 @@ export default class World {
 
         const world = new World(x2 - x1, y2 - y1)
 
-        for (let x = 0; x < this.width; x++)
-            for (let y = 0; y < this.height; y++) {
-                world.background[x][y] = this.background[x][y]
-                world.foreground[x][y] = this.foreground[x][y]
+        for (let x = x1; x < x2; x++)
+            for (let y = y1; y < y2; y++) {
+                world.background[x - x1][y - y1] = this.background[x][y]
+                world.foreground[x - x1][y - y1] = this.foreground[x][y]
             }
 
         return world

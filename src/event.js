@@ -304,4 +304,20 @@ export default class Client extends EventEmitter {
         await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(id))
     }
 
+    /**
+     * @param {number} x 
+     * @param {number} y 
+     * @param {World} world 
+     * @param {*} args 
+     */
+    async fill(xt, yt, world, args) {
+        for (let x = 0; x < world.width; x++)
+            for (let y = 0; y < world.height; y++) {
+                await this.block(xt + x, yt + y, 1, world.blockAt(x, y, 1).id)
+                await this.wait()
+                await this.block(xt + x, yt + y, 0, world.blockAt(x, y, 0).id)
+                await this.wait()
+            }
+    }
+
 }
