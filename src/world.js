@@ -66,7 +66,7 @@ export default class World {
         offset = this.deserializeLayer(this.background, buffer, offset)
         offset = this.deserializeLayer(this.foreground, buffer, offset)
 
-        console.log(buffer.length, offset)
+        // console.log(buffer.length, offset)
     }
 
     /**
