@@ -88,7 +88,7 @@ export function deserialise(buffer, offset) {
                 break
             case 8: // = ByteArray
                 [length, offset] = read7BitInt(buffer, offset)
-                arr.push(buffer.subarray(offset, length - 1))
+                arr.push(buffer.subarray(offset, offset + length))
                 offset += length
                 break
         }
