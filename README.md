@@ -26,7 +26,7 @@ client.connect('WORLD ID')
 
 | Event | Data | Description |
 |:-:|-|-|
-| `init` | `id`, `cuid`, `username`, `face`, `isAdmin`, `x`<sup>1</sup>, `y`<sup>1</sup>, `can_edit`, `can_god`, `title`, `plays`, `owner`, `width`, `height` | Client joined the room. **Do not use. Instead use `start`!** |
+| `init` | `id`, `cuid`, `username`, `face`, `isAdmin`, `x`<sup>1</sup>, `y`<sup>1</sup>, `can_edit`, `can_god`, `title`, `plays`, `owner`, `width`, `height` | Client joined the room. **Do not use unless intentional. Instead use `start`, which is compatible with the bindings!** |
 | `start`<sup>2</sup> | `id` | Client joined the room after init. |
 | `error`<sup>2</sup> | `err` | Called on API errors |
 | `updateRights` |  | |
