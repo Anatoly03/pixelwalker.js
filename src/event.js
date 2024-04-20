@@ -140,6 +140,7 @@ export default class Client extends EventEmitter {
         const data = await fetch(`https://${API_ROOM_LINK}/mappings`)
         const text = await data.text()
         this.block_mappings = JSON.parse(text)
+
     }
 
     //
@@ -151,13 +152,16 @@ export default class Client extends EventEmitter {
      */
     async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height, buffer]) {
         await this.init()
+        await this.wait(() => this.block_mappings)
+
         this.world = new World(width, height)
+        this.world.setMappings(this.block_mappings)
+        this.world.init(buffer)
 
         this.players.set(id, {
             id, cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode: false, mod_mode: false, has_crown: false
         })
 
-        this.world.init(buffer)
 
         this.emit('start', [id])
     }
