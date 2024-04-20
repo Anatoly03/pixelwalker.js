@@ -23,6 +23,7 @@ export default class Client extends EventEmitter {
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
         this.socket = null
         this.world = null
+        this.cmdPrefix = ['.', '!']
 
         /**
          * @type {Map<number, Player>}
@@ -73,6 +74,7 @@ export default class Client extends EventEmitter {
         this.on('init', this.internal_player_init)
         this.on('playerJoined', this.internal_player_join)
         this.on('playerLeft', this.internal_player_leave)
+        this.on('chatMessage', this.internal_player_chat)
         this.on('playerMoved', this.internal_player_move)
         this.on('playerFace', this.internal_player_face)
         this.on('playerGodMode', this.internal_player_godmode)
@@ -145,7 +147,7 @@ export default class Client extends EventEmitter {
         this.world = new World(width, height)
 
         this.players.set(id, {
-            cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode: false, mod_mode: false, has_crown: false
+            id, cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode: false, mod_mode: false, has_crown: false
         })
 
         this.world.init(buffer)
@@ -167,6 +169,22 @@ export default class Client extends EventEmitter {
      */
     internal_player_leave([id]) {
         this.players.delete(id)
+    }
+
+    /**
+     * @private
+     * @param {[number, string]}
+     */
+    internal_player_chat([id, message]) {
+        const prefix = this.cmdPrefix.find(v => message.startsWith(v))
+        if (prefix == undefined) return
+        const cmd = message.substring(prefix.length)
+        const arg_regex = /"[^"]+"|'[^"]+'|\w+/gi
+        const args = [id]
+        for (const match of cmd.matchAll(arg_regex)) {
+            args.push(match[0])
+        }
+        this.emit(`cmd:${args[1]}`, args)
     }
 
     /**
