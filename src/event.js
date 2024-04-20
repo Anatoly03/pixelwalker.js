@@ -87,7 +87,7 @@ export default class Client extends EventEmitter {
         this.on('playerGodMode', this.internal_player_godmode)
         this.on('playerModMode', this.internal_player_modmode)
         this.on('crownTouched', this.internal_player_crown)
-        this.on('crownTouched', this.internal_player_block)
+        this.on('placeBlock', this.internal_player_block)
 
         this.create_block_mappings()
     }
@@ -161,7 +161,6 @@ export default class Client extends EventEmitter {
         this.players.set(id, {
             id, cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode: false, mod_mode: false, has_crown: false
         })
-
 
         this.emit('start', [id])
     }

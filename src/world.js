@@ -130,8 +130,9 @@ export default class World {
     /**
      * @param {*} buffer 
      */
-    place(x, y, layer, id) {
-        // TODO
+    place(x, y, l, id) {
+        const layer = l == 1 ? this.foreground : this.background
+        layer[x][y] = new Block(id)
     }
 
     blockAt(x, y, l) {
