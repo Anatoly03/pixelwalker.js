@@ -40,6 +40,13 @@ export default class Client extends EventEmitter {
             throw new Error('Authentication with user and password not supported yet.')
         }
 
+        if (args.flags) {
+            // TODO ability to enable parts of the api
+            // - 'serialize' = serialize the world and keep track of changes
+            // - 'simulate' = do not simulate player movements and track pseudo events: coins collected
+            // - ...
+        }
+
         process.on('SIGINT', () => {
             this.disconnect()
         })
