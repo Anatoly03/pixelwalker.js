@@ -7,7 +7,7 @@ import { EventEmitter } from 'events'
 
 import { read7BitInt, deserialise } from './math.js'
 import { MessageType } from './consts.js'
-import { Magic, Bit7, String, Int32 } from './types.js'
+import { Magic, Bit7, String, Int32, Boolean } from './types.js'
 import World from './world.js'
 
 const API_ACCOUNT_LINK = 'lgso0g8.116.202.52.27.sslip.io'
@@ -302,6 +302,14 @@ export default class Client extends EventEmitter {
         }
 
         await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(id))
+    }
+
+    /**
+     * @param {boolean} value 
+     * @param {boolean} mod_mode 
+     */
+    async god(value, mod_mode) {
+        await this.send(Magic(0x6B), Bit7(MessageType[mod_mode ? 'playerModMode' : 'playerGodMode']), Boolean(value))
     }
 
     /**
