@@ -56,6 +56,7 @@ client.connect('WORLD ID')
 
 | Event | Description |
 |:-:|-|
+| `.send(buffer[])` | Send raw binaries. |
 | `.say(string)` | Write into chat |
 | `.block(x, y, layer, id)` | Place a block |
 | `.wait(time)` | Wait for a specific amount of time in miliseconds |
