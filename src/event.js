@@ -188,7 +188,7 @@ export default class Client extends EventEmitter {
     internal_player_chat([id, message]) {
         const prefix = this.cmdPrefix.find(v => message.startsWith(v))
         if (prefix == undefined) return
-        const cmd = message.substring(prefix.length)
+        const cmd = message.substring(prefix.length).toLowerCase()
         const arg_regex = /"[^"]+"|'[^']+'|\w+/gi
         const args = [id]
         for (const match of cmd.matchAll(arg_regex)) {
