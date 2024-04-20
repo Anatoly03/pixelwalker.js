@@ -46,12 +46,12 @@ export default class World {
      * Initialise the world with values
      * @param {Buffer} buffer 
      */
-    clear() {
+    clear(border) {
         for (let x = 0; x < this.width; x++) {
             for (let y = 0; y < this.height; y++) {
-                const atBorder = x == 0 || y == 0 || x == this.width - 1 || y == this.height - 1
+                const atBorder = border && (x == 0 || y == 0 || x == this.width - 1 || y == this.height - 1)
 
-                this.foreground[x][y] = r ? new Block(World.mappings['basic_gray']) : new Block(0),
+                this.foreground[x][y] = atBorder ? new Block(World.mappings['basic_gray']) : new Block(0),
                 this.background[x][y] = new Block(0)
             }
         }
@@ -193,6 +193,9 @@ export default class World {
 
 export class Block {
     constructor(id) {
+        if (typeof id == 'string') {
+            id = World.mappings[id]
+        }
         this.id = id
     }
 

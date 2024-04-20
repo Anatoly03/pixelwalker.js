@@ -92,6 +92,7 @@ export default class Client extends EventEmitter {
         this.on('playerModMode', this.internal_player_modmode)
         this.on('crownTouched', this.internal_player_crown)
         this.on('placeBlock', this.internal_player_block)
+        this.on('worldCleared', this.internal_world_clear)
 
         this.create_block_mappings()
     }
@@ -223,7 +224,7 @@ export default class Client extends EventEmitter {
     /**
      * @private
      */
-    internal_player_face([id, face]) {
+    async internal_player_face([id, face]) {
         this.players.get(id).face = face
     }
 
@@ -257,6 +258,14 @@ export default class Client extends EventEmitter {
     async internal_player_block([x, y, layer, id, ...args]) {
         await this.wait(() => this.world)
         this.world.place(x, y, layer, id, args)
+    }
+
+    /**
+     * @private
+     */
+    async internal_world_clear() {
+        await this.wait(() => this.world)
+        this.world.clear(true)
     }
 
     //
@@ -366,7 +375,7 @@ export default class Client extends EventEmitter {
             for (let y = 0; y < world.height; y++) {
                 await this.block(xt + x, yt + y, 1, world.blockAt(x, y, 1))
                 await this.block(xt + x, yt + y, 0, world.blockAt(x, y, 0))
-                await this.wait(20)
+                await this.wait(10)
             }
     }
 
