@@ -132,9 +132,28 @@ export default class World {
      * @param {0 | 1} l 
      * @param {number} id 
      */
-    place(x, y, l, id) {
+    place(x, y, l, id, args) {
         const layer = l == 1 ? this.foreground : this.background
-        layer[x][y] = new Block(id)
+        const block = layer[x][y] = new Block(id)
+
+        switch (World.reverseMapping[id]) {
+            case 'coin_gate':
+            case 'blue_coin_gate':
+            case 'coin_door':
+            case 'blue_coin_door':
+                block.amount = args[0]
+                break
+
+            case 'portal':
+                block.rotation = args[0]
+                block.portal_id = args[1]
+                block.target_id = args[2]
+                break
+
+            case 'spikes':
+                block.rotation = args[0]
+                break
+        }
     }
 
     /**

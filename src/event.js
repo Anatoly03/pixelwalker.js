@@ -254,9 +254,9 @@ export default class Client extends EventEmitter {
     /**
      * @private
      */
-    async internal_player_block([x, y, layer, id]) {
+    async internal_player_block([x, y, layer, id, ...args]) {
         await this.wait(() => this.world)
-        this.world.place(x, y, layer, id)
+        this.world.place(x, y, layer, id, args)
     }
 
     //
@@ -326,9 +326,7 @@ export default class Client extends EventEmitter {
                     break
     
                 case 'portal':
-                    console.log('error', block)
-                    // await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid), Int32(block.rotation), Int32(block.portal_id), Int32(block.target_id))
-                    console.log('error')
+                    await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid), Int32(block.rotation), Int32(block.portal_id), Int32(block.target_id))
                     break
     
                 case 'spikes':
