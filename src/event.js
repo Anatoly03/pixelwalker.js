@@ -186,7 +186,7 @@ export default class Client extends EventEmitter {
         const prefix = this.cmdPrefix.find(v => message.startsWith(v))
         if (prefix == undefined) return
         const cmd = message.substring(prefix.length)
-        const arg_regex = /"[^"]+"|'[^"]+'|\w+/gi
+        const arg_regex = /"[^"]+"|'[^']+'|\w+/gi
         const args = [id]
         for (const match of cmd.matchAll(arg_regex)) {
             args.push(match[0])
