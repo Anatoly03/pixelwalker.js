@@ -65,6 +65,8 @@ export default class World {
         let offset = 0
         offset = this.deserializeLayer(this.background, buffer, offset)
         offset = this.deserializeLayer(this.foreground, buffer, offset)
+
+        console.log(buffer.length, offset)
     }
 
     /**
@@ -104,19 +106,16 @@ export default class World {
             case 'blue_coin_gate':
             case 'coin_door':
             case 'blue_coin_door':
-                // console.log(World.reverseMapping[id])
                 block.amount = buffer.readInt32LE(offset)
                 return [block, offset + 4]
 
             case 'portal':
-                // console.log(World.reverseMapping[id])
-                block.v1 = buffer.readInt32LE(offset) // id?
-                block.v2 = buffer.readInt32LE(offset + 4) // target?
-                block.v3 = buffer.readInt32LE(offset + 8) // rotation?
+                block.rotation = buffer.readInt32LE(offset)
+                block.portal_id = buffer.readInt32LE(offset + 4) 
+                block.target_id = buffer.readInt32LE(offset + 8)
                 return [block, offset + 12]
 
             case 'spikes':
-                // console.log(World.reverseMapping[id])
                 block.rotation = buffer.readInt32LE(offset)
                 return [block, offset + 4]
 
@@ -161,10 +160,10 @@ export default class World {
         if (x2 < x1) {let tmp = x2; x2 = x1; x1 = tmp }
         if (y2 < y1) {let tmp = y2; y2 = y1; y1 = tmp }
 
-        const world = new World(x2 - x1, y2 - y1)
+        const world = new World(x2 - x1 + 1, y2 - y1 + 1)
 
-        for (let x = x1; x < x2; x++)
-            for (let y = y1; y < y2; y++) {
+        for (let x = x1; x <= x2; x++)
+            for (let y = y1; y <= y2; y++) {
                 world.background[x - x1][y - y1] = this.background[x][y]
                 world.foreground[x - x1][y - y1] = this.foreground[x][y]
             }
@@ -173,7 +172,7 @@ export default class World {
     }
 }
 
-class Block {
+export class Block {
     constructor(id) {
         this.id = id
     }

@@ -46,7 +46,7 @@ export function write7BitInt(buffer, value, offset) {
  */
 export function deserialise(buffer, offset) {
     const arr = []
-    // const types = []
+    const types = []
 
     while (offset < buffer.length) {
         let [type, o] = read7BitInt(buffer, offset)
@@ -93,8 +93,10 @@ export function deserialise(buffer, offset) {
                 break
         }
 
-        // types.push(type)
+        types.push(type)
     }
+
+    // console.log(types)
 
     return arr
 }

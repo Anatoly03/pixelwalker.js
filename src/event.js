@@ -8,7 +8,7 @@ import { EventEmitter } from 'events'
 import { read7BitInt, deserialise } from './math.js'
 import { MessageType } from './consts.js'
 import { Magic, Bit7, String, Int32, Boolean } from './types.js'
-import World from './world.js'
+import World, { Block } from './world.js'
 
 const API_ACCOUNT_LINK = 'lgso0g8.116.202.52.27.sslip.io'
 const API_ROOM_LINK = 'po4swc4.116.202.52.27.sslip.io'
@@ -75,7 +75,11 @@ export default class Client extends EventEmitter {
         })
 
         this.socket.on('error', (err) => {
-            this.emit('err', [err])
+            this.emit('error', [err])
+        })
+
+        this.socket.on('close', (code, reason) => {
+            this.emit('close', [code, reason])
         })
 
         this.on('init', this.internal_player_init)
@@ -261,9 +265,9 @@ export default class Client extends EventEmitter {
 
     /**
      * @param  {...Buffer} args 
-     * @returns {Promise<boolean>} True, if socket was disconnected and message was not sent.
+     * @returns {Promise<any | undefined>} True, if socket was disconnected and message was not sent.
      */
-    async send(...args) {
+    send(...args) {
         return new Promise((res, rej) => {
             if (!this.socket) return true
             const buffer = Buffer.concat(args)
@@ -284,8 +288,8 @@ export default class Client extends EventEmitter {
      * @public
      * @param {string} content 
      */
-    say(content) {
-        this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
+    async say(content) {
+        await this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
     }
 
     /**
@@ -293,15 +297,49 @@ export default class Client extends EventEmitter {
      * @param {number} x 
      * @param {number} y
      * @param {number} layer
-     * @param {number | string} id Numeric Id or string name
+     * @param {number | string | Block} id Numeric Id or string name
      */
     async block(x, y, layer, id) {
         if (typeof id == 'string') {
-            this.wait(() => this.block_mappings)
+            await this.wait(() => this.block_mappings)
             id = this.block_mappings[id]
         }
 
-        await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(id))
+        if (typeof id == 'number') {
+            await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(id))
+            return
+        }
+
+        if (id instanceof Block) {
+            /** @type {Block} */
+            const block = id
+            const bid = block.id
+
+            console.log(block, x, y, layer)
+
+            switch (World.reverseMapping[id]) {
+                case 'coin_gate':
+                case 'blue_coin_gate':
+                case 'coin_door':
+                case 'blue_coin_door':
+                    await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid), Int32(block.amount))
+                    break
+    
+                case 'portal':
+                    await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid), Int32(block.rotation), Int32(block.portal_id), Int32(block.target_id))
+                    break
+    
+                case 'spikes':
+                    await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid), Int32(block.rotation))
+                    break
+
+                default:
+                    await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid))
+                    break
+            }
+        }
+    
+        //
     }
 
     /**
@@ -328,10 +366,10 @@ export default class Client extends EventEmitter {
     async fill(xt, yt, world, args) {
         for (let x = 0; x < world.width; x++)
             for (let y = 0; y < world.height; y++) {
-                await this.block(xt + x, yt + y, 1, world.blockAt(x, y, 1).id)
-                await this.wait()
-                await this.block(xt + x, yt + y, 0, world.blockAt(x, y, 0).id)
-                await this.wait()
+                console.log(x, y, world.blockAt(x, y, 1))
+                await this.block(xt + x, yt + y, 1, world.blockAt(x, y, 1))
+                await this.block(xt + x, yt + y, 0, world.blockAt(x, y, 0))
+                await this.wait(100)
             }
     }
 
