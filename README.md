@@ -22,6 +22,11 @@ client.connect('WORLD ID')
 
 ```
 
+## Installation
+```
+npm i --save TBA
+```
+
 ## Events: Receive
 
 | Event | Data | Description |
