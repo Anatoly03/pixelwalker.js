@@ -53,8 +53,8 @@ export default class Client extends EventEmitter {
     /**
      * Connect client to server
      */
-    async connect(world_id, ROOM_TYPE) {
-        const { token } = await this.pocketbase.send(`/api/joinkey/${ROOM_TYPE}/${world_id}`, {})
+    async connect(world_id, room_type) {
+        const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
         this.socket = new WebSocket(`wss://${API_ROOM_LINK}/room/${token}`)
         this.socket.binaryType = 'arraybuffer'
 
