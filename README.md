@@ -3,7 +3,7 @@
 
 ```js
 
-import Client from 'pixelwalker.js'
+import Client from 'pixelwalker.js' // Currently: /path/to/index.js
 
 const client = new Client({ token: 'YOUR TOKEN HERE' })
 
