@@ -13,8 +13,6 @@ import World, { Block } from './world.js'
 const API_ACCOUNT_LINK = 'lgso0g8.116.202.52.27.sslip.io'
 const API_ROOM_LINK = 'po4swc4.116.202.52.27.sslip.io'
 
-const ROOM_TYPE = 'pixelwalker1'
-
 export default class Client extends EventEmitter {
 
     constructor(args) {
@@ -55,7 +53,7 @@ export default class Client extends EventEmitter {
     /**
      * Connect client to server
      */
-    async connect(world_id) {
+    async connect(world_id, ROOM_TYPE) {
         const { token } = await this.pocketbase.send(`/api/joinkey/${ROOM_TYPE}/${world_id}`, {})
         this.socket = new WebSocket(`wss://${API_ROOM_LINK}/room/${token}`)
         this.socket.binaryType = 'arraybuffer'
