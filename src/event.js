@@ -13,7 +13,7 @@ import World, { Block } from './world.js'
 const API_ACCOUNT_LINK = 'lgso0g8.116.202.52.27.sslip.io'
 const API_ROOM_LINK = 'po4swc4.116.202.52.27.sslip.io'
 
-const ROOM_TYPE = 'pixelwalker1'
+const ROOM_TYPE = 'pixelwalker2'
 
 export default class Client extends EventEmitter {
 
