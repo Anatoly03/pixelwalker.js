@@ -6,7 +6,6 @@
 #### Example
 
 ```js
-
 import Client from 'pixelwalker.js'
 
 const client = new Client({ token: 'YOUR TOKEN HERE' })
@@ -18,12 +17,11 @@ client.on('cmd:hello', async ([user, message]) => {
     // Wait the event till the player is loaded
     // (dependency information), and get the 
     // players' username. Then, greet every "!hello"
-    const { username } = await client.wait(() => client.players.get(user))
+    const { username } = await client.wait_for(() => client.players.get(user))
     client.say(`🤖 Hello, ${username}! `)
 })
 
 client.connect('WORLD ID', 'pixelwalker2')
-
 ```
 
 ## Installation
@@ -71,4 +69,4 @@ npm i --save pixelwalker.js
 | `.god(value, mode)` | Set god mode. If `mode` is true, then mod mode. |
 | `.face(value)` | Change player face. |
 | `.wait(time)` | Wait for a specific amount of time in miliseconds |
-| `.wait(callback)` | Wait till `callback` is a value. If awaited, this function will block the current function and busy wait for callback to be true. Use only for events that will eventually come true, or you create memory leaks. |
+| `.wait_for(callback)` | Wait till `callback` is a value. If awaited, this function will block the current function and busy wait for callback to be true. Use only for events that will eventually come true, or you create memory leaks. |

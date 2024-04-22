@@ -25,7 +25,7 @@ export default class Client extends EventEmitter {
     public cmdPrefix: string[]
     public players: Map<number, Player>
 
-    constructor(args) {
+    constructor(args: {token?: string, user?: string, pass?: string, flags?: any}) {
         super()
 
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
@@ -67,7 +67,8 @@ export default class Client extends EventEmitter {
         await init_mappings()
 
         this.socket.on('message', (event) => {
-            const buffer = Buffer.from(event)
+            // TODO (tmpfix) find a better type coercion
+            const buffer = Buffer.from(event as any)
 
             if (buffer[0] == 0x3F) { // 63
                 return this.send(Magic(0x3F))
@@ -111,28 +112,26 @@ export default class Client extends EventEmitter {
     }
 
     /**
-     * Wait in the local thread either:
-     * 1) for a numeric value of miliseconds or
-     * 2) busy-wait until the condition defined by
-     *    callback is non-undefined. This function forces
-     *    to wait current control flow till certain
-     *    information is truthy.
+     * Wait in the local thread for a numeric value of miliseconds.
+     * The numeric magic constant 5 is chosen as an estimate 
      */
-    public async wait(condition: number | (<V>() => V)) {
-        if (condition == undefined)
-            condition = 2
+    public wait(condition: number): Promise<void> {
+        return new Promise(res => setTimeout(res, condition || 5))
+    }
 
-        if (typeof condition == 'number')
-            return new Promise(res => setTimeout(res, condition))
-        else if (typeof condition == 'function') {
-            const binder = <T>(res: (v: T) => void) => {
-                let x: T = condition()
-                if (x) res(x)
-                else binder.bind(<T>res)
-            }
-
-            return new Promise(res => binder(res))
+    /**
+     * Busy-Wait in the local thread until the return value defined by
+     * callback is non-undefined. This function forces to wait current
+     * control flow till certain information is received.
+     */
+    public wait_for<WaitType>(condition: (() => WaitType)): Promise<WaitType> {
+        const binder = (res: (v: WaitType) => void) => {
+            let x: WaitType = condition()
+            if (x) res(x)
+            else binder.bind(res)
         }
+
+        return new Promise(res => binder(res))
     }
 
     /**
@@ -201,7 +200,7 @@ export default class Client extends EventEmitter {
 
     private async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id, coins, blue_coins]: any[]) {
         // if (!this.players.get(id)) return
-        let player = await this.wait(() => this.players.get(id))
+        let player: Player = await this.wait_for(() => this.players.get(id))
 
         // if (player.coins != undefined && player.coins != coins)
         //     this.emit('coinCollected', [id, coins])
@@ -223,28 +222,28 @@ export default class Client extends EventEmitter {
     }
 
     private async internal_player_godmode([id, god_mode]) {
-        await this.wait(() => this.players.get(id))
+        await this.wait_for(() => this.players.get(id))
         this.players.get(id).god_mode = god_mode
     }
 
     private async internal_player_modmode([id, mod_mode]) {
-        await this.wait(() => this.players.get(id))
+        await this.wait_for(() => this.players.get(id))
         this.players.get(id).mod_mode = mod_mode
     }
 
     private async internal_player_crown([id]) {
-        await this.wait(() => this.players.get(id))
+        await this.wait_for(() => this.players.get(id))
         this.players.forEach((p) => p.has_crown = p.id == id)
     }
 
     private async internal_player_block([x, y, layer, id, ...args]) {
-        await this.wait(() => this.world)
+        await this.wait_for(() => this.world)
         this.world.place(x, y, layer, id, args)
         // TODO handle
     }
 
     private async internal_world_clear() {
-        await this.wait(() => this.world)
+        await this.wait_for(() => this.world)
         this.world.clear(true)
     }
 
