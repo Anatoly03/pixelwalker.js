@@ -169,7 +169,7 @@ export default class Client extends EventEmitter {
         })
     }
 
-    privateinternal_player_leave([id]) {
+    private internal_player_leave([id]) {
         this.players.delete(id)
     }
 
