@@ -6,16 +6,13 @@ import { EventEmitter } from 'events'
 // import { addEntity } from 'bitecs'
 
 import { read7BitInt, deserialise } from './math.js'
-import { HeaderTypes, MessageType, SpecialBlockData } from './consts.js'
+import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK } from './consts.js'
 import { Magic, Bit7, String, Int32, Boolean } from './types.js'
 export { init_mappings, BlockMappings, BlockMappingsReverse } from './mappings.js'
 import World from './world.js'
 import Block from './block.js'
 import Player from './player.js'
 import { BlockMappings, BlockMappingsReverse, init_mappings } from './mappings.js'
-
-const API_ACCOUNT_LINK = 'lgso0g8.116.202.52.27.sslip.io'
-const API_ROOM_LINK = 'po4swc4.116.202.52.27.sslip.io'
 
 export default class Client extends EventEmitter {
 
