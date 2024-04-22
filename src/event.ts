@@ -6,7 +6,7 @@ import { EventEmitter } from 'events'
 // import { addEntity } from 'bitecs'
 
 import { read7BitInt, deserialise } from './math'
-import { MessageType } from './consts'
+import { HeaderTypes, MessageType, SpecialBlockData } from './consts'
 import { Magic, Bit7, String, Int32, Boolean } from './types'
 export { init_mappings, BlockMappings, BlockMappingsReverse } from './mappings'
 import World from './world'
@@ -111,19 +111,24 @@ export default class Client extends EventEmitter {
     }
 
     /**
-     * Wait in the local thread
+     * Wait in the local thread either:
+     * 1) for a numeric value of miliseconds or
+     * 2) busy-wait until the condition defined by
+     *    callback is non-undefined. This function forces
+     *    to wait current control flow till certain
+     *    information is truthy.
      */
-    public async wait(condition: number | (() => any)) {
+    public async wait(condition: number | (<V>() => V)) {
         if (condition == undefined)
             condition = 2
 
         if (typeof condition == 'number')
             return new Promise(res => setTimeout(res, condition))
         else if (typeof condition == 'function') {
-            const binder = (res) => {
-                let x = condition()
+            const binder = <T>(res: (v: T) => void) => {
+                let x: T = condition()
                 if (x) res(x)
-                else binder.bind(res)
+                else binder.bind(<T>res)
             }
 
             return new Promise(res => binder(res))
@@ -142,7 +147,7 @@ export default class Client extends EventEmitter {
     // Internal Events
     //
 
-    private async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height, buffer]) {
+    private async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height, buffer]: any[]) {
         await this.init()
 
         this.world = new World(width, height)
@@ -162,13 +167,23 @@ export default class Client extends EventEmitter {
         this.emit('start', [id])
     }
 
-    private internal_player_join([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]) {
+    private internal_player_join([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]: any[]) {
         this.players.set(id, new Player ({
-            cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode, mod_mode, has_crown
+            client: this,
+            id,
+            cuid,
+            username,
+            face,
+            isAdmin,
+            x: x / 16,
+            y: y / 16,
+            god_mode,
+            mod_mode,
+            has_crown
         }))
     }
 
-    private internal_player_leave([id]) {
+    private internal_player_leave([id]: [number]) {
         this.players.delete(id)
     }
 
@@ -184,7 +199,8 @@ export default class Client extends EventEmitter {
         this.emit(`cmd:${args[1]}`, args)
     }
 
-    private async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id, coins, blue_coins]) {
+    private async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id, coins, blue_coins]: any[]) {
+        // if (!this.players.get(id)) return
         let player = await this.wait(() => this.players.get(id))
 
         // if (player.coins != undefined && player.coins != coins)
@@ -202,7 +218,7 @@ export default class Client extends EventEmitter {
         // TODO fix
     }
 
-    private async internal_player_face([id, face]) {
+    private async internal_player_face([id, face]: [number, number]) {
         this.players.get(id).face = face
     }
 
@@ -269,30 +285,20 @@ export default class Client extends EventEmitter {
         }
 
         if (id instanceof Block) {
-            /** @type {Block} */
-            const block = id
-            const bid = block.id
+            const block: Block = id
+            const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
+            const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
 
-            switch (BlockMappingsReverse[bid]) {
-                case 'coin_gate':
-                case 'blue_coin_gate':
-                case 'coin_door':
-                case 'blue_coin_door':
-                    await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid), Int32(block.amount))
-                    break
-
-                case 'portal':
-                    await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid), Int32(block.rotation), Int32(block.portal_id), Int32(block.target_id))
-                    break
-
-                case 'spikes':
-                    await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid), Int32(block.rotation))
-                    break
-
-                default:
-                    await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid))
-                    break
+            for (let i = 0; i < arg_types.length; i++) {
+                switch(arg_types[i]) {
+                    // TODO other types
+                    case HeaderTypes.Int32:
+                        buffer.push(Int32(block.data[i]))
+                        break
+                }
             }
+
+            await this.send(Buffer.concat(buffer))
         }
     }
 
