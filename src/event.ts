@@ -21,7 +21,7 @@ export default class Client extends EventEmitter {
 
     private pocketbase: PocketBase
     private socket: WebSocket | null
-    public world: World | null
+    public world: World | undefined
     public cmdPrefix: string[]
     public players: Map<number, Player>
 
@@ -30,7 +30,7 @@ export default class Client extends EventEmitter {
 
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
         this.socket = null
-        this.world = null
+        this.world = undefined
         this.cmdPrefix = ['.', '!']
         this.players = new Map()
 
@@ -124,9 +124,9 @@ export default class Client extends EventEmitter {
      * callback is non-undefined. This function forces to wait current
      * control flow till certain information is received.
      */
-    public wait_for<WaitType>(condition: (() => WaitType)): Promise<WaitType> {
+    public wait_for<WaitType>(condition: (() => WaitType | undefined)): Promise<WaitType> {
         const binder = (res: (v: WaitType) => void) => {
-            let x: WaitType = condition()
+            let x: WaitType | undefined = condition()
             if (x) res(x)
             else binder.bind(res)
         }
@@ -191,7 +191,7 @@ export default class Client extends EventEmitter {
         if (prefix == undefined) return
         const cmd = message.substring(prefix.length).toLowerCase()
         const arg_regex = /"[^"]+"|'[^']+'|\w+/gi
-        const args = [id]
+        const args: any[] = [id]
         for (const match of cmd.matchAll(arg_regex)) {
             args.push(match[0])
         }
@@ -218,33 +218,34 @@ export default class Client extends EventEmitter {
     }
 
     private async internal_player_face([id, face]: [number, number]) {
-        this.players.get(id).face = face
+        let player = await this.wait_for(() => this.players.get(id))
+        player.face = face
     }
 
-    private async internal_player_godmode([id, god_mode]) {
-        await this.wait_for(() => this.players.get(id))
-        this.players.get(id).god_mode = god_mode
+    private async internal_player_godmode([id, god_mode]: [number, boolean]) {
+        let player = await this.wait_for(() => this.players.get(id))
+        player.god_mode = god_mode
     }
 
-    private async internal_player_modmode([id, mod_mode]) {
-        await this.wait_for(() => this.players.get(id))
-        this.players.get(id).mod_mode = mod_mode
+    private async internal_player_modmode([id, mod_mode]: [number, boolean]) {
+        let player = await this.wait_for(() => this.players.get(id))
+        player.mod_mode = mod_mode
     }
 
-    private async internal_player_crown([id]) {
-        await this.wait_for(() => this.players.get(id))
-        this.players.forEach((p) => p.has_crown = p.id == id)
+    private async internal_player_crown([id]: [number]) {
+        const players = await this.wait_for(() => this.players)
+        players.forEach((p) => p.has_crown = p.id == id)
     }
 
-    private async internal_player_block([x, y, layer, id, ...args]) {
-        await this.wait_for(() => this.world)
-        this.world.place(x, y, layer, id, args)
+    private async internal_player_block([x, y, layer, id, ...args]: any[]) {
+        const world = await this.wait_for(() => this.world)
+        world.place(x, y, layer, id, args)
         // TODO handle
     }
 
     private async internal_world_clear() {
-        await this.wait_for(() => this.world)
-        this.world.clear(true)
+        const world = await this.wait_for(() => this.world)
+        world.clear(true)
     }
 
     //

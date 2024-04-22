@@ -14,6 +14,9 @@ export default class Player {
     public mod_mode: boolean
     public has_crown: boolean
 
+    public coins: number
+    public blue_coins: number
+
     constructor(args: {
         client: Client,
         id: number,
@@ -41,6 +44,9 @@ export default class Player {
         this.god_mode = args.god_mode || false
         this.mod_mode = args.mod_mode || false
         this.has_crown = args.has_crown || false
+
+        this.coins = 0
+        this.blue_coins = 0
     }
 
     public equals(other: Player): boolean {
