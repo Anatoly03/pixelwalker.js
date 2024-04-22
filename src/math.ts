@@ -1,9 +1,14 @@
 
 /**
- * @param {Buffer} buffer 
- * @param {number} offset
+ * On occasions, the game has integer compression with the bits
+ * stored in 7 bits, where as the first bit in a byte specifies
+ * if the number is any longer.
+ * 
+ * 1(000 0001) 0(111 1110) converts to 000 0001 111 1110
+ * 
+ * This function reads such compression.
  */
-export function read7BitInt(buffer, offset) {
+export function read7BitInt(buffer: Buffer, offset: number): [number, number] {
     let value = 0, shift = 0, byte = 0xFF
 
     while (byte & 0x80) {
@@ -16,9 +21,12 @@ export function read7BitInt(buffer, offset) {
 }
 
 /**
- * @param {number} value 
+ * This function reads how many bytes a normal integer would take
+ * as a 7-bit number
+ * 
+ * 1(000 0001) 0(111 1110)
  */
-export function length7BitInt(value) {
+export function length7BitInt(value: number): number {
     let size = 0;
     do
         value >>= 7,
@@ -28,16 +36,14 @@ export function length7BitInt(value) {
 }
 
 /**
- * @param {Buffer} buffer 
- * @param {number} value
- * @param {number} offset
+ * Write a normal integer value into buffer at offset.
  */
-export function write7BitInt(buffer, value, offset) {
+export function write7BitInt(buffer: Buffer, value: number, offset: number) {
     while (value >= 128) {
         buffer.writeUInt8(value & 127 | 128, offset++)
         value >>= 7
     }
-    return [buffer.writeUInt8(value, offset), offset + 1]
+    buffer.writeUInt8(value, offset)
 }
 
 /**
