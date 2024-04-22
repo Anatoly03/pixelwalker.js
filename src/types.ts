@@ -119,26 +119,3 @@ export function Bit7(value): Buffer {
     write7BitInt(buf, value, 0)
     return buf
 }
-
-//
-//
-// API Internals
-//
-//
-
-/**
- * @param {Client} client 
- */
-export function Player(client) {
-    _client = client
-    id = null
-    cuid = null
-    username = null
-    face = null
-    isAdmin = false
-    x = null
-    y = null
-    god_mode = false
-    mod_mode = false
-    has_crown = false
-}
