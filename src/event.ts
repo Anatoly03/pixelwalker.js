@@ -8,8 +8,11 @@ import { EventEmitter } from 'events'
 import { read7BitInt, deserialise } from './math'
 import { MessageType } from './consts'
 import { Magic, Bit7, String, Int32, Boolean } from './types'
-import World, { Block } from './world'
+export { init_mappings, BlockMappings, BlockMappingsReverse } from './mappings'
+import World from './world'
+import Block from './block'
 import Player from './player'
+import { init_mappings } from './mappings'
 
 const API_ACCOUNT_LINK = 'lgso0g8.116.202.52.27.sslip.io'
 const API_ROOM_LINK = 'po4swc4.116.202.52.27.sslip.io'
@@ -48,9 +51,8 @@ export default class Client extends EventEmitter {
             // - ...
         }
 
-        process.on('SIGINT', () => {
-            this.disconnect()
-        })
+        // On process interrupt, gracefully disconnect.
+        process.on('SIGINT', this.disconnect)
     }
 
     /**
@@ -60,6 +62,9 @@ export default class Client extends EventEmitter {
         const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
         this.socket = new WebSocket(`wss://${API_ROOM_LINK}/room/${token}`)
         this.socket.binaryType = 'arraybuffer'
+
+        // Initialise block map
+        await init_mappings()
 
         this.socket.on('message', (event) => {
             const buffer = Buffer.from(event)
@@ -94,8 +99,6 @@ export default class Client extends EventEmitter {
         this.on('crownTouched', this.internal_player_crown)
         this.on('placeBlock', this.internal_player_block)
         this.on('worldCleared', this.internal_world_clear)
-
-        this.create_block_mappings()
     }
 
     private accept_event(buffer: Buffer) {
@@ -133,16 +136,6 @@ export default class Client extends EventEmitter {
     public disconnect() {
         this.pocketbase.authStore.clear()
         this.socket?.close()
-    }
-
-    /**
-     * Get Block id to string mappings
-     */
-    private async create_block_mappings() {
-        const data = await fetch(`https://${API_ROOM_LINK}/mappings`)
-        const text = await data.text()
-        this.block_mappings = JSON.parse(text)
-        // TODO handle this
     }
 
     //
