@@ -10,7 +10,7 @@ import { length7BitInt, write7BitInt } from "./math"
  * @param {string} value 
  * @returns Buffer
  */
-export function String(value): Buffer {
+export function String(value: string): Buffer {
     const stringByteLen = Buffer.byteLength(value)
 
     const buf1 = Buffer.alloc(length7BitInt(stringByteLen))
@@ -25,7 +25,7 @@ export function String(value): Buffer {
  * @param {number} value 
  * @returns Buffer
  */
-export function Byte(value): Buffer {
+export function Byte(value: number): Buffer {
     const buf = Buffer.from([1, 0])
     buf.writeUInt8(value, 1)
     return buf
@@ -35,7 +35,7 @@ export function Byte(value): Buffer {
  * @param {number} value 
  * @returns Buffer
  */
-export function Int16(value): Buffer {
+export function Int16(value: number): Buffer {
     const buf = Buffer.from([2, 0, 0])
     buf.writeUint16BE(value, 1)
     return buf
@@ -45,7 +45,7 @@ export function Int16(value): Buffer {
  * @param {number} value 
  * @returns Buffer
  */
-export function Int32(value): Buffer {
+export function Int32(value: number): Buffer {
     const buf = Buffer.from([3, 0, 0, 0, 0])
     buf.writeInt32BE(value, 1)
     return buf
@@ -55,7 +55,7 @@ export function Int32(value): Buffer {
  * @param {bigint} value 
  * @returns Buffer
  */
-export function Int64(value): Buffer {
+export function Int64(value: bigint): Buffer {
     const buf = Buffer.from([4, 0, 0, 0, 0, 0, 0, 0, 0])
     buf.writeBigInt64BE(value, 1)
     return buf
@@ -65,7 +65,7 @@ export function Int64(value): Buffer {
  * @param {number} value 
  * @returns Buffer
  */
-export function Float(value): Buffer {
+export function Float(value: number): Buffer {
     const buf = Buffer.from([5, 0, 0, 0, 0])
     buf.writeFloatBE(value, 1)
     return buf
@@ -75,7 +75,7 @@ export function Float(value): Buffer {
  * @param {number} value 
  * @returns Buffer
  */
-export function Double(value): Buffer {
+export function Double(value: number): Buffer {
     const buf = Buffer.from([6, 0, 0, 0, 0, 0, 0, 0, 0])
     buf.writeDoubleBE(value, 1)
     return buf
@@ -85,7 +85,7 @@ export function Double(value): Buffer {
  * @param {boolean} value 
  * @returns Buffer
  */
-export function Boolean(value): Buffer {
+export function Boolean(value: boolean): Buffer {
     const buf = Buffer.from([7, 0])
     if (value) buf.writeUInt8(1, 1)
     return buf
@@ -95,7 +95,7 @@ export function Boolean(value): Buffer {
  * @param {Uint8Array} value 
  * @returns Buffer
  */
-export function ByteArray(value): Buffer {
+export function ByteArray(value: any): Buffer {
     // TODO implement
     // offset = this.write7BitEncodedInt(buffer, value.byteLength, offset);
     // for (let j = 0; j < value.byteLength; j++) {
@@ -108,7 +108,7 @@ export function ByteArray(value): Buffer {
  * @param {number} value 
  * @returns Buffer
  */
-export function Magic(value): Buffer {
+export function Magic(value: number): Buffer {
     return Buffer.from([value])
 }
 
@@ -116,7 +116,7 @@ export function Magic(value): Buffer {
  * @param {number} value 
  * @returns Buffer
  */
-export function Bit7(value): Buffer {
+export function Bit7(value: number): Buffer {
     const buf = Buffer.alloc(length7BitInt(value))
     write7BitInt(buf, value, 0)
     return buf
