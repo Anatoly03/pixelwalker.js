@@ -1,9 +1,13 @@
 
 <center><h1>PixelWalker API</h1></center>
 
+[NPM](https://www.npmjs.com/package/pixelwalker.js) | [GitHub](https://github.com/Anatoly03/pixelwalker.js)
+
+#### Example
+
 ```js
 
-import Client from 'pixelwalker.js' // Currently: /path/to/index.js
+import Client from 'pixelwalker.js'
 
 const client = new Client({ token: 'YOUR TOKEN HERE' })
 
@@ -24,7 +28,7 @@ client.connect('WORLD ID', 'pixelwalker2')
 
 ## Installation
 ```
-npm i --save TBA
+npm i --save pixelwalker.js
 ```
 
 ## Events: Receive
