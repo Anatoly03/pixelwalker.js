@@ -1,52 +1,37 @@
 
-import { read7BitInt } from './math.js'
+function get2dArray(width, height) {
+    const arr = new Array(width)
+    for (let i = 0; i < width; i++) {
+        arr[i] = new Array(height)
+    }
+    return arr
+}
 
 export default class World {
+    static mappings: {[keys: string]: number}
+    static reverseMapping: {[keys: number]: string}
+
+    public width: number
+    public height: number
+    public foreground: Block[][]
+    public background: Block[][]
+
     constructor(width, height) {
         this.width = width
         this.height = height
-
-        /**
-         * @type {Block[][]}
-         */
-        this.foreground = World.get2dArray(width, height)
-
-        /**
-         * @type {Block[][]}
-         */
-        this.background = World.get2dArray(width, height)
-    }
-
-    /**
-     * @param {number} width 
-     * @param {number} height 
-     * @returns {any[][]}
-     */
-    static get2dArray(width, height) {
-        const arr = new Array(width)
-        for (let i = 0; i < width; i++) {
-            arr[i] = new Array(height)
-        }
-        return arr
+        this.foreground = get2dArray(width, height)
+        this.background = get2dArray(width, height)
     }
 
     /**
      * Set the block string to id mappings
-     * @param {{[keys: string]: number}} map 
      */
-    setMappings(map) {
+    public setMappings(map: {[keys: string]: number}) {
         World.mappings = World.mappings || map
-        /**
-         * @type {{[keys: number]: string}}
-         */
         World.reverseMapping = World.reverseMapping || Object.fromEntries(Object.entries(map).map(a => a.reverse()))
     }
 
-    /**
-     * Initialise the world with values
-     * @param {Buffer} buffer 
-     */
-    clear(border) {
+    clear(border: boolean) {
         for (let x = 0; x < this.width; x++) {
             for (let y = 0; y < this.height; y++) {
                 const atBorder = border && (x == 0 || y == 0 || x == this.width - 1 || y == this.height - 1)
@@ -59,22 +44,17 @@ export default class World {
 
     /**
      * Initialise the world with values
-     * @param {Buffer} buffer 
      */
-    init(buffer) {
+    init(buffer: Buffer) {
         let offset = 0
         offset = this.deserializeLayer(this.background, buffer, offset)
         offset = this.deserializeLayer(this.foreground, buffer, offset)
-
-        // console.log(buffer.length, offset)
     }
 
     /**
      * Serialize a layer
-     * @param {*} layer 
-     * @param {Buffer} buffer 
      */
-    deserializeLayer(layer, buffer, offset) {
+    deserializeLayer(layer: Block[][], buffer: Buffer, offset: number): number {
         for (let x = 0; x < this.width; x++)
             for (let y = 0; y < this.height; y++) {
                 let [block, o] = this.deserializeBlock(buffer, offset)
@@ -85,14 +65,7 @@ export default class World {
         return offset
     }
 
-    /**
-     * 
-     * @param {number} id 
-     * @param {Buffer} buffer 
-     * @param {number} offset 
-     * @returns 
-     */
-    deserializeBlock(buffer, offset) {
+    deserializeBlock(buffer: Buffer, offset: number): [Block, number] {
         const id = buffer.readInt32LE(offset)
         const block = new Block(id)
         
@@ -126,13 +99,7 @@ export default class World {
         // return [block, offset]
     }
 
-    /**
-     * @param {number} x 
-     * @param {number} y 
-     * @param {0 | 1} l 
-     * @param {number} id 
-     */
-    place(x, y, l, id, args) {
+    place(x: number, y: number, l: 0 | 1, id: number, args: any) {
         const layer = l == 1 ? this.foreground : this.background
         const block = layer[x][y] = new Block(id)
 
@@ -156,26 +123,12 @@ export default class World {
         }
     }
 
-    /**
-     * 
-     * @param {number} x 
-     * @param {number} y 
-     * @param {0 | 1} l 
-     * @returns 
-     */
-    blockAt(x, y, l) {
+    blockAt(x: number, y: number, l: 0 | 1) {
         const layer = l == 1 ? this.foreground : this.background
         return layer[x][y]
     }
 
-    /**
-     * @param {number} x1 
-     * @param {number} y1 
-     * @param {number} x2 
-     * @param {number} y2 
-     * @returns {World}
-     */
-    copy(x1, y1, x2, y2) {
+    copy(x1: number, y1: number, x2: number, y2: number): World {
         if (x2 < x1) {let tmp = x2; x2 = x1; x1 = tmp }
         if (y2 < y1) {let tmp = y2; y2 = y1; y1 = tmp }
 
@@ -192,6 +145,8 @@ export default class World {
 }
 
 export class Block {
+    public id: number
+    
     constructor(id) {
         if (typeof id == 'string') {
             id = World.mappings[id]

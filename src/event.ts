@@ -5,15 +5,21 @@ import { EventEmitter } from 'events'
 
 // import { addEntity } from 'bitecs'
 
-import { read7BitInt, deserialise } from './math.js'
-import { MessageType } from './consts.js'
-import { Magic, Bit7, String, Int32, Boolean } from './types.js'
-import World, { Block } from './world.js'
+import { read7BitInt, deserialise } from './math'
+import { MessageType } from './consts'
+import { Magic, Bit7, String, Int32, Boolean } from './types'
+import World, { Block } from './world'
 
 const API_ACCOUNT_LINK = 'lgso0g8.116.202.52.27.sslip.io'
 const API_ROOM_LINK = 'po4swc4.116.202.52.27.sslip.io'
 
 export default class Client extends EventEmitter {
+
+    private pocketbase: PocketBase
+    private socket: WebSocket | null
+    public world: World | null
+    public cmdPrefix: string[]
+    public players: Map<number, any> // TODO: Player Type
 
     constructor(args) {
         super()
@@ -22,10 +28,6 @@ export default class Client extends EventEmitter {
         this.socket = null
         this.world = null
         this.cmdPrefix = ['.', '!']
-
-        /**
-         * @type {Map<number, Player>}
-         */
         this.players = new Map()
 
         if (args.token) {
@@ -53,7 +55,7 @@ export default class Client extends EventEmitter {
     /**
      * Connect client to server
      */
-    async connect(world_id, room_type) {
+    public async connect(world_id: string, room_type: string) {
         const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
         this.socket = new WebSocket(`wss://${API_ROOM_LINK}/room/${token}`)
         this.socket.binaryType = 'arraybuffer'
@@ -95,22 +97,19 @@ export default class Client extends EventEmitter {
         this.create_block_mappings()
     }
 
-    /**
-     * @private
-     * @param {Buffer} buffer
-     */
-    accept_event(buffer) {
+    private accept_event(buffer: Buffer) {
         let [event_id, offset] = read7BitInt(buffer, 0)
-        const event_name = Object.entries(MessageType).find((k) => k[1] == event_id)[0]
+        const event_name = Object.entries(MessageType).find((k) => k[1] == event_id)?.[0]
+        if (event_name == undefined)
+            throw new Error('Unknown event type for incoming buffer ' + buffer)
         const data = deserialise(buffer, offset)
         this.emit(event_name, data)
     }
 
     /**
      * Wait in the local thread
-     * @param {number | () => any} condition
      */
-    async wait(condition) {
+    public async wait(condition: number | (() => any)) {
         if (condition == undefined)
             condition = 2
 
@@ -130,30 +129,26 @@ export default class Client extends EventEmitter {
     /**
      * Disconnect client from server
      */
-    disconnect() {
+    public disconnect() {
         this.pocketbase.authStore.clear()
         this.socket?.close()
     }
 
     /**
-     * Disconnect client from server
-     * @private Get Block id to string mappings
+     * Get Block id to string mappings
      */
-    async create_block_mappings() {
+    private async create_block_mappings() {
         const data = await fetch(`https://${API_ROOM_LINK}/mappings`)
         const text = await data.text()
         this.block_mappings = JSON.parse(text)
-
+        // TODO handle this
     }
 
     //
     // Internal Events
     //
 
-    /**
-     * @private
-     */
-    async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height, buffer]) {
+    private async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height, buffer]) {
         await this.init()
         await this.wait(() => this.block_mappings)
 
@@ -168,27 +163,17 @@ export default class Client extends EventEmitter {
         this.emit('start', [id])
     }
 
-    /**
-     * @private
-     */
-    internal_player_join([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]) {
+    private internal_player_join([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]) {
         this.players.set(id, {
             cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode, mod_mode, has_crown
         })
     }
 
-    /**
-     * @private
-     */
-    internal_player_leave([id]) {
+    privateinternal_player_leave([id]) {
         this.players.delete(id)
     }
 
-    /**
-     * @private
-     * @param {[number, string]}
-     */
-    internal_player_chat([id, message]) {
+    private internal_player_chat([id, message]: [number, string]) {
         const prefix = this.cmdPrefix.find(v => message.startsWith(v))
         if (prefix == undefined) return
         const cmd = message.substring(prefix.length).toLowerCase()
@@ -200,10 +185,7 @@ export default class Client extends EventEmitter {
         this.emit(`cmd:${args[1]}`, args)
     }
 
-    /**
-     * @private
-     */
-    async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id, coins, blue_coins]) {
+    private async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id, coins, blue_coins]) {
         let player = await this.wait(() => this.players.get(id))
 
         // if (player.coins != undefined && player.coins != coins)
@@ -217,51 +199,36 @@ export default class Client extends EventEmitter {
 
         player.x = x / 16
         player.y = y / 16
+
+        // TODO fix
     }
 
-    /**
-     * @private
-     */
-    async internal_player_face([id, face]) {
+    private async internal_player_face([id, face]) {
         this.players.get(id).face = face
     }
 
-    /**
-     * @private
-     */
-    async internal_player_godmode([id, god_mode]) {
+    private async internal_player_godmode([id, god_mode]) {
         await this.wait(() => this.players.get(id))
         this.players.get(id).god_mode = god_mode
     }
 
-    /**
-     * @private
-     */
-    async internal_player_modmode([id, mod_mode]) {
+    private async internal_player_modmode([id, mod_mode]) {
         await this.wait(() => this.players.get(id))
         this.players.get(id).mod_mode = mod_mode
     }
 
-    /**
-     * @private
-     */
-    async internal_player_crown([id]) {
+    private async internal_player_crown([id]) {
         await this.wait(() => this.players.get(id))
         this.players.forEach((p) => p.has_crown = p.id == id)
     }
 
-    /**
-     * @private
-     */
-    async internal_player_block([x, y, layer, id, ...args]) {
+    private async internal_player_block([x, y, layer, id, ...args]) {
         await this.wait(() => this.world)
         this.world.place(x, y, layer, id, args)
+        // TODO handle
     }
 
-    /**
-     * @private
-     */
-    async internal_world_clear() {
+    private async internal_world_clear() {
         await this.wait(() => this.world)
         this.world.clear(true)
     }
@@ -270,43 +237,29 @@ export default class Client extends EventEmitter {
     // Communication
     //
 
-    /**
-     * @param  {...Buffer} args 
-     * @returns {Promise<any | undefined>} True, if socket was disconnected and message was not sent.
-     */
-    send(...args) {
+    public send(...args: Buffer[]): Promise<any | undefined> {
         return new Promise((res, rej) => {
             if (!this.socket) return true
             const buffer = Buffer.concat(args)
-            this.socket.send(buffer, (err) => {if (err) rej(err); else res(true)})
-            // this.socket.send(buffer, (err) => this.emit('error', err))
+            this.socket.send(buffer, {}, (err: any) => {
+                if (err) return rej(err)
+                res(true)
+            })
         })
     }
 
     /**
-     * @public
      * Respond to the init protocol
      */
-    async init() {
+    private async init() {
         await this.send(Magic(0x6B), Bit7(MessageType['init']))
     }
 
-    /**
-     * @public
-     * @param {string} content 
-     */
-    async say(content) {
+    public async say(content: string) {
         await this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
     }
 
-    /**
-     * @public
-     * @param {number} x 
-     * @param {number} y
-     * @param {number} layer
-     * @param {number | string | Block} id Numeric Id or string name
-     */
-    async block(x, y, layer, id) {
+    public async block(x: number, y: number, layer: number, id: number | string | Block) {
         if (typeof id == 'string') {
             await this.wait(() => this.block_mappings)
             id = this.block_mappings[id]
@@ -329,11 +282,11 @@ export default class Client extends EventEmitter {
                 case 'blue_coin_door':
                     await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid), Int32(block.amount))
                     break
-    
+
                 case 'portal':
                     await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid), Int32(block.rotation), Int32(block.portal_id), Int32(block.target_id))
                     break
-    
+
                 case 'spikes':
                     await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(bid), Int32(block.rotation))
                     break
@@ -343,32 +296,17 @@ export default class Client extends EventEmitter {
                     break
             }
         }
-    
-        //
     }
 
-    /**
-     * @param {boolean} value 
-     * @param {boolean} mod_mode 
-     */
-    async god(value, mod_mode) {
+    public async god(value: boolean, mod_mode: boolean) {
         await this.send(Magic(0x6B), Bit7(MessageType[mod_mode ? 'playerModMode' : 'playerGodMode']), Boolean(value))
     }
 
-    /**
-     * @param {number} value 
-     */
-    async face(value) {
+    public async face(value: number) {
         await this.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
     }
 
-    /**
-     * @param {number} x 
-     * @param {number} y 
-     * @param {World} world 
-     * @param {*} args 
-     */
-    async fill(xt, yt, world, args) {
+    public async fill(xt: number, yt: number, world: World, args: any) {
         for (let x = 0; x < world.width; x++)
             for (let y = 0; y < world.height; y++) {
                 await this.block(xt + x, yt + y, 1, world.blockAt(x, y, 1))
@@ -378,6 +316,3 @@ export default class Client extends EventEmitter {
     }
 
 }
-
-// .copy 71 162 82 167t
-// .paste 82 149
