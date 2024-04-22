@@ -1,5 +1,3 @@
-import { Int32 } from "./types"
-
 export const API_ACCOUNT_LINK = 'https://lgso0g8.116.202.52.27.sslip.io'
 export const API_ROOM_LINK = 'wss://po4swc4.116.202.52.27.sslip.io'
 
