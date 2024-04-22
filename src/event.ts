@@ -12,7 +12,7 @@ export { init_mappings, BlockMappings, BlockMappingsReverse } from './mappings'
 import World from './world'
 import Block from './block'
 import Player from './player'
-import { init_mappings } from './mappings'
+import { BlockMappingsReverse, init_mappings } from './mappings'
 
 const API_ACCOUNT_LINK = 'lgso0g8.116.202.52.27.sslip.io'
 const API_ROOM_LINK = 'po4swc4.116.202.52.27.sslip.io'
@@ -269,7 +269,7 @@ export default class Client extends EventEmitter {
             const block = id
             const bid = block.id
 
-            switch (World.reverseMapping[bid]) {
+            switch (BlockMappingsReverse[bid]) {
                 case 'coin_gate':
                 case 'blue_coin_gate':
                 case 'coin_door':
