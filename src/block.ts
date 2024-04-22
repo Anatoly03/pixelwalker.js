@@ -13,7 +13,7 @@ export default class Block {
         this.id = id
     }
 
-    get name() {
+    public get name(): string {
         return BlockMappingsReverse[this.id]
     }
 
