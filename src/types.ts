@@ -96,10 +96,12 @@ export function Boolean(value): Buffer {
  * @returns Buffer
  */
 export function ByteArray(value): Buffer {
-    // TODO
+    // TODO implement
     // offset = this.write7BitEncodedInt(buffer, value.byteLength, offset);
     // for (let j = 0; j < value.byteLength; j++) {
     //     buffer.writeUInt8(value[j], offset++);
+    return Buffer.from([])
+
 }
 
 /**
