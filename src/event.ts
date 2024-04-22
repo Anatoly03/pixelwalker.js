@@ -9,6 +9,7 @@ import { read7BitInt, deserialise } from './math'
 import { MessageType } from './consts'
 import { Magic, Bit7, String, Int32, Boolean } from './types'
 import World, { Block } from './world'
+import Player from './player'
 
 const API_ACCOUNT_LINK = 'lgso0g8.116.202.52.27.sslip.io'
 const API_ROOM_LINK = 'po4swc4.116.202.52.27.sslip.io'
@@ -19,7 +20,7 @@ export default class Client extends EventEmitter {
     private socket: WebSocket | null
     public world: World | null
     public cmdPrefix: string[]
-    public players: Map<number, any> // TODO: Player Type
+    public players: Map<number, Player> // TODO: Player Type
 
     constructor(args) {
         super()
