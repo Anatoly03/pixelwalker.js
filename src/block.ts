@@ -4,6 +4,7 @@ import { BlockMappings, BlockMappingsReverse } from "./mappings"
 export default class Block {
     private client // TODO
     public id: number
+    public data: any[] = []
     
     constructor(id: number | string) {
         if (typeof id == 'string') {

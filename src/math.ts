@@ -103,7 +103,6 @@ export function deserialise(buffer: Buffer, offset_1: number): any[] {
     return arr
 }
 
-
 /**
  * @param {any[]} buffer 
  * @param {number[]} types 

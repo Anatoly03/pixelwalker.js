@@ -1,5 +1,6 @@
 
 import Block from "./block"
+import { HeaderTypes, SpecialBlockData } from "./consts"
 import { BlockMappings, BlockMappingsReverse } from './mappings'
 
 function get2dArray(width, height) {
@@ -60,59 +61,34 @@ export default class World {
     deserializeBlock(buffer: Buffer, offset: number): [Block, number] {
         const id = buffer.readInt32LE(offset)
         const block = new Block(id)
+        let arg_types: HeaderTypes[]
 
         offset += 4
 
-        switch (BlockMappingsReverse[id]) {
-            case 'empty':
-                return [new Block(0), offset]
-
-            case 'coin_gate':
-            case 'blue_coin_gate':
-            case 'coin_door':
-            case 'blue_coin_door':
-                block.amount = buffer.readInt32LE(offset)
-                return [block, offset + 4]
-
-            case 'portal':
-                block.rotation = buffer.readInt32LE(offset)
-                block.portal_id = buffer.readInt32LE(offset + 4)
-                block.target_id = buffer.readInt32LE(offset + 8)
-                return [block, offset + 12]
-
-            case 'spikes':
-                block.rotation = buffer.readInt32LE(offset)
-                return [block, offset + 4]
-
-            default:
-                return [block, offset]
+        if (block.name == 'empty') {
+            return [block, offset]
         }
 
-        // return [block, offset]
+        if (arg_types = SpecialBlockData[block.name]) {
+            for (const type of arg_types) {
+                switch(type) {
+                    case HeaderTypes.Int32:
+                        block.data.push(buffer.readInt32LE(offset))
+                        offset += 4
+                        break
+                }
+            }
+        }
+
+        return [block, offset]
     }
 
     place(x: number, y: number, l: 0 | 1, id: number, args: any) {
         const layer = l == 1 ? this.foreground : this.background
         const block = layer[x][y] = new Block(id)
 
-        switch (BlockMappingsReverse[id]) {
-            case 'coin_gate':
-            case 'blue_coin_gate':
-            case 'coin_door':
-            case 'blue_coin_door':
-                block.amount = args[0]
-                break
-
-            case 'portal':
-                block.rotation = args[0]
-                block.portal_id = args[1]
-                block.target_id = args[2]
-                break
-
-            case 'spikes':
-                block.rotation = args[0]
-                break
-        }
+        if (SpecialBlockData[block.name])
+            block.data = args
     }
 
     blockAt(x: number, y: number, l: 0 | 1) {

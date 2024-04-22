@@ -12,7 +12,7 @@ export { init_mappings, BlockMappings, BlockMappingsReverse } from './mappings'
 import World from './world'
 import Block from './block'
 import Player from './player'
-import { BlockMappingsReverse, init_mappings } from './mappings'
+import { BlockMappings, BlockMappingsReverse, init_mappings } from './mappings'
 
 const API_ACCOUNT_LINK = 'lgso0g8.116.202.52.27.sslip.io'
 const API_ROOM_LINK = 'po4swc4.116.202.52.27.sslip.io'
@@ -144,10 +144,8 @@ export default class Client extends EventEmitter {
 
     private async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height, buffer]) {
         await this.init()
-        await this.wait(() => this.block_mappings)
 
         this.world = new World(width, height)
-        this.world.setMappings(this.block_mappings)
         this.world.init(buffer)
 
         this.players.set(id, {
@@ -255,8 +253,7 @@ export default class Client extends EventEmitter {
 
     public async block(x: number, y: number, layer: number, id: number | string | Block) {
         if (typeof id == 'string') {
-            await this.wait(() => this.block_mappings)
-            id = this.block_mappings[id]
+            id = BlockMappings[id]
         }
 
         if (typeof id == 'number') {
