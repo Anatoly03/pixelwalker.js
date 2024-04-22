@@ -20,7 +20,7 @@ export default class Client extends EventEmitter {
     private socket: WebSocket | null
     public world: World | null
     public cmdPrefix: string[]
-    public players: Map<number, Player> // TODO: Player Type
+    public players: Map<number, Player>
 
     constructor(args) {
         super()
