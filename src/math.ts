@@ -47,22 +47,18 @@ export function write7BitInt(buffer: Buffer, value: number, offset: number) {
 }
 
 /**
- * @param {Buffer} buffer 
- * @param {number} offset 
+ * Deserialise incoming buffer from server to JS values.
  */
-export function deserialise(buffer, offset) {
-    const arr = []
-    // const types = []
+export function deserialise(buffer: Buffer, offset_1: number): any[] {
+    const arr: (string | number | boolean | Buffer | bigint)[] = []
 
-    while (offset < buffer.length) {
-        let [type, o] = read7BitInt(buffer, offset)
+    while (offset_1 < buffer.length) {
+        let [type, offset] = read7BitInt(buffer, offset_1)
         let length
-        offset = o
 
         switch (type) {
             case 0: // = String
-                [length, o] = read7BitInt(buffer, offset)
-                offset = o
+                [length, offset] = read7BitInt(buffer, offset)
                 arr.push(buffer.subarray(offset, offset + length).toString('ascii'))
                 offset += length
                 break
