@@ -2,14 +2,17 @@ import Client from "./event";
 
 export default class Player {
     private readonly client: Client
+    public readonly id: number
+    public readonly cuid: string
+    public readonly username: string
 
-    constructor(args) {
+    constructor(args: { client: Client, id: number, cuid: string, username: string }) {
         this.client = args.client
 
-        // _client = client
-        // id = null
-        // cuid = null
-        // username = null
+        this.id = args.id
+        this.cuid = args.cuid
+        this.username = args.username
+
         // face = null
         // isAdmin = false
         // x = null
@@ -19,8 +22,12 @@ export default class Player {
         // has_crown = false
     }
 
+    public equals(other: Player): boolean {
+        return this.cuid == other.cuid
+    }
+
     public async pm(content: string) {
-        // TODO /pm
+        this.client.say(`/pm ${this.username} ${content}`)
     }
 
     public async respond(content: string) {
@@ -28,10 +35,10 @@ export default class Player {
     }
 
     public async kick(reason: string) {
-        // TODO /kick USERNAME
+        this.client.say(`/kick ${this.username} ${reason}`)
     }
 
     public async edit(value: boolean) {
-        // TODO /giveedit, /takeedit
+        this.client.say(`/${value ? 'giveedit' : 'takeedit'} ${this.username}`)
     }
 }

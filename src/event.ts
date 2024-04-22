@@ -148,9 +148,10 @@ export default class Client extends EventEmitter {
         this.world = new World(width, height)
         this.world.init(buffer)
 
-        this.players.set(id, {
+        this.players.set(id, new Player ({
+            client: this,
             id, cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode: false, mod_mode: false, has_crown: false
-        })
+        }))
 
         this.emit('start', [id])
     }
