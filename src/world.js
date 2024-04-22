@@ -2,32 +2,24 @@
 import { read7BitInt } from './math.js'
 
 export default class World {
+    width = 0
+    height = 0
+    
+    /**
+     * @type {Block[][]}
+     */
+    foreground = []
+
+    /**
+     * @type {Block[][]}
+     */
+    background = []
+
     constructor(width, height) {
         this.width = width
         this.height = height
-
-        /**
-         * @type {Block[][]}
-         */
-        this.foreground = World.get2dArray(width, height)
-
-        /**
-         * @type {Block[][]}
-         */
-        this.background = World.get2dArray(width, height)
-    }
-
-    /**
-     * @param {number} width 
-     * @param {number} height 
-     * @returns {any[][]}
-     */
-    static get2dArray(width, height) {
-        const arr = new Array(width)
-        for (let i = 0; i < width; i++) {
-            arr[i] = new Array(height)
-        }
-        return arr
+        this.foreground = get2dArray(width, height)
+        this.background = get2dArray(width, height)
     }
 
     /**
@@ -189,6 +181,19 @@ export default class World {
 
         return world
     }
+}
+
+/**
+ * @param {number} width 
+ * @param {number} height 
+ * @returns {any[][]}
+ */
+function get2dArray(width, height) {
+    const arr = new Array(width)
+    for (let i = 0; i < width; i++) {
+        arr[i] = new Array(height)
+    }
+    return arr
 }
 
 export class Block {
