@@ -1,4 +1,4 @@
-import { length7BitInt, write7BitInt } from "./math"
+import { length7BitInt, write7BitInt } from "./math.js"
 
 //
 //

@@ -1,4 +1,4 @@
-import { API_ROOM_LINK } from "./consts"
+import { API_ROOM_LINK } from "./consts.js"
 
 export let BlockMappings: {[keys: string]: number}
 export let BlockMappingsReverse: {[keys: number]: string}

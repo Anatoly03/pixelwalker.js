@@ -1,7 +1,7 @@
 
-import Block from "./block"
-import { HeaderTypes, SpecialBlockData } from "./consts"
-import { BlockMappings, BlockMappingsReverse } from './mappings'
+import Block from "./block.js"
+import { HeaderTypes, SpecialBlockData } from "./consts.js"
+import { BlockMappings, BlockMappingsReverse } from './mappings.js'
 
 function get2dArray(width: number, height: number) {
     const arr = new Array(width)

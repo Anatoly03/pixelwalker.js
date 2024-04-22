@@ -2,7 +2,7 @@
   "name": "pixelwalker.js",
   "version": "1.0.0",
   "description": "PixelWalker.JS API Bindings",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
