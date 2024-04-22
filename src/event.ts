@@ -150,16 +150,22 @@ export default class Client extends EventEmitter {
 
         this.players.set(id, new Player ({
             client: this,
-            id, cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode: false, mod_mode: false, has_crown: false
+            id,
+            cuid,
+            username,
+            face,
+            isAdmin,
+            x: x / 16,
+            y: y / 16,
         }))
 
         this.emit('start', [id])
     }
 
     private internal_player_join([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]) {
-        this.players.set(id, {
+        this.players.set(id, new Player ({
             cuid, username, face, isAdmin, x: x / 16, y: y / 16, god_mode, mod_mode, has_crown
-        })
+        }))
     }
 
     private internal_player_leave([id]) {

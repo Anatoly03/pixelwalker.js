@@ -6,20 +6,41 @@ export default class Player {
     public readonly cuid: string
     public readonly username: string
 
-    constructor(args: { client: Client, id: number, cuid: string, username: string }) {
+    public face: number
+    public isAdmin: boolean
+    public x: number
+    public y: number
+    public god_mode: boolean
+    public mod_mode: boolean
+    public has_crown: boolean
+
+    constructor(args: {
+        client: Client,
+        id: number,
+        cuid: string,
+        username: string,
+        face: number,
+        isAdmin: boolean,
+        x: number,
+        y: number,
+        god_mode?: boolean
+        mod_mode?: boolean
+        has_crown?: boolean
+    }) {
         this.client = args.client
 
         this.id = args.id
         this.cuid = args.cuid
         this.username = args.username
 
-        // face = null
-        // isAdmin = false
-        // x = null
-        // y = null
-        // god_mode = false
-        // mod_mode = false
-        // has_crown = false
+        this.face = args.face
+        this.isAdmin = args.isAdmin
+        this.x = args.x
+        this.y = args.y
+
+        this.god_mode = args.god_mode || false
+        this.mod_mode = args.mod_mode || false
+        this.has_crown = args.has_crown || false
     }
 
     public equals(other: Player): boolean {
