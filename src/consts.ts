@@ -35,7 +35,7 @@ export const MessageType = {
     'keyPressed':       16,  // [0x6B, 16],
 }
 
-export const SpecialBlockData = {
+export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
     'coin_gate':        [HeaderTypes.Int32],
     'blue_coin_gate':   [HeaderTypes.Int32],
     'coin_door':        [HeaderTypes.Int32],

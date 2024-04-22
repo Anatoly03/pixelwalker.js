@@ -3,7 +3,7 @@ import Block from "./block"
 import { HeaderTypes, SpecialBlockData } from "./consts"
 import { BlockMappings, BlockMappingsReverse } from './mappings'
 
-function get2dArray(width, height) {
+function get2dArray(width: number, height: number) {
     const arr = new Array(width)
     for (let i = 0; i < width; i++) {
         arr[i] = new Array(height)
@@ -17,7 +17,7 @@ export default class World {
     public foreground: Block[][]
     public background: Block[][]
 
-    constructor(width, height) {
+    constructor(width: number, height: number) {
         this.width = width
         this.height = height
         this.foreground = get2dArray(width, height)
@@ -29,7 +29,7 @@ export default class World {
             for (let y = 0; y < this.height; y++) {
                 const atBorder = border && (x == 0 || y == 0 || x == this.width - 1 || y == this.height - 1)
 
-                this.foreground[x][y] = atBorder ? new Block(World.mappings['basic_gray']) : new Block(0),
+                this.foreground[x][y] = atBorder ? new Block(BlockMappings['basic_gray']) : new Block(0),
                     this.background[x][y] = new Block(0)
             }
         }
@@ -61,7 +61,6 @@ export default class World {
     deserializeBlock(buffer: Buffer, offset: number): [Block, number] {
         const id = buffer.readInt32LE(offset)
         const block = new Block(id)
-        let arg_types: HeaderTypes[]
 
         offset += 4
 
@@ -69,14 +68,14 @@ export default class World {
             return [block, offset]
         }
 
-        if (arg_types = SpecialBlockData[block.name]) {
-            for (const type of arg_types) {
-                switch(type) {
-                    case HeaderTypes.Int32:
-                        block.data.push(buffer.readInt32LE(offset))
-                        offset += 4
-                        break
-                }
+        const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
+
+        for (const type of arg_types) {
+            switch(type) {
+                case HeaderTypes.Int32:
+                    block.data.push(buffer.readInt32LE(offset))
+                    offset += 4
+                    break
             }
         }
 
