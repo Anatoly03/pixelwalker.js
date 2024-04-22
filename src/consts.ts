@@ -1,6 +1,19 @@
+import { Int32 } from "./types"
 
 export const API_ACCOUNT_LINK = 'https://lgso0g8.116.202.52.27.sslip.io'
 export const API_ROOM_LINK = 'wss://po4swc4.116.202.52.27.sslip.io'
+
+export const enum HeaderTypes {
+    String = 0,
+    Byte = 1,
+    Int16 = 2,
+    Int32 = 3,
+    Int64 = 4,
+    Float = 5,
+    Double = 6,
+    Boolean = 7,
+    ByteArray = 8
+}
 
 export const MessageType = {
     'init':             0,   // [0x6B, 0],
@@ -20,4 +33,14 @@ export const MessageType = {
     'placeBlock':       14,  // [0x6B, 14],
     'crownTouched':     15,  // [0x6B, 15],
     'keyPressed':       16,  // [0x6B, 16],
+}
+
+export const SpecialBlockData = {
+    'coin_gate':        [HeaderTypes.Int32],
+    'blue_coin_gate':   [HeaderTypes.Int32],
+    'coin_door':        [HeaderTypes.Int32],
+    'blue_coin_door':   [HeaderTypes.Int32],
+    'portal':           [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
+    'portal_invisible': [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
+    'spikes':           [HeaderTypes.Int32],
 }
