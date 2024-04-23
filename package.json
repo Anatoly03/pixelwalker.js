@@ -2,11 +2,12 @@
   "name": "pixelwalker.js",
   "version": "1.0.0",
   "description": "PixelWalker.JS API Bindings",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "start": "npx tsc src/user.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "publish": "npm run build && npm publish",
+    "test": "jest --verbose ./test"
   },
   "keywords": [],
   "author": "",
@@ -15,5 +16,10 @@
     "@types/node": "^20.12.7",
     "pocketbase": "^0.21.1",
     "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/ws": "^8.5.10",
+    "jest": "^29.7.0"
   }
 }

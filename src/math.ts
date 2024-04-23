@@ -1,9 +1,16 @@
+import { Type } from "."
+import { HeaderTypes } from "./consts"
 
 /**
- * @param {Buffer} buffer 
- * @param {number} offset
+ * On occasions, the game has integer compression with the bits
+ * stored in 7 bits, where as the first bit in a byte specifies
+ * if the number is any longer.
+ * 
+ * 1(000 0001) 0(111 1110) converts to 000 0001 111 1110
+ * 
+ * This function reads such compression.
  */
-export function read7BitInt(buffer, offset) {
+export function read7BitInt(buffer: Buffer, offset: number): [number, number] {
     let value = 0, shift = 0, byte = 0xFF
 
     while (byte & 0x80) {
@@ -16,9 +23,12 @@ export function read7BitInt(buffer, offset) {
 }
 
 /**
- * @param {number} value 
+ * This function reads how many bytes a normal integer would take
+ * as a 7-bit number
+ * 
+ * 1(000 0001) 0(111 1110)
  */
-export function length7BitInt(value) {
+export function length7BitInt(value: number): number {
     let size = 0;
     do
         value >>= 7,
@@ -28,65 +38,59 @@ export function length7BitInt(value) {
 }
 
 /**
- * @param {Buffer} buffer 
- * @param {number} value
- * @param {number} offset
+ * Write a normal integer value into buffer at offset.
  */
-export function write7BitInt(buffer, value, offset) {
+export function write7BitInt(buffer: Buffer, value: number, offset: number) {
     while (value >= 128) {
         buffer.writeUInt8(value & 127 | 128, offset++)
         value >>= 7
     }
-    return [buffer.writeUInt8(value, offset), offset + 1]
+    buffer.writeUInt8(value, offset)
 }
 
 /**
- * @param {Buffer} buffer 
- * @param {number} offset 
+ * Deserialise incoming buffer from server to JS values.
  */
-export function deserialise(buffer, offset) {
-    const arr = []
-    // const types = []
+export function deserialise(buffer: Buffer, offset: number): any[] {
+    const arr: (string | number | boolean | Buffer | bigint)[] = []
+    let type, length
 
     while (offset < buffer.length) {
-        let [type, o] = read7BitInt(buffer, offset)
-        let length
-        offset = o
+        [type, offset] = read7BitInt(buffer, offset)
 
         switch (type) {
-            case 0: // = String
-                [length, o] = read7BitInt(buffer, offset)
-                offset = o
+            case HeaderTypes.String:
+                [length, offset] = read7BitInt(buffer, offset)
                 arr.push(buffer.subarray(offset, offset + length).toString('ascii'))
                 offset += length
                 break
-            case 1: // = Byte
+            case HeaderTypes.Byte: // = Byte
                 arr.push(buffer.readUInt8(offset++))
                 break
-            case 2: // = Int16 (short)
+            case HeaderTypes.Int16: // = Int16 (short)
                 arr.push(buffer.readInt16BE(offset))
                 offset += 2
                 break
-            case 3: // = Int32
+            case HeaderTypes.Int32: // = Int32
                 arr.push(buffer.readInt32BE(offset))
                 offset += 4
                 break
-            case 4: // = Int64 (long)
+            case HeaderTypes.Int64:
                 arr.push(buffer.readBigInt64BE(offset))
                 offset += 8
                 break
-            case 5: // = Float
+            case HeaderTypes.Float:
                 arr.push(buffer.readFloatBE(offset))
                 offset += 4
                 break
-            case 6: // = Double
+            case HeaderTypes.Double:
                 arr.push(buffer.readDoubleBE(offset))
                 offset += 8
                 break
-            case 7: // = Boolean
+            case HeaderTypes.Boolean:
                 arr.push(!!buffer.readUInt8(offset++)) // !! is truthy
                 break
-            case 8: // = ByteArray
+            case HeaderTypes.ByteArray:
                 [length, offset] = read7BitInt(buffer, offset)
                 arr.push(buffer.subarray(offset, offset + length))
                 offset += length
@@ -101,10 +105,9 @@ export function deserialise(buffer, offset) {
     return arr
 }
 
-
 /**
- * @param {any[]} buffer 
- * @param {number[]} types 
+ * @param {any[]} buffer
+ * @param {number[]} types
  */
 // export function serialise(arr, types) {
 //     let chunks = []
@@ -168,7 +171,7 @@ export function deserialise(buffer, offset) {
 
 /**
  * https://stackoverflow.com/questions/8609289/convert-a-binary-nodejs-buffer-to-javascript-arraybuffer
- * @param {Buffer} buffer 
+ * @param {Buffer} buffer
  * @returns {ArrayBuffer}
  */
 // export function toArrayBuffer(buffer) {
