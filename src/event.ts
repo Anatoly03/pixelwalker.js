@@ -25,7 +25,7 @@ export default class Client extends EventEmitter {
     public cmdPrefix: string[]
     public players: Map<number, Player>
 
-    constructor(args: {token?: string, user?: string, pass?: string, flags?: any, debug?: boolean}) {
+    constructor(args: { token?: string, user?: string, pass?: string, flags?: any, debug?: boolean }) {
         super()
 
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
@@ -54,7 +54,7 @@ export default class Client extends EventEmitter {
         this.debug = args.debug || false
 
         // On process interrupt, gracefully disconnect.
-        process.on('SIGINT', ()  => {
+        process.on('SIGINT', () => {
             this.disconnect()
         })
     }
@@ -72,7 +72,7 @@ export default class Client extends EventEmitter {
 
         this.socket.on('message', (event) => {
             const buffer = Buffer.from(event as any) // TODO (tmpfix) find a better type coercion
-            
+
             if (this.debug) console.debug('Received', buffer)
 
             if (buffer[0] == 0x3F) { // 63
@@ -158,7 +158,7 @@ export default class Client extends EventEmitter {
         this.world = new World(width, height)
         this.world.init(buffer)
 
-        this.players.set(id, new Player ({
+        this.players.set(id, new Player({
             client: this,
             id,
             cuid,
@@ -173,7 +173,7 @@ export default class Client extends EventEmitter {
     }
 
     private internal_player_join([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]: any[]) {
-        this.players.set(id, new Player ({
+        this.players.set(id, new Player({
             client: this,
             id,
             cuid,
@@ -298,7 +298,7 @@ export default class Client extends EventEmitter {
             const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
 
             for (let i = 0; i < arg_types.length; i++) {
-                switch(arg_types[i]) {
+                switch (arg_types[i]) {
                     // TODO other types
                     case HeaderTypes.Int32:
                         buffer.push(Int32(block.data[i]))
@@ -318,20 +318,21 @@ export default class Client extends EventEmitter {
         await this.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
     }
 
-    public async fill(xt: number, yt: number, world: World, args: any) {
+    public async fill(xt: number, yt: number, world: World, args: {}) {
         this.world = await this.wait_for(() => this.world)
+        const to_be_placed: [number, number, number, Block][] = []
 
         for (let x = 0; x < world.width; x++)
             for (let y = 0; y < world.height; y++) {
                 if (!world.foreground[x][y].isSameAs(this.world.foreground[xt + x][yt + y])) {
-                    await this.block(xt + x, yt + y, 1, world.blockAt(x, y, 1))
-                    await this.wait()
+                    to_be_placed.push([xt + x, yt + y, 1, world.blockAt(x, y, 1)])
                 }
                 if (!world.background[x][y].isSameAs(this.world.background[xt + x][yt + y])) {
-                    await this.block(xt + x, yt + y, 0, world.blockAt(x, y, 0))
-                    await this.wait()
+                    to_be_placed.push([xt + x, yt + y, 0, world.blockAt(x, y, 0)])
                 }
             }
+
+        // TODO fill
     }
 
 }
