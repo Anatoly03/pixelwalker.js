@@ -18,11 +18,14 @@ export default class Client extends EventEmitter {
 
     private pocketbase: PocketBase
     private socket: WebSocket | null
+
+    public debug: boolean
+
     public world: World | undefined
     public cmdPrefix: string[]
     public players: Map<number, Player>
 
-    constructor(args: {token?: string, user?: string, pass?: string, flags?: any}) {
+    constructor(args: {token?: string, user?: string, pass?: string, flags?: any, debug?: boolean}) {
         super()
 
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
@@ -48,8 +51,12 @@ export default class Client extends EventEmitter {
             // - ...
         }
 
+        this.debug = args.debug || false
+
         // On process interrupt, gracefully disconnect.
-        process.on('SIGINT', this.disconnect)
+        process.on('SIGINT', ()  => {
+            this.disconnect()
+        })
     }
 
     /**
@@ -64,8 +71,9 @@ export default class Client extends EventEmitter {
         await init_mappings()
 
         this.socket.on('message', (event) => {
-            // TODO (tmpfix) find a better type coercion
-            const buffer = Buffer.from(event as any)
+            const buffer = Buffer.from(event as any) // TODO (tmpfix) find a better type coercion
+            
+            if (this.debug) console.debug('Received', buffer)
 
             if (buffer[0] == 0x3F) { // 63
                 return this.send(Magic(0x3F))
@@ -135,7 +143,8 @@ export default class Client extends EventEmitter {
      * Disconnect client from server
      */
     public disconnect() {
-        this.pocketbase.authStore.clear()
+        if (this.debug) console.debug('Disconnect')
+        this.pocketbase?.authStore.clear()
         this.socket?.close()
     }
 
@@ -147,7 +156,7 @@ export default class Client extends EventEmitter {
         await this.init()
 
         this.world = new World(width, height)
-        this.world.init(buffer)
+        // this.world.init(buffer)
 
         this.players.set(id, new Player ({
             client: this,
@@ -250,6 +259,8 @@ export default class Client extends EventEmitter {
     //
 
     public send(...args: Buffer[]): Promise<any | undefined> {
+        if (this.debug) console.debug('Sending', Buffer.concat(args))
+
         return new Promise((res, rej) => {
             if (!this.socket) return true
             const buffer = Buffer.concat(args)

@@ -51,12 +51,12 @@ export function write7BitInt(buffer: Buffer, value: number, offset: number) {
 /**
  * Deserialise incoming buffer from server to JS values.
  */
-export function deserialise(buffer: Buffer, offset_1: number): any[] {
+export function deserialise(buffer: Buffer, offset: number): any[] {
     const arr: (string | number | boolean | Buffer | bigint)[] = []
+    let type, length
 
-    while (offset_1 < buffer.length) {
-        let [type, offset] = read7BitInt(buffer, offset_1)
-        let length
+    while (offset < buffer.length) {
+        [type, offset] = read7BitInt(buffer, offset)
 
         switch (type) {
             case HeaderTypes.String:
@@ -76,7 +76,9 @@ export function deserialise(buffer: Buffer, offset_1: number): any[] {
                     arr.push(buffer.readInt32BE(offset))
                     offset += 4
                 } catch(e) {
-                    console.log('Process failed to push to array with length ')
+                    console.log('Process failed to push to array with length')
+                    console.log(arr.length)
+                    process.exit()
                 }
                 break
             case HeaderTypes.Int64:
