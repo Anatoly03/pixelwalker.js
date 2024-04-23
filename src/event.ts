@@ -120,7 +120,7 @@ export default class Client extends EventEmitter {
      * Wait in the local thread for a numeric value of miliseconds.
      * The numeric magic constant 5 is chosen as an estimate 
      */
-    public wait(condition: number): Promise<void> {
+    public wait(condition?: number): Promise<void> {
         return new Promise(res => setTimeout(res, condition || 5))
     }
 
@@ -319,11 +319,18 @@ export default class Client extends EventEmitter {
     }
 
     public async fill(xt: number, yt: number, world: World, args: any) {
+        this.world = await this.wait_for(() => this.world)
+
         for (let x = 0; x < world.width; x++)
             for (let y = 0; y < world.height; y++) {
-                await this.block(xt + x, yt + y, 1, world.blockAt(x, y, 1))
-                await this.block(xt + x, yt + y, 0, world.blockAt(x, y, 0))
-                await this.wait(10)
+                if (!world.foreground[x][y].isSameAs(this.world.foreground[xt + x][yt + y])) {
+                    await this.block(xt + x, yt + y, 1, world.blockAt(x, y, 1))
+                    await this.wait()
+                }
+                if (!world.background[x][y].isSameAs(this.world.background[xt + x][yt + y])) {
+                    await this.block(xt + x, yt + y, 0, world.blockAt(x, y, 0))
+                    await this.wait()
+                }
             }
     }
 
