@@ -1,3 +1,5 @@
+import { Type } from "."
+import { HeaderTypes } from "./consts"
 
 /**
  * On occasions, the game has integer compression with the bits
@@ -57,38 +59,42 @@ export function deserialise(buffer: Buffer, offset_1: number): any[] {
         let length
 
         switch (type) {
-            case 0: // = String
+            case HeaderTypes.String:
                 [length, offset] = read7BitInt(buffer, offset)
                 arr.push(buffer.subarray(offset, offset + length).toString('ascii'))
                 offset += length
                 break
-            case 1: // = Byte
+            case HeaderTypes.Byte: // = Byte
                 arr.push(buffer.readUInt8(offset++))
                 break
-            case 2: // = Int16 (short)
+            case HeaderTypes.Int16: // = Int16 (short)
                 arr.push(buffer.readInt16BE(offset))
                 offset += 2
                 break
-            case 3: // = Int32
-                arr.push(buffer.readInt32BE(offset))
-                offset += 4
+            case HeaderTypes.Int32: // = Int32
+                try {
+                    arr.push(buffer.readInt32BE(offset))
+                    offset += 4
+                } catch(e) {
+                    console.log('Process failed to push to array with length ')
+                }
                 break
-            case 4: // = Int64 (long)
+            case HeaderTypes.Int64:
                 arr.push(buffer.readBigInt64BE(offset))
                 offset += 8
                 break
-            case 5: // = Float
+            case HeaderTypes.Float:
                 arr.push(buffer.readFloatBE(offset))
                 offset += 4
                 break
-            case 6: // = Double
+            case HeaderTypes.Double:
                 arr.push(buffer.readDoubleBE(offset))
                 offset += 8
                 break
-            case 7: // = Boolean
+            case HeaderTypes.Boolean:
                 arr.push(!!buffer.readUInt8(offset++)) // !! is truthy
                 break
-            case 8: // = ByteArray
+            case HeaderTypes.ByteArray:
                 [length, offset] = read7BitInt(buffer, offset)
                 arr.push(buffer.subarray(offset, offset + length))
                 offset += length
@@ -104,8 +110,8 @@ export function deserialise(buffer: Buffer, offset_1: number): any[] {
 }
 
 /**
- * @param {any[]} buffer 
- * @param {number[]} types 
+ * @param {any[]} buffer
+ * @param {number[]} types
  */
 // export function serialise(arr, types) {
 //     let chunks = []
@@ -169,7 +175,7 @@ export function deserialise(buffer: Buffer, offset_1: number): any[] {
 
 /**
  * https://stackoverflow.com/questions/8609289/convert-a-binary-nodejs-buffer-to-javascript-arraybuffer
- * @param {Buffer} buffer 
+ * @param {Buffer} buffer
  * @returns {ArrayBuffer}
  */
 // export function toArrayBuffer(buffer) {
