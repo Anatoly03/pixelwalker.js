@@ -72,14 +72,8 @@ export function deserialise(buffer: Buffer, offset: number): any[] {
                 offset += 2
                 break
             case HeaderTypes.Int32: // = Int32
-                try {
-                    arr.push(buffer.readInt32BE(offset))
-                    offset += 4
-                } catch(e) {
-                    console.log('Process failed to push to array with length')
-                    console.log(arr.length)
-                    process.exit()
-                }
+                arr.push(buffer.readInt32BE(offset))
+                offset += 4
                 break
             case HeaderTypes.Int64:
                 arr.push(buffer.readBigInt64BE(offset))
