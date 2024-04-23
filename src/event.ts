@@ -13,6 +13,7 @@ import World from './world.js'
 import Block from './block.js'
 import Player from './player.js'
 import { BlockMappings, BlockMappingsReverse, init_mappings } from './mappings.js'
+import { FIFO, RANDOM } from './animation.js'
 
 export default class Client extends EventEmitter {
 
@@ -318,7 +319,8 @@ export default class Client extends EventEmitter {
         await this.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
     }
 
-    public async fill(xt: number, yt: number, world: World, args: {}) {
+    // TODO add types for animation header
+    public async fill(xt: number, yt: number, world: World, args: {animation: (b: any) => any}) {
         this.world = await this.wait_for(() => this.world)
         const to_be_placed: [number, number, number, Block][] = []
 
@@ -332,7 +334,15 @@ export default class Client extends EventEmitter {
                 }
             }
 
-        // TODO fill
+        // TODO const generator = (args.animation || FIFO)(to_be_placed)
+        const generator = RANDOM(to_be_placed)
+
+        while (to_be_placed.length > 0) {
+            const yielded = generator.next()
+            const [x, y, layer, block]: any = yielded.value
+            await this.block(x, y, layer, block)
+            await this.wait()
+        }
     }
 
 }
