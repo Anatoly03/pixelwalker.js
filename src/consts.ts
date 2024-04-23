@@ -1,6 +1,5 @@
-
-export const API_ACCOUNT_LINK = 'api.pixelwalker.net'
-export const API_ROOM_LINK = 'game.pixelwalker.net'
+export const API_ACCOUNT_LINK = 'lgso0g8.116.202.52.27.sslip.io'
+export const API_ROOM_LINK = 'po4swc4.116.202.52.27.sslip.io'
 
 export const enum HeaderTypes {
     String = 0,
