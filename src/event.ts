@@ -156,7 +156,7 @@ export default class Client extends EventEmitter {
         await this.init()
 
         this.world = new World(width, height)
-        // this.world.init(buffer)
+        this.world.init(buffer)
 
         this.players.set(id, new Player ({
             client: this,

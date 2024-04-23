@@ -42,6 +42,10 @@ export default class World {
         let offset = 0
         offset = this.deserializeLayer(this.background, buffer, offset)
         offset = this.deserializeLayer(this.foreground, buffer, offset)
+
+        if (buffer.length != offset) {
+            console.warn(`Buffer Length for World Data and Offset do not match. (${buffer.length} != ${offset}). You may be loading a world with blocks that are not yet encoded in this API version.`)
+        }
     }
 
     /**
