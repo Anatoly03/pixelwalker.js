@@ -8,7 +8,7 @@ import { EventEmitter } from 'events'
 import { read7BitInt, deserialise } from './math.js'
 import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK } from './consts.js'
 import { Magic, Bit7, String, Int32, Boolean } from './types.js'
-import { init_mappings, BlockMappings } from './mappings.js'
+import { BlockMappings } from './mappings.js'
 import World from './world.js'
 import Block from './block.js'
 import Player from './player.js'
@@ -71,9 +71,6 @@ export default class Client extends EventEmitter {
         } catch(e) {
             throw new Error('Socket failed to connect.')
         }
-
-        // Initialise block map
-        await init_mappings()
 
         this.socket.on('message', (event) => {
             const buffer = Buffer.from(event as any) // TODO (tmpfix) find a better type coercion
