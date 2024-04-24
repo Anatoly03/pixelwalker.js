@@ -182,3 +182,15 @@ export function deserialise(buffer: Buffer, offset: number): any[] {
 //     }
 //     return arrayBuffer;
 // }
+
+
+/**
+ * Create a two dimensional array.
+ */
+export function get2dArray<T>(width: number, height: number): T[][] {
+    const arr: T[][] = new Array(width)
+    for (let i = 0; i < width; i++) {
+        arr[i] = new Array(height)
+    }
+    return arr
+}

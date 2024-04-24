@@ -2,14 +2,7 @@
 import Block from "./block.js"
 import { HeaderTypes, SpecialBlockData } from "./consts.js"
 import { BlockMappings, BlockMappingsReverse } from './mappings.js'
-
-function get2dArray(width: number, height: number) {
-    const arr = new Array(width)
-    for (let i = 0; i < width; i++) {
-        arr[i] = new Array(height)
-    }
-    return arr
-}
+import { get2dArray } from "./math.js"
 
 export default class World {
     public width: number
