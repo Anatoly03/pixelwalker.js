@@ -35,11 +35,28 @@ export const MessageType = {
 }
 
 export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
-    'coin_gate':        [HeaderTypes.Int32],
-    'blue_coin_gate':   [HeaderTypes.Int32],
-    'coin_door':        [HeaderTypes.Int32],
-    'blue_coin_door':   [HeaderTypes.Int32],
-    'portal':           [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
-    'portal_invisible': [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
-    'spikes':           [HeaderTypes.Int32],
+    'coin_gate':                [HeaderTypes.Int32],
+    'blue_coin_gate':           [HeaderTypes.Int32],
+    'coin_door':                [HeaderTypes.Int32],
+    'blue_coin_door':           [HeaderTypes.Int32],
+    
+    'death_gate':               [HeaderTypes.Int32],
+    'death_door':               [HeaderTypes.Int32],
+
+    'portal':                   [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
+    'portal_invisible':         [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
+
+    'spikes':                   [HeaderTypes.Int32],
+
+    'local_switch':             [HeaderTypes.Int32],
+    'local_switch_activator':   [HeaderTypes.Int32, HeaderTypes.Boolean],
+    'local_switch_resetter':    [HeaderTypes.Boolean],
+    'local_switch_door':        [HeaderTypes.Int32],
+    'local_switch_gate':        [HeaderTypes.Int32],
+
+    'global_switch':            [HeaderTypes.Int32],
+    'global_switch_activator':  [HeaderTypes.Int32, HeaderTypes.Boolean],
+    'global_switch_resetter':   [HeaderTypes.Boolean],
+    'global_switch_door':       [HeaderTypes.Int32],
+    'global_switch_gate':       [HeaderTypes.Int32],
 }
