@@ -1,4 +1,5 @@
 
+import stream from "stream"
 import Block from "./block.js"
 import { HeaderTypes, SpecialBlockData } from "./consts.js"
 import { BlockMappings, BlockMappingsReverse } from './mappings.js'
@@ -116,5 +117,55 @@ export default class World {
                 this.foreground[x + xt][y + yt] = data.foreground[x][y]
                 this.background[x + xt][y + yt] = data.background[x][y]
             }
+    }
+
+    /**
+     * Write world data into a stream
+     */
+    public writeStringTo(writer: stream.Writable, args?: {[keys: string]: any}) {
+        const mapping = ['empty']
+
+        for (const key in (args || {})) {
+            writer.write(`${key.toLowerCase()} = `)
+        }
+
+        writer.write(`write-version: 0\n`)
+        writer.write(`width: ${this.width}\n`)
+        writer.write(`height: ${this.height}\n`)
+        
+        let FOREGROUND = '', BACKGROUND = ''
+
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height; y++) {
+                const block = this.foreground[x][y]
+
+                if (!mapping.includes(block.name))
+                    mapping.push(block.name)
+
+                FOREGROUND += mapping.indexOf(block.name).toString(36).toLocaleUpperCase()
+                if (block.data.length > 0)
+                    FOREGROUND += block.data.toString()
+                FOREGROUND += ';'
+            }
+
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height; y++) {
+                const block = this.background[x][y]
+
+                if (!mapping.includes(block.name))
+                    mapping.push(block.name)
+
+                BACKGROUND += mapping.indexOf(block.name).toString(36).toLocaleUpperCase()
+                if (block.data.length > 0)
+                    BACKGROUND += block.data.toString()
+                BACKGROUND += ';'
+            }
+
+        writer.write(`mapping: ${mapping}\n`)
+        writer.write('layers:\n')
+        writer.write(' - foreground: ' + FOREGROUND + '\n')
+        writer.write(' - background: ' + BACKGROUND + '\n')
+
+        writer.end()
     }
 }
