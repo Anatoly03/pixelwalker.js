@@ -215,18 +215,9 @@ export default class Client extends EventEmitter {
         this.emit(`cmd:${args[1]}`, args)
     }
 
-    private async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id, coins, blue_coins]: any[]) {
+    private async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]: any[]) {
         // if (!this.players.get(id)) return
         let player: Player = await this.wait_for(() => this.players.get(id))
-
-        // if (player.coins != undefined && player.coins != coins)
-        //     this.emit('coinCollected', [id, coins])
-
-        // if (player.blue_coins != undefined && player.blue_coins != blue_coins)
-        //     this.emit('blueCoinCollected', [id, blue_coins])
-
-        player.coins = coins
-        player.blue_coins = blue_coins
 
         player.x = x / 16
         player.y = y / 16
