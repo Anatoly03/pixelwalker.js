@@ -16,6 +16,7 @@ export default class Player {
 
     public coins: number
     public blue_coins: number
+    public deaths: number
 
     constructor(args: {
         client: Client,
@@ -47,6 +48,7 @@ export default class Player {
 
         this.coins = 0
         this.blue_coins = 0
+        this.deaths = 0
     }
 
     public equals(other: Player): boolean {
