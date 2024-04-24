@@ -116,11 +116,11 @@ export default class Client extends EventEmitter {
     private accept_event(buffer: Buffer) {
         let [event_id, offset] = read7BitInt(buffer, 0)
         const event_name = Object.entries(MessageType).find((k) => k[1] == event_id)?.[0]
+        const data = deserialise(buffer, offset)
         if (event_name == undefined) {
-            console.warn((`Unknown event type ${event_id}. API may be out of date. ${buffer}`))
+            console.warn((`Unknown event type ${event_id}. API may be out of date. Deserialised: ${data}`))
             return
         }
-        const data = deserialise(buffer, offset)
         this.emit(event_name, data)
     }
 
