@@ -8,11 +8,10 @@ import { EventEmitter } from 'events'
 import { read7BitInt, deserialise } from './math.js'
 import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK } from './consts.js'
 import { Magic, Bit7, String, Int32, Boolean } from './types.js'
-export { init_mappings, BlockMappings, BlockMappingsReverse } from './mappings.js'
+import { init_mappings, BlockMappings } from './mappings.js'
 import World from './world.js'
 import Block from './block.js'
 import Player from './player.js'
-import { BlockMappings, BlockMappingsReverse, init_mappings } from './mappings.js'
 
 export default class Client extends EventEmitter {
 
