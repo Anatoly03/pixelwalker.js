@@ -159,7 +159,8 @@ export default class Client extends EventEmitter {
     // Internal Events
     //
 
-    private async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height, buffer]: any[]) {
+    // private async internal_player_init(some: any) {
+    private async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]: any[]) {
         await this.init()
 
         this.world = new World(width, height)
