@@ -25,7 +25,7 @@ export default class Client extends EventEmitter {
     public cmdPrefix: string[]
     public players: Map<number, Player>
 
-    constructor(args: {token?: string, user?: string, pass?: string, flags?: any, debug?: boolean}) {
+    constructor(args: { token?: string, user?: string, pass?: string, flags?: any, debug?: boolean }) {
         super()
 
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
@@ -54,7 +54,7 @@ export default class Client extends EventEmitter {
         this.debug = args.debug || false
 
         // On process interrupt, gracefully disconnect.
-        process.on('SIGINT', ()  => {
+        process.on('SIGINT', () => {
             this.disconnect()
         })
     }
@@ -64,15 +64,20 @@ export default class Client extends EventEmitter {
      */
     public async connect(world_id: string, room_type: string) {
         const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
-        this.socket = new WebSocket(`wss://${API_ROOM_LINK}/room/${token}`)
-        this.socket.binaryType = 'arraybuffer'
+
+        try {
+            this.socket = new WebSocket(`wss://${API_ROOM_LINK}/room/${token}`)
+            this.socket.binaryType = 'arraybuffer'
+        } catch(e) {
+            throw new Error('Socket failed to connect.')
+        }
 
         // Initialise block map
         await init_mappings()
 
         this.socket.on('message', (event) => {
             const buffer = Buffer.from(event as any) // TODO (tmpfix) find a better type coercion
-            
+
             if (this.debug) console.debug('Received', buffer)
 
             if (buffer[0] == 0x3F) { // 63
@@ -158,7 +163,7 @@ export default class Client extends EventEmitter {
         this.world = new World(width, height)
         this.world.init(buffer)
 
-        this.players.set(id, new Player ({
+        this.players.set(id, new Player({
             client: this,
             id,
             cuid,
@@ -173,7 +178,7 @@ export default class Client extends EventEmitter {
     }
 
     private internal_player_join([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]: any[]) {
-        this.players.set(id, new Player ({
+        this.players.set(id, new Player({
             client: this,
             id,
             cuid,
@@ -298,7 +303,7 @@ export default class Client extends EventEmitter {
             const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
 
             for (let i = 0; i < arg_types.length; i++) {
-                switch(arg_types[i]) {
+                switch (arg_types[i]) {
                     // TODO other types
                     case HeaderTypes.Int32:
                         buffer.push(Int32(block.data[i]))
