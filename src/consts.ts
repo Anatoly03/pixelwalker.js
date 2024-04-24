@@ -32,6 +32,8 @@ export const MessageType = {
     'placeBlock':       14,  // [0x6B, 14],
     'crownTouched':     15,  // [0x6B, 15],
     'keyPressed':       16,  // [0x6B, 16],
+
+    'playerStatsChanged':       19,  // [0x6B, 19],
 }
 
 export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {

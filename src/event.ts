@@ -108,6 +108,7 @@ export default class Client extends EventEmitter {
         this.on('playerGodMode', this.internal_player_godmode)
         this.on('playerModMode', this.internal_player_modmode)
         this.on('crownTouched', this.internal_player_crown)
+        this.on('playerStatsChanged', this.internal_player_stat_change)
         this.on('placeBlock', this.internal_player_block)
         this.on('worldCleared', this.internal_world_clear)
     }
@@ -248,6 +249,13 @@ export default class Client extends EventEmitter {
     private async internal_player_crown([id]: [number]) {
         const players = await this.wait_for(() => this.players)
         players.forEach((p) => p.has_crown = p.id == id)
+    }
+
+    private async internal_player_stat_change([id, gold_coins, blue_coins, death_count]: number[]) {
+        const player = await this.wait_for(() => this.players.get(id))
+        player.coins = gold_coins
+        player.blue_coins = blue_coins
+        player.deaths = death_count
     }
 
     private async internal_player_block([x, y, layer, id, ...args]: any[]) {
