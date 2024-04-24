@@ -78,13 +78,12 @@ export default class Client extends EventEmitter {
         this.socket.on('message', (event) => {
             const buffer = Buffer.from(event as any) // TODO (tmpfix) find a better type coercion
 
-            if (this.debug) console.debug('Received', buffer)
-
             if (buffer[0] == 0x3F) { // 63
                 return this.send(Magic(0x3F))
             }
 
             if (buffer[0] == 0x6B) { // 107
+                if (this.debug && buffer[1] != MessageType['playerMoved']) console.debug('Received', buffer)
                 return this.accept_event(buffer.subarray(1))
             }
 
@@ -274,7 +273,7 @@ export default class Client extends EventEmitter {
     //
 
     public send(...args: Buffer[]): Promise<any | undefined> {
-        if (this.debug) console.debug('Sending', Buffer.concat(args))
+        if (this.debug && Buffer.concat(args)[0] != 0x3f) console.debug('Sending', Buffer.concat(args))
 
         return new Promise((res, rej) => {
             if (!this.socket) return true
