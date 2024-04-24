@@ -19,7 +19,7 @@ export const MessageType = {
     'updateRights':       1,   // [0x6B, 1],
     'worldMetadata':      2,   // [0x6B, 2],
     'worldCleared':       3,   // [0x6B, 3],
-    // 'worldReloaded':      4,  // [0x6B, 14],
+    'worldReloaded':      4,  // [0x6B, 14],
     'placeBlock':         5,  // [0x6B, 14],
     'chatMessage':        6,   // [0x6B, 4],
     'systemMessage':      7,   // [0x6B, 5],

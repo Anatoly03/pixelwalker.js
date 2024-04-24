@@ -108,8 +108,11 @@ export default class Client extends EventEmitter {
         this.on('playerModMode', this.internal_player_modmode)
         this.on('crownTouched', this.internal_player_crown)
         this.on('playerStatsChanged', this.internal_player_stat_change)
+        
         this.on('placeBlock', this.internal_player_block)
+
         this.on('worldCleared', this.internal_world_clear)
+        this.on('worldReloaded', this.internal_world_reload)
     }
 
     private accept_event(buffer: Buffer) {
@@ -267,6 +270,10 @@ export default class Client extends EventEmitter {
     private async internal_world_clear() {
         const world = await this.wait_for(() => this.world)
         world.clear(true)
+    }
+
+    private async internal_world_reload() {
+        if (this.debug) console.debug('World Reload not yet implemented.')
     }
 
     //
