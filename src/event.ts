@@ -108,7 +108,7 @@ export default class Client extends EventEmitter {
         this.on('playerModMode', this.internal_player_modmode)
         this.on('crownTouched', this.internal_player_crown)
         this.on('playerStatsChanged', this.internal_player_stat_change)
-        
+
         this.on('placeBlock', this.internal_player_block)
 
         this.on('worldCleared', this.internal_world_clear)
