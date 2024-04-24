@@ -145,7 +145,7 @@ export default class World {
                 FOREGROUND += mapping.indexOf(block.name).toString(36).toLocaleUpperCase()
                 if (block.data.length > 0)
                     FOREGROUND += block.data.toString()
-                FOREGROUND += ';'
+                FOREGROUND += ' '
             }
 
         for (let x = 0; x < this.width; x++)
@@ -158,7 +158,7 @@ export default class World {
                 BACKGROUND += mapping.indexOf(block.name).toString(36).toLocaleUpperCase()
                 if (block.data.length > 0)
                     BACKGROUND += block.data.toString()
-                BACKGROUND += ';'
+                BACKGROUND += ' '
             }
 
         writer.write(`mapping: ${mapping}\n`)
