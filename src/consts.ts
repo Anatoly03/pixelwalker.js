@@ -19,7 +19,8 @@ export const MessageType = {
     'updateRights':       1,   // [0x6B, 1],
     'worldMetadata':      2,   // [0x6B, 2],
     'worldCleared':       3,   // [0x6B, 3],
-    // missing 2
+    // 'worldReloaded':      4,  // [0x6B, 14],
+    'placeBlock':         5,  // [0x6B, 14],
     'chatMessage':        6,   // [0x6B, 4],
     'systemMessage':      7,   // [0x6B, 5],
     'playerJoined':       8,   // [0x6B, 6],
@@ -30,11 +31,11 @@ export const MessageType = {
     'playerModMode':      13,  // [0x6B, 11],
     'playerCheckpoint':   14,  // [0x6B, 12],
     'playerRespawn':      15,  // [0x6B, 13],
-    'placeBlock':         16,  // [0x6B, 14],
+    // 'playerReset':     16,  // [0x6B, 14],
     'crownTouched':       17,  // [0x6B, 15],
     'keyPressed':         18,  // [0x6B, 16],
     'playerStatsChanged': 19,  // [0x6B, 19],
-    // missing 20
+    // 'playerWin': 20,  // [0x6B, 20],
     'localSwitchChange':  21,  // [0x6B, 19],
     'localSwitchReset':   22,  // [0x6B, 19],
     'globalSwitchChange': 23,  // [0x6B, 19],
