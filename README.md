@@ -21,7 +21,7 @@ client.on('cmd:hello', async ([user, message]) => {
     client.say(`🤖 Hello, ${username}! `)
 })
 
-client.connect('WORLD ID', 'pixelwalker2')
+client.connect('WORLD ID', 'pixelwalker3')
 ```
 
 ## Installation

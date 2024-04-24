@@ -8,11 +8,10 @@ import { EventEmitter } from 'events'
 import { read7BitInt, deserialise } from './math.js'
 import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK } from './consts.js'
 import { Magic, Bit7, String, Int32, Boolean } from './types.js'
-export { init_mappings, BlockMappings, BlockMappingsReverse } from './mappings.js'
+import { init_mappings, BlockMappings } from './mappings.js'
 import World from './world.js'
 import Block from './block.js'
 import Player from './player.js'
-import { BlockMappings, BlockMappingsReverse, init_mappings } from './mappings.js'
 import { FIFO, RANDOM } from './animation.js'
 
 export default class Client extends EventEmitter {
@@ -26,7 +25,7 @@ export default class Client extends EventEmitter {
     public cmdPrefix: string[]
     public players: Map<number, Player>
 
-    constructor(args: { token?: string, user?: string, pass?: string, flags?: any, debug?: boolean }) {
+    constructor(args: { token?: string, user?: string, pass?: string, flags?: {}, debug?: boolean }) {
         super()
 
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
@@ -65,8 +64,13 @@ export default class Client extends EventEmitter {
      */
     public async connect(world_id: string, room_type: string) {
         const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
-        this.socket = new WebSocket(`wss://${API_ROOM_LINK}/room/${token}`)
-        this.socket.binaryType = 'arraybuffer'
+
+        try {
+            this.socket = new WebSocket(`wss://${API_ROOM_LINK}/room/${token}`)
+            this.socket.binaryType = 'arraybuffer'
+        } catch(e) {
+            throw new Error('Socket failed to connect.')
+        }
 
         // Initialise block map
         await init_mappings()
@@ -74,13 +78,12 @@ export default class Client extends EventEmitter {
         this.socket.on('message', (event) => {
             const buffer = Buffer.from(event as any) // TODO (tmpfix) find a better type coercion
 
-            if (this.debug) console.debug('Received', buffer)
-
             if (buffer[0] == 0x3F) { // 63
                 return this.send(Magic(0x3F))
             }
 
             if (buffer[0] == 0x6B) { // 107
+                if (this.debug && buffer[1] != MessageType['playerMoved']) console.debug('Received', buffer)
                 return this.accept_event(buffer.subarray(1))
             }
 
@@ -104,16 +107,22 @@ export default class Client extends EventEmitter {
         this.on('playerGodMode', this.internal_player_godmode)
         this.on('playerModMode', this.internal_player_modmode)
         this.on('crownTouched', this.internal_player_crown)
+        this.on('playerStatsChanged', this.internal_player_stat_change)
+
         this.on('placeBlock', this.internal_player_block)
+
         this.on('worldCleared', this.internal_world_clear)
+        this.on('worldReloaded', this.internal_world_reload)
     }
 
     private accept_event(buffer: Buffer) {
         let [event_id, offset] = read7BitInt(buffer, 0)
         const event_name = Object.entries(MessageType).find((k) => k[1] == event_id)?.[0]
-        if (event_name == undefined)
-            throw new Error('Unknown event type for incoming buffer ' + buffer)
         const data = deserialise(buffer, offset)
+        if (event_name == undefined) {
+            console.warn((`Unknown event type ${event_id}. API may be out of date. Deserialised: ${data}`))
+            return
+        }
         this.emit(event_name, data)
     }
 
@@ -153,7 +162,8 @@ export default class Client extends EventEmitter {
     // Internal Events
     //
 
-    private async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, width, height, buffer]: any[]) {
+    // private async internal_player_init(some: any) {
+    private async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]: any[]) {
         await this.init()
 
         this.world = new World(width, height)
@@ -197,7 +207,7 @@ export default class Client extends EventEmitter {
         const prefix = this.cmdPrefix.find(v => message.startsWith(v))
         if (prefix == undefined) return
         const cmd = message.substring(prefix.length).toLowerCase()
-        const arg_regex = /"[^"]+"|'[^']+'|\w+/gi
+        const arg_regex = /"[^"]+"|'[^']+'|\w+/gi // TODO add escape char \
         const args: any[] = [id]
         for (const match of cmd.matchAll(arg_regex)) {
             args.push(match[0])
@@ -205,18 +215,9 @@ export default class Client extends EventEmitter {
         this.emit(`cmd:${args[1]}`, args)
     }
 
-    private async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id, coins, blue_coins]: any[]) {
+    private async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]: any[]) {
         // if (!this.players.get(id)) return
         let player: Player = await this.wait_for(() => this.players.get(id))
-
-        // if (player.coins != undefined && player.coins != coins)
-        //     this.emit('coinCollected', [id, coins])
-
-        // if (player.blue_coins != undefined && player.blue_coins != blue_coins)
-        //     this.emit('blueCoinCollected', [id, blue_coins])
-
-        player.coins = coins
-        player.blue_coins = blue_coins
 
         player.x = x / 16
         player.y = y / 16
@@ -244,6 +245,13 @@ export default class Client extends EventEmitter {
         players.forEach((p) => p.has_crown = p.id == id)
     }
 
+    private async internal_player_stat_change([id, gold_coins, blue_coins, death_count]: number[]) {
+        const player = await this.wait_for(() => this.players.get(id))
+        player.coins = gold_coins
+        player.blue_coins = blue_coins
+        player.deaths = death_count
+    }
+
     private async internal_player_block([x, y, layer, id, ...args]: any[]) {
         const world = await this.wait_for(() => this.world)
         world.place(x, y, layer, id, args)
@@ -255,12 +263,16 @@ export default class Client extends EventEmitter {
         world.clear(true)
     }
 
+    private async internal_world_reload() {
+        if (this.debug) console.debug('World Reload not yet implemented.')
+    }
+
     //
     // Communication
     //
 
     public send(...args: Buffer[]): Promise<any | undefined> {
-        if (this.debug) console.debug('Sending', Buffer.concat(args))
+        if (this.debug && Buffer.concat(args)[0] != 0x3f) console.debug('Sending', Buffer.concat(args))
 
         return new Promise((res, rej) => {
             if (!this.socket) return true
