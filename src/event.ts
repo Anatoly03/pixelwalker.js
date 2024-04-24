@@ -25,7 +25,7 @@ export default class Client extends EventEmitter {
     public cmdPrefix: string[]
     public players: Map<number, Player>
 
-    constructor(args: { token?: string, user?: string, pass?: string, flags?: any, debug?: boolean }) {
+    constructor(args: { token?: string, user?: string, pass?: string, flags?: {}, debug?: boolean }) {
         super()
 
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
