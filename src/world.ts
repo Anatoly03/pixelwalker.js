@@ -106,4 +106,15 @@ export default class World {
 
         return world
     }
+
+    /**
+     * Paste World chunk into this world
+     */
+    paste(xt: number, yt: number, data: World) {
+        for (let x = 0; x < data.width; x++)
+            for (let y = 0; y < data.height; y++) {
+                this.foreground[x + xt][y + yt] = data.foreground[x][y]
+                this.background[x + xt][y + yt] = data.background[x][y]
+            }
+    }
 }
