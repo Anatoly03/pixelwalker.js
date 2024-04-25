@@ -101,21 +101,21 @@ export default class Client extends EventEmitter {
 
         if (buffer[0] == 0x6B) { // 107
             if (this.debug && buffer[1] != MessageType['playerMoved']) console.debug('Received', buffer)
-            return this.accept_event(buffer.subarray(1))
+
+            let [event_id, offset] = read7BitInt(buffer, 1)
+            const event_name = Object.entries(MessageType).find((k) => k[1] == event_id)?.[0]
+            const data = deserialise(buffer, offset)
+
+            if (event_name == undefined) {
+                console.warn((`Unknown event type ${event_id}. API may be out of date. Deserialised: ${data}`))
+                return
+            }
+
+            this.emit(event_name, data)
+            return
         }
 
         this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
-    }
-
-    private accept_event(buffer: Buffer) {
-        let [event_id, offset] = read7BitInt(buffer, 0)
-        const event_name = Object.entries(MessageType).find((k) => k[1] == event_id)?.[0]
-        const data = deserialise(buffer, offset)
-        if (event_name == undefined) {
-            console.warn((`Unknown event type ${event_id}. API may be out of date. Deserialised: ${data}`))
-            return
-        }
-        this.emit(event_name, data)
     }
 
     /**
