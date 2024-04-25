@@ -68,25 +68,12 @@ export default class Client extends EventEmitter {
         try {
             this.socket = new WebSocket(`wss://${API_ROOM_LINK}/room/${token}`)
             this.socket.binaryType = 'arraybuffer'
-        } catch(e) {
+        } catch (e) {
             throw new Error('Socket failed to connect.')
         }
 
-        this.socket.on('message', (event) => {
-            const buffer = Buffer.from(event as any) // TODO (tmpfix) find a better type coercion
-
-            if (buffer[0] == 0x3F) { // 63
-                return this.send(Magic(0x3F))
-            }
-
-            if (buffer[0] == 0x6B) { // 107
-                if (this.debug && buffer[1] != MessageType['playerMoved']) console.debug('Received', buffer)
-                return this.accept_event(buffer.subarray(1))
-            }
-
-            this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
-        })
-
+        // (tmpfix) find a better type coercion
+        this.socket.on('message', (event) => this.internal_socket_message(Buffer.from(event as any)))
         this.socket.on('error', (err) => this.emit('error', [err]))
         this.socket.on('close', (code, reason) => this.emit('close', [code, reason]))
 
@@ -105,6 +92,19 @@ export default class Client extends EventEmitter {
 
         this.on('worldCleared', this.internal_world_clear)
         this.on('worldReloaded', this.internal_world_reload)
+    }
+
+    private async internal_socket_message(buffer: Buffer) {
+        if (buffer[0] == 0x3F) { // 63
+            return await this.send(Magic(0x3F))
+        }
+
+        if (buffer[0] == 0x6B) { // 107
+            if (this.debug && buffer[1] != MessageType['playerMoved']) console.debug('Received', buffer)
+            return this.accept_event(buffer.subarray(1))
+        }
+
+        this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
     }
 
     private accept_event(buffer: Buffer) {
