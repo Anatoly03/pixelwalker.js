@@ -60,7 +60,7 @@ export default class Player {
     }
 
     public async respond(content: string) {
-        // TODO "USERNAME: message"
+        this.client.say(`${this.username}: ${content}`)
     }
 
     public async kick(reason: string) {
