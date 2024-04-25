@@ -5,6 +5,11 @@ import { HeaderTypes, SpecialBlockData } from "./consts.js"
 import { BlockMappings, BlockMappingsReverse } from './mappings.js'
 import { get2dArray } from "./math.js"
 
+/**
+ * A World is an offline-saved chunk of two dimensional
+ * block-data. Worlds can be used to manipulate map fragments
+ * like a pixel raster.
+ */
 export default class World {
     public width: number
     public height: number
