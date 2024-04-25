@@ -1,5 +1,5 @@
 
-import { BlockMappings, BlockMappingsReverse } from "./mappings.js"
+import { BlockMappings, BlockMappingsReverse } from "../mappings.js"
 
 export default class Block {
     public id: number

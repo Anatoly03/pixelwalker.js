@@ -1,6 +1,6 @@
 
 import stream from "stream"
-import Block from "./block.js"
+import Block from "./types/block.js"
 import { HeaderTypes, SpecialBlockData } from "./consts.js"
 import { BlockMappings, BlockMappingsReverse } from './mappings.js'
 import { get2dArray } from "./math.js"

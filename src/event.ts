@@ -10,9 +10,9 @@ import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_
 import { Magic, Bit7, String, Int32, Boolean } from './types.js'
 import { BlockMappings } from './mappings.js'
 import World from './world.js'
-import Block from './block.js'
-import Player from './player.js'
-import { FIFO, RANDOM } from './animation.js'
+import Block from './types/block.js'
+import Player from './types/player.js'
+import { FIFO, RANDOM } from './types/animation.js'
 
 export default class Client extends EventEmitter {
 

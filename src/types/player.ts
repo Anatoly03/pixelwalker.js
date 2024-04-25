@@ -1,7 +1,8 @@
-import Client from "./event.js";
+import Client from "../event.js";
 
 export default class Player {
     private readonly client: Client
+
     public readonly id: number
     public readonly cuid: string
     public readonly username: string
