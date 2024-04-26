@@ -19,7 +19,7 @@ export default class Client extends EventEmitter {
     private pocketbase: PocketBase
     private socket: WebSocket | null
 
-    public debug: boolean
+    private debug: boolean
 
     public world: World | undefined
     public cmdPrefix: string[]
