@@ -15,7 +15,7 @@ import Player from './types/player.js'
 import { FIFO, RANDOM } from './types/animation.js'
 
 export default class Client extends EventEmitter {
-    public lib: EventEmitter
+    public raw: EventEmitter
 
     private pocketbase: PocketBase
     private socket: WebSocket | null
@@ -28,7 +28,7 @@ export default class Client extends EventEmitter {
     constructor(args: { token?: string, user?: string, pass?: string, flags?: {}, debug?: boolean }) {
         super()
 
-        this.lib = new EventEmitter()
+        this.raw = new EventEmitter()
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
         this.socket = null
         this.world = undefined
@@ -76,24 +76,22 @@ export default class Client extends EventEmitter {
 
         // (tmpfix) find a better type coercion
         this.socket.on('message', (event) => this.internal_socket_message(Buffer.from(event as any)))
-        this.socket.on('error', (err) => this.lib.emit('error', [err]))
-        this.socket.on('close', (code, reason) => this.lib.emit('close', [code, reason]))
+        this.socket.on('error', (err) => this.emit('error', [err]))
+        this.socket.on('close', (code, reason) => this.emit('close', [code, reason]))
 
-        this.on('init', this.internal_player_init)
-        this.on('playerJoined', this.internal_player_join)
-        this.on('playerLeft', this.internal_player_leave)
-        this.on('chatMessage', this.internal_player_chat)
-        this.on('playerMoved', this.internal_player_move)
-        this.on('playerFace', this.internal_player_face)
-        this.on('playerGodMode', this.internal_player_godmode)
-        this.on('playerModMode', this.internal_player_modmode)
-        this.on('crownTouched', this.internal_player_crown)
-        this.on('playerStatsChanged', this.internal_player_stat_change)
-
-        this.on('placeBlock', this.internal_player_block)
-
-        this.on('worldCleared', this.internal_world_clear)
-        this.on('worldReloaded', this.internal_world_reload)
+        this.raw.on('init', this.internal_player_init)
+        this.raw.on('playerJoined', this.internal_player_join)
+        this.raw.on('playerLeft', this.internal_player_leave)
+        this.raw.on('chatMessage', this.internal_player_chat)
+        this.raw.on('playerMoved', this.internal_player_move)
+        this.raw.on('playerFace', this.internal_player_face)
+        this.raw.on('playerGodMode', this.internal_player_godmode)
+        this.raw.on('playerModMode', this.internal_player_modmode)
+        this.raw.on('crownTouched', this.internal_player_crown)
+        this.raw.on('playerStatsChanged', this.internal_player_stat_change)
+        this.raw.on('placeBlock', this.internal_player_block)
+        this.raw.on('worldCleared', this.internal_world_clear)
+        this.raw.on('worldReloaded', this.internal_world_reload)
     }
 
     private async internal_socket_message(buffer: Buffer) {
@@ -113,10 +111,10 @@ export default class Client extends EventEmitter {
                 return
             }
 
-            return this.emit(event_name, data)
+            return this.raw.emit(event_name, data)
         }
 
-        this.lib.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
+        this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
     }
 
     /**
@@ -164,7 +162,7 @@ export default class Client extends EventEmitter {
         this.world = new World(width, height)
         this.world.init(buffer)
 
-        this.players.set(id, new Player({
+        const self = new Player({
             client: this,
             id,
             cuid,
@@ -173,9 +171,11 @@ export default class Client extends EventEmitter {
             isAdmin,
             x: x / 16,
             y: y / 16,
-        }))
+        })
 
-        this.lib.emit('start', [id])
+        this.players.set(id, self)
+
+        this.emit('start', [self])
     }
 
     private internal_player_join([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]: any[]) {
@@ -207,7 +207,7 @@ export default class Client extends EventEmitter {
         for (const match of cmd.matchAll(arg_regex)) {
             args.push(match[0])
         }
-        this.lib.emit(`cmd:${args[1]}`, args)
+        this.emit(`cmd:${args[1]}`, args)
     }
 
     private async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]: any[]) {
