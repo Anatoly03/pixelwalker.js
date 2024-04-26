@@ -55,7 +55,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.debug = args.debug || false
 
         // On process interrupt, gracefully disconnect.
-        process.on('SIGINT', this.disconnect)
+        // DO NOT merge this into one function, otherwise it does not work.
+        process.on('SIGINT', (signal) => {
+            this.disconnect()
+        })
     }
 
     /**
