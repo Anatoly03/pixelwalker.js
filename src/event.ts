@@ -15,10 +15,10 @@ import Player from './types/player.js'
 import { FIFO, RANDOM } from './types/animation.js'
 
 export default class Client extends EventEmitter {
+    public lib: EventEmitter
 
     private pocketbase: PocketBase
     private socket: WebSocket | null
-
     private debug: boolean
 
     public world: World | undefined
@@ -28,6 +28,7 @@ export default class Client extends EventEmitter {
     constructor(args: { token?: string, user?: string, pass?: string, flags?: {}, debug?: boolean }) {
         super()
 
+        this.lib = new EventEmitter()
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
         this.socket = null
         this.world = undefined
@@ -75,8 +76,8 @@ export default class Client extends EventEmitter {
 
         // (tmpfix) find a better type coercion
         this.socket.on('message', (event) => this.internal_socket_message(Buffer.from(event as any)))
-        this.socket.on('error', (err) => this.emit('error', [err]))
-        this.socket.on('close', (code, reason) => this.emit('close', [code, reason]))
+        this.socket.on('error', (err) => this.lib.emit('error', [err]))
+        this.socket.on('close', (code, reason) => this.lib.emit('close', [code, reason]))
 
         this.on('init', this.internal_player_init)
         this.on('playerJoined', this.internal_player_join)
@@ -115,7 +116,7 @@ export default class Client extends EventEmitter {
             return this.emit(event_name, data)
         }
 
-        this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
+        this.lib.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
     }
 
     /**
@@ -151,7 +152,9 @@ export default class Client extends EventEmitter {
     }
 
     //
+    //
     // Internal Events
+    //
     //
 
     // private async internal_player_init(some: any) {
@@ -172,7 +175,7 @@ export default class Client extends EventEmitter {
             y: y / 16,
         }))
 
-        this.emit('start', [id])
+        this.lib.emit('start', [id])
     }
 
     private internal_player_join([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]: any[]) {
@@ -204,7 +207,7 @@ export default class Client extends EventEmitter {
         for (const match of cmd.matchAll(arg_regex)) {
             args.push(match[0])
         }
-        this.emit(`cmd:${args[1]}`, args)
+        this.lib.emit(`cmd:${args[1]}`, args)
     }
 
     private async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]: any[]) {
@@ -260,7 +263,9 @@ export default class Client extends EventEmitter {
     }
 
     //
+    //
     // Communication
+    //
     //
 
     public send(...args: Buffer[]): Promise<any | undefined> {
