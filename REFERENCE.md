@@ -1,9 +1,37 @@
 
 # API Reference
 
-### Native Events
+### `class Player`
 
-Native Events are emitted when raw game data is received and deserialised.
+```js
+readonly id: number
+readonly cuid: string
+readonly username: string
+
+face: number
+isAdmin: boolean
+x: number
+y: number
+god_mode: boolean
+mod_mode: boolean
+has_crown: boolean
+
+coins: number
+blue_coins: number
+deaths: number
+
+// Methods
+
+equals(other: Player): boolean
+async pm(content: string)
+async respond(content: string)
+async kick(reason: string)
+async edit(value: boolean)
+```
+
+### `class Client`
+
+
 
 TODO describe properly
 
