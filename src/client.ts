@@ -14,6 +14,7 @@ import Block, { WorldPosition } from './types/block.js'
 import Player from './types/player.js'
 import { FIFO, RANDOM } from './types/animation.js'
 import { RoomTypes } from './data/room_types.js'
+import init_events from './events.js'
 
 export default class Client extends EventEmitter {
     public raw: EventEmitter
@@ -80,9 +81,11 @@ export default class Client extends EventEmitter {
         this.socket.on('error', (err) => this.emit('error', [err]))
         this.socket.on('close', (code, reason) => this.emit('close', [code, reason]))
 
+        init_events(this)
+
         this.raw.on('init', this.internal_player_init)
-        this.raw.on('playerJoined', this.internal_player_join)
-        this.raw.on('playerLeft', this.internal_player_leave)
+        // this.raw.on('playerJoined', this.internal_player_join)
+        // this.raw.on('playerLeft', this.internal_player_leave)
         this.raw.on('chatMessage', this.internal_player_chat)
         this.raw.on('playerMoved', this.internal_player_move)
         this.raw.on('playerFace', this.internal_player_face)
@@ -176,31 +179,6 @@ export default class Client extends EventEmitter {
 
         this.players.set(id, self)
         this.emit('start', [self])
-    }
-
-    private async internal_player_join([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]: any[]) {
-        const player = new Player({
-            client: this,
-            id,
-            cuid,
-            username,
-            face,
-            isAdmin,
-            x: x / 16,
-            y: y / 16,
-            god_mode,
-            mod_mode,
-            has_crown
-        })
-
-        this.players.set(id, player)
-        this.emit('player:join', [player])
-    }
-
-    private async internal_player_leave([id]: [number]) {
-        const player = await this.wait_for(() => this.players.get(id))
-        this.emit('player:leave', [player])
-        this.players.delete(id)
     }
 
     private async internal_player_chat([id, message]: [number, string]) {
