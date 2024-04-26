@@ -1,7 +1,37 @@
 import Client from "./client.js";
+import { MessageType } from "./data/consts.js";
+import { Bit7, Magic } from "./types.js";
 import Player from "./types/player.js";
+import World from "./world.js";
 
 export default (client: Client) => {
+
+    /**
+     * On init, set everything up
+     */
+    client.raw.on('init', async (
+        [id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]:
+            [number, string, string, number, boolean, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]
+    ) => {
+        await client.send(Magic(0x6B), Bit7(MessageType['init']))
+
+        client.world = new World(width, height)
+        client.world.init(buffer)
+
+        const self = new Player({
+            client,
+            id,
+            cuid,
+            username,
+            face,
+            isAdmin,
+            x: x / 16,
+            y: y / 16,
+        })
+
+        client.players.set(id, self)
+        client.emit('start', [self])
+    })
 
     /**
      * On player join, create a player object with data
@@ -39,4 +69,121 @@ export default (client: Client) => {
         client.players.delete(id)
     })
 
+    /**
+     * When receiving a chat message, if it is a command,
+     * emit command, otherwise emit chat message
+     */
+    client.raw.on('chatMessage', async ([id, message]: [number, string]) => {
+        const player = await client.wait_for(() => client.players.get(id))
+        const prefix = client.cmdPrefix.find(v => message.startsWith(v))
+
+        if (!prefix) return client.emit('chat', [player, message])
+
+        const cmd = message.substring(prefix.length).toLowerCase()
+        const arg_regex = /"[^"]+"|'[^']+'|\w+/gi // TODO add escape char \
+        const args: any[] = [player]
+
+        for (const match of cmd.matchAll(arg_regex)) args.push(match[0])
+
+        client.emit(`cmd:${args[1]}`, args)
+    })
+
+    /**
+     * TODO Player movement
+     */
+    client.raw.on('playerMoved', async ([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]: [number, number, number, number, number, number, number, number, number, boolean, boolean, number]) => {
+        const player = await client.wait_for(() => client.players.get(id))
+
+        player.x = x / 16
+        player.y = y / 16
+        
+        // TODO
+        // this.emit('player:move', [player])
+    })
+
+    /**
+     * When player changes face, update.
+     */
+    client.raw.on('playerFace', async ([id, face]: [number, number]) => {
+        const player = await client.wait_for(() => client.players.get(id))
+        const old_face = player.face
+        player.face = face
+        client.emit('player:face', [player, old_face, face])
+    })
+
+    /**
+     * TODO When player changes god mode, update.
+     */
+    client.raw.on('playerGodMode', async ([id, god_mode]: [number, boolean]) => {
+        const player = await client.wait_for(() => client.players.get(id))
+        const old_mode = player.god_mode
+        player.god_mode = god_mode
+        client.emit('player:god', [player])
+    })
+
+    /**
+     * TODO When player changes mod mode, update.
+     */
+    client.raw.on('playerModMode', async ([id, mod_mode]: [number, boolean]) => {
+        const player = await client.wait_for(() => client.players.get(id))
+        const old_mode = player.god_mode
+        player.mod_mode = mod_mode
+        client.emit('player:mod', [player])
+    })
+
+    /**
+     * TODO
+     */
+    client.raw.on('crownTouched', async ([id, mod_mode]: [number, boolean]) => {
+        const players = await client.wait_for(() => client.players)
+        const player = players.get(id)
+        const old_crown = Array.from(players.values()).find(p => p.has_crown)
+        players.forEach((p) => p.has_crown = p.id == id)
+        client.emit('player:crown', [player, old_crown || null])
+    })
+
+    /**
+     * TODO
+     */
+    client.raw.on('crownTouched', async ([id, gold_coins, blue_coins, death_count]: [number, number, number, number]) => {
+        const player = await client.wait_for(() => client.players.get(id))
+
+        const old_coins = player.coins
+        const old_blue_coins = player.blue_coins
+        const old_death_count = player.deaths
+
+        player.coins = gold_coins
+        player.blue_coins = blue_coins
+        player.deaths = death_count
+
+        if (old_coins != gold_coins) client.emit('player:coin', [player, old_coins, gold_coins])
+        if (old_blue_coins != blue_coins) client.emit('player:coin:blue', [player, old_blue_coins, blue_coins])
+        if (old_death_count != death_count) client.emit('player:death', [player, old_death_count, death_count])
+    })
+
+    /**
+     * TODO
+     */
+    client.raw.on('placeBlock', async ([id, x, y, layer, bid, ...args]: any[]) => {
+        const player = await client.wait_for(() => client.players.get(id))
+        const world = await client.wait_for(() => client.world)
+        const [position, block] = world.place(x, y, layer, bid, args)
+        client.emit('world:block', [player, position, block])
+    })
+
+    /**
+     * TODO
+     */
+    client.raw.on('worldCleared', async ([id, x, y, layer, bid, ...args]: any[]) => {
+        const world = await client.wait_for(() => client.world)
+        world.clear(true)
+        client.emit('world:clear', [])
+    })
+
+    /**
+     * TODO
+     */
+    client.raw.on('worldReloaded', async ([id, x, y, layer, bid, ...args]: any[]) => {
+        console.debug('World Reload not yet implemented.')
+    })
 }

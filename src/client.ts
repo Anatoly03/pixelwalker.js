@@ -3,8 +3,6 @@ import PocketBase from 'pocketbase'
 import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 
-// import { addEntity } from 'bitecs'
-
 import { read7BitInt, deserialise } from './math.js'
 import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK } from './data/consts.js'
 import { Magic, Bit7, String, Int32, Boolean } from './types.js'
@@ -76,29 +74,18 @@ export default class Client extends EventEmitter {
             throw new Error('Socket failed to connect.')
         }
 
-        // (tmpfix) find a better type coercion
-        this.socket.on('message', (event) => this.internal_socket_message(Buffer.from(event as any)))
+        this.socket.on('message', (event) => this.receive_message(Buffer.from(event as any)))
         this.socket.on('error', (err) => this.emit('error', [err]))
         this.socket.on('close', (code, reason) => this.emit('close', [code, reason]))
 
         init_events(this)
-
-        this.raw.on('init', this.internal_player_init)
-        // this.raw.on('playerJoined', this.internal_player_join)
-        // this.raw.on('playerLeft', this.internal_player_leave)
-        this.raw.on('chatMessage', this.internal_player_chat)
-        this.raw.on('playerMoved', this.internal_player_move)
-        this.raw.on('playerFace', this.internal_player_face)
-        this.raw.on('playerGodMode', this.internal_player_godmode)
-        this.raw.on('playerModMode', this.internal_player_modmode)
-        this.raw.on('crownTouched', this.internal_player_crown)
-        this.raw.on('playerStatsChanged', this.internal_player_stat_change)
-        this.raw.on('placeBlock', this.internal_player_block)
-        this.raw.on('worldCleared', this.internal_world_clear)
-        this.raw.on('worldReloaded', this.internal_world_reload)
     }
 
-    private async internal_socket_message(buffer: Buffer) {
+    /**
+     * This function is called when a message is received
+     * from the server.
+     */
+    private async receive_message(buffer: Buffer) {
         if (buffer[0] == 0x3F) { // 63
             return await this.send(Magic(0x3F))
         }
@@ -155,123 +142,6 @@ export default class Client extends EventEmitter {
 
     //
     //
-    // Internal Events
-    //
-    //
-
-    // private async internal_player_init(some: any) {
-    private async internal_player_init([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]: any[]) {
-        await this.init()
-
-        this.world = new World(width, height)
-        this.world.init(buffer)
-
-        const self = new Player({
-            client: this,
-            id,
-            cuid,
-            username,
-            face,
-            isAdmin,
-            x: x / 16,
-            y: y / 16,
-        })
-
-        this.players.set(id, self)
-        this.emit('start', [self])
-    }
-
-    private async internal_player_chat([id, message]: [number, string]) {
-        const player = await this.wait_for(() => this.players.get(id))
-        const prefix = this.cmdPrefix.find(v => message.startsWith(v))
-
-        if (prefix == undefined) {
-            this.emit('chat', [player, message])
-            return
-        }
-
-        const cmd = message.substring(prefix.length).toLowerCase()
-        const arg_regex = /"[^"]+"|'[^']+'|\w+/gi // TODO add escape char \
-        const args: any[] = [player]
-        for (const match of cmd.matchAll(arg_regex)) {
-            args.push(match[0])
-        }
-        this.emit(`cmd:${args[1]}`, args)
-    }
-
-    private async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]: any[]) {
-        const player = await this.wait_for(() => this.players.get(id))
-
-        player.x = x / 16
-        player.y = y / 16
-
-        // TODO
-        // this.emit('player:move', [player])
-    }
-
-    private async internal_player_face([id, face]: [number, number]) {
-        const player = await this.wait_for(() => this.players.get(id))
-        const old_face = player.face
-        player.face = face
-        this.emit('player:face', [player, old_face, face])
-    }
-
-    private async internal_player_godmode([id, god_mode]: [number, boolean]) {
-        const player = await this.wait_for(() => this.players.get(id))
-        const old_mode = player.god_mode
-        player.god_mode = god_mode
-        this.emit('player:god', [player]) // TODO
-    }
-
-    private async internal_player_modmode([id, mod_mode]: [number, boolean]) {
-        let player = await this.wait_for(() => this.players.get(id))
-        player.mod_mode = mod_mode
-        // TODO emit
-    }
-
-    private async internal_player_crown([id]: [number]) {
-        const player = await this.wait_for(() => this.players.get(id))
-        const players = await this.wait_for(() => this.players)
-        const old_crown = Array.from(players.values()).find(p => p.has_crown)
-        players.forEach((p) => p.has_crown = p.id == id)
-        this.emit('player:crown', [player, old_crown])
-    }
-
-    private async internal_player_stat_change([id, gold_coins, blue_coins, death_count]: number[]) {
-        const player = await this.wait_for(() => this.players.get(id))
-
-        const old_coins = player.coins
-        const old_blue_coins = player.blue_coins
-        const old_death_count = player.deaths
-
-        player.coins = gold_coins
-        player.blue_coins = blue_coins
-        player.deaths = death_count
-
-        if (old_coins != gold_coins) this.emit('player:coin', [player, old_coins, gold_coins])
-        if (old_blue_coins != blue_coins) this.emit('player:blue_coin', [player, old_blue_coins, blue_coins])
-        if (old_death_count != death_count) this.emit('player:death', [player, old_death_count, death_count])
-    }
-
-    private async internal_player_block([x, y, layer, id, ...args]: any[]) {
-        const world = await this.wait_for(() => this.world)
-        const [position, block] = world.place(x, y, layer, id, args)
-        this.emit('world:block', [position, block])
-    }
-
-    private async internal_world_clear() {
-        const world = await this.wait_for(() => this.world)
-        world.clear(true)
-        this.emit('world:clear', [])
-    }
-
-    private async internal_world_reload() {
-        if (this.debug) console.debug('World Reload not yet implemented.')
-        // TODO
-    }
-
-    //
-    //
     // Communication
     //
     //
@@ -287,13 +157,6 @@ export default class Client extends EventEmitter {
                 res(true)
             })
         })
-    }
-
-    /**
-     * Respond to the init protocol
-     */
-    private async init() {
-        await this.send(Magic(0x6B), Bit7(MessageType['init']))
     }
 
     public async say(content: string) {
