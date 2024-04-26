@@ -10,7 +10,7 @@ import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_
 import { Magic, Bit7, String, Int32, Boolean } from './types.js'
 import { BlockMappings } from './data/mappings.js'
 import World from './world.js'
-import Block from './types/block.js'
+import Block, { WorldPosition } from './types/block.js'
 import Player from './types/player.js'
 import { FIFO, RANDOM } from './types/animation.js'
 
@@ -324,17 +324,17 @@ export default class Client extends EventEmitter {
     }
 
     // TODO add types for animation header
-    public async fill(xt: number, yt: number, world: World, args: {animation: (b: any) => any}) {
+    public async fill(xt: number, yt: number, world: World, args: { animation: (b: any) => any }) {
         this.world = await this.wait_for(() => this.world)
-        const to_be_placed: [number, number, number, Block][] = []
+        const to_be_placed: [WorldPosition, Block][] = []
 
         for (let x = 0; x < world.width; x++)
             for (let y = 0; y < world.height; y++) {
                 if (!world.foreground[x][y].isSameAs(this.world.foreground[xt + x][yt + y])) {
-                    to_be_placed.push([xt + x, yt + y, 1, world.blockAt(x, y, 1)])
+                    to_be_placed.push([[xt + x, yt + y, 1], world.blockAt(x, y, 1)])
                 }
                 if (!world.background[x][y].isSameAs(this.world.background[xt + x][yt + y])) {
-                    to_be_placed.push([xt + x, yt + y, 0, world.blockAt(x, y, 0)])
+                    to_be_placed.push([[xt + x, yt + y, 0], world.blockAt(x, y, 0)])
                 }
             }
 
@@ -343,7 +343,7 @@ export default class Client extends EventEmitter {
 
         while (to_be_placed.length > 0) {
             const yielded = generator.next()
-            const [x, y, layer, block]: any = yielded.value
+            const [[x, y, layer], block]: any = yielded.value
             await this.block(x, y, layer, block)
             await this.wait()
         }

@@ -1,6 +1,8 @@
 
 import { BlockMappings, BlockMappingsReverse } from "../data/mappings.js"
 
+export type WorldPosition = [number, number, 0 | 1]
+
 export default class Block {
     public id: number
     public data: any[] = []
