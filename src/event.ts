@@ -323,6 +323,10 @@ export default class Client extends EventEmitter {
         await this.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
     }
 
+    public async move(x: number, y: number) {
+        // TODO
+    }
+
     // TODO add types for animation header
     public async fill(xt: number, yt: number, world: World, args: { animation: (b: any) => any }) {
         this.world = await this.wait_for(() => this.world)
