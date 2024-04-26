@@ -35,6 +35,34 @@ export interface LibraryEvents {
     'world:clear': [[]]
 }
 
+export interface RawGameEvents {
+    'init':                     [[number, string, string, number, boolean, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
+    'updateRights':             [[]],
+    'worldMetadata':            [[]],
+    'worldCleared':             [[]],
+    'worldReloaded':            [[]],
+    'placeBlock':               [[number, number, number, 0 | 1, number, ...any]],
+    'chatMessage':              [[number, string]],
+    'systemMessage':            [[]],
+    'playerJoined':             [[number, string, string, number, boolean, number, number, boolean, boolean, boolean]],
+    'playerLeft':               [[number]],
+    'playerMoved':              [[number, number, number, number, number, number, number, number, number, boolean, boolean, number]],
+    'playerFace':               [[number, number]],
+    'playerGodMode':            [[number, boolean]],
+    'playerModMode':            [[number, boolean]],
+    'playerCheckpoint':         [[]],
+    'playerRespawn':            [[]],
+    'playerReset':              [[]],
+    'crownTouched':             [[number]],
+    'keyPressed':               [[]],
+    'playerStatsChanged':       [[number, number, number, number]],
+    'playerWin':                [[]],
+    'localSwitchChange':        [[]],
+    'localSwitchReset':         [[]],
+    'globalSwitchChange':       [[]],
+    'globalSwitchReset':        [[]],
+}
+
 export const MessageType = {
     'init':                     0,
     'updateRights':             1,

@@ -4,7 +4,7 @@ import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 
 import { read7BitInt, deserialise } from './math.js'
-import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents } from './data/consts.js'
+import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
 import { Magic, Bit7, String, Int32, Boolean } from './types.js'
 import { BlockMappings } from './data/mappings.js'
 import World from './world.js'
@@ -15,7 +15,7 @@ import { RoomTypes } from './data/room_types.js'
 import init_events from './events.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
-    public raw: EventEmitter
+    public raw: EventEmitter<RawGameEvents>
 
     private pocketbase: PocketBase
     private socket: WebSocket | null
@@ -95,7 +95,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
             if (this.debug && buffer[1] != MessageType['playerMoved']) console.debug('Received', buffer)
 
             let [event_id, offset] = read7BitInt(buffer, 1)
-            const event_name = Object.entries(MessageType).find((k) => k[1] == event_id)?.[0]
+            const event_name = Object.entries(MessageType).find((k) => k[1] == event_id)?.[0] as keyof RawGameEvents
             const data = deserialise(buffer, offset)
 
             if (event_name == undefined) {
@@ -103,7 +103,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
                 return
             }
 
-            return this.raw.emit(event_name, data)
+            return this.raw.emit(event_name, data as any)
         }
 
         this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])

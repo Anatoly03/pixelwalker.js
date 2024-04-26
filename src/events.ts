@@ -13,10 +13,7 @@ export default (client: Client) => {
     /**
      * On init, set everything up
      */
-    client.raw.on('init', async (
-        [id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]:
-            [number, string, string, number, boolean, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]
-    ) => {
+    client.raw.on('init', async ([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
         await client.send(Magic(0x6B), Bit7(MessageType['init']))
 
         client.world = new World(width, height)
@@ -41,10 +38,7 @@ export default (client: Client) => {
      * On player join, create a player object with data
      * and emit `player:join` with said object.
      */
-    client.raw.on('playerJoined', async (
-        [id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]:
-            [number, string, string, number, boolean, number, number, boolean, boolean, boolean]
-    ) => {
+    client.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]) => {
         const player = new Player({
             client,
             id,
@@ -67,7 +61,7 @@ export default (client: Client) => {
      * On player leave, send the object of the player
      * and destroy it.
      */
-    client.raw.on('playerLeft', async ([id]: [number]) => {
+    client.raw.on('playerLeft', async ([id]) => {
         const player = await client.wait_for(() => client.players.get(id))
         client.emit('player:leave', [player])
         client.players.delete(id)
@@ -77,7 +71,7 @@ export default (client: Client) => {
      * When receiving a chat message, if it is a command,
      * emit command, otherwise emit chat message
      */
-    client.raw.on('chatMessage', async ([id, message]: [number, string]) => {
+    client.raw.on('chatMessage', async ([id, message]) => {
         const player = await client.wait_for(() => client.players.get(id))
         const prefix = client.cmdPrefix.find(v => message.startsWith(v))
 
@@ -95,7 +89,7 @@ export default (client: Client) => {
     /**
      * TODO Player movement
      */
-    client.raw.on('playerMoved', async ([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]: [number, number, number, number, number, number, number, number, number, boolean, boolean, number]) => {
+    client.raw.on('playerMoved', async ([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]) => {
         const player = await client.wait_for(() => client.players.get(id))
 
         player.x = x / 16
@@ -108,7 +102,7 @@ export default (client: Client) => {
     /**
      * When player changes face, update.
      */
-    client.raw.on('playerFace', async ([id, face]: [number, number]) => {
+    client.raw.on('playerFace', async ([id, face]) => {
         const player = await client.wait_for(() => client.players.get(id))
         const old_face = player.face
         player.face = face
@@ -118,7 +112,7 @@ export default (client: Client) => {
     /**
      * TODO When player changes god mode, update.
      */
-    client.raw.on('playerGodMode', async ([id, god_mode]: [number, boolean]) => {
+    client.raw.on('playerGodMode', async ([id, god_mode]) => {
         const player = await client.wait_for(() => client.players.get(id))
         const old_mode = player.god_mode
         player.god_mode = god_mode
@@ -128,7 +122,7 @@ export default (client: Client) => {
     /**
      * TODO When player changes mod mode, update.
      */
-    client.raw.on('playerModMode', async ([id, mod_mode]: [number, boolean]) => {
+    client.raw.on('playerModMode', async ([id, mod_mode]) => {
         const player = await client.wait_for(() => client.players.get(id))
         const old_mode = player.god_mode
         player.mod_mode = mod_mode
@@ -138,7 +132,7 @@ export default (client: Client) => {
     /**
      * TODO
      */
-    client.raw.on('crownTouched', async ([id]: [number]) => {
+    client.raw.on('crownTouched', async ([id]) => {
         const players = await client.wait_for(() => client.players)
         const player: Player = players.get(id) as Player
         const old_crown = Array.from(players.values()).find(p => p.has_crown)
@@ -149,7 +143,7 @@ export default (client: Client) => {
     /**
      * TODO
      */
-    client.raw.on('playerStatsChanged', async ([id, gold_coins, blue_coins, death_count]: [number, number, number, number]) => {
+    client.raw.on('playerStatsChanged', async ([id, gold_coins, blue_coins, death_count]) => {
         const player = await client.wait_for(() => client.players.get(id))
 
         const old_coins = player.coins
@@ -168,7 +162,7 @@ export default (client: Client) => {
     /**
      * TODO
      */
-    client.raw.on('placeBlock', async ([id, x, y, layer, bid, ...args]: any[]) => {
+    client.raw.on('placeBlock', async ([id, x, y, layer, bid, ...args]) => {
         const player = await client.wait_for(() => client.players.get(id))
         const world = await client.wait_for(() => client.world)
         const [position, block] = world.place(x, y, layer, bid, args)
@@ -178,7 +172,8 @@ export default (client: Client) => {
     /**
      * TODO
      */
-    client.raw.on('worldCleared', async ([id, x, y, layer, bid, ...args]: any[]) => {
+    client.raw.on('worldCleared', async ([]) => {
+        console.debug('World Reload not yet implemented.')
         const world = await client.wait_for(() => client.world)
         world.clear(true)
         client.emit('world:clear', [])
@@ -187,7 +182,7 @@ export default (client: Client) => {
     /**
      * TODO
      */
-    client.raw.on('worldReloaded', async ([id, x, y, layer, bid, ...args]: any[]) => {
+    client.raw.on('worldReloaded', async ([]) => {
         console.debug('World Reload not yet implemented.')
     })
 }
