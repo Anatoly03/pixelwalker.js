@@ -108,7 +108,7 @@ export default (client: Client) => {
         const player = await client.wait_for(() => client.players.get(id))
         const old_face = player.face
         player.face = face
-        client.emit('player:face', [player, old_face, face])
+        client.emit('player:face', [player, face, old_face])
     })
 
     /**
@@ -134,7 +134,7 @@ export default (client: Client) => {
     /**
      * TODO
      */
-    client.raw.on('crownTouched', async ([id, mod_mode]: [number, boolean]) => {
+    client.raw.on('crownTouched', async ([id]: [number]) => {
         const players = await client.wait_for(() => client.players)
         const player = players.get(id)
         const old_crown = Array.from(players.values()).find(p => p.has_crown)
@@ -145,7 +145,7 @@ export default (client: Client) => {
     /**
      * TODO
      */
-    client.raw.on('crownTouched', async ([id, gold_coins, blue_coins, death_count]: [number, number, number, number]) => {
+    client.raw.on('playerStatsChanged', async ([id, gold_coins, blue_coins, death_count]: [number, number, number, number]) => {
         const player = await client.wait_for(() => client.players.get(id))
 
         const old_coins = player.coins
@@ -156,9 +156,9 @@ export default (client: Client) => {
         player.blue_coins = blue_coins
         player.deaths = death_count
 
-        if (old_coins != gold_coins) client.emit('player:coin', [player, old_coins, gold_coins])
-        if (old_blue_coins != blue_coins) client.emit('player:coin:blue', [player, old_blue_coins, blue_coins])
-        if (old_death_count != death_count) client.emit('player:death', [player, old_death_count, death_count])
+        if (old_coins != gold_coins) client.emit('player:coin', [player, old_coins])
+        if (old_blue_coins != blue_coins) client.emit('player:coin:blue', [player, old_blue_coins])
+        if (old_death_count != death_count) client.emit('player:death', [player, old_death_count])
     })
 
     /**
@@ -168,7 +168,7 @@ export default (client: Client) => {
         const player = await client.wait_for(() => client.players.get(id))
         const world = await client.wait_for(() => client.world)
         const [position, block] = world.place(x, y, layer, bid, args)
-        client.emit('world:block', [player, position, block])
+        client.emit('player:block', [player, position, block])
     })
 
     /**
