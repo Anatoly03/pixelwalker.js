@@ -136,7 +136,7 @@ export default class World {
             writer.write(`${key.toLowerCase()} = `)
         }
 
-        writer.write(`write-version: 0\n`)
+        writer.write(`file-version: 0\n`)
         writer.write(`width: ${this.width}\n`)
         writer.write(`height: ${this.height}\n`)
         
@@ -168,7 +168,7 @@ export default class World {
                 BACKGROUND += ' '
             }
 
-        writer.write(`mapping: ${mapping}\n`)
+        writer.write(`palette: ${mapping}\n`)
         writer.write('layers:\n')
         writer.write(' - foreground: ' + FOREGROUND + '\n')
         writer.write(' - background: ' + BACKGROUND + '\n')
