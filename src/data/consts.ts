@@ -35,7 +35,7 @@ export const MessageType = {
     'crownTouched':             17,
     'keyPressed':               18,
     'playerStatsChanged':       19,
-    // 'playerWin':             20,
+    'playerWin':                20,
     'localSwitchChange':        21,
     'localSwitchReset':         22,
     'globalSwitchChange':       23,
