@@ -23,7 +23,8 @@ export interface LibraryEvents {
     'player:join': [[Player]]
     'player:leave': [[Player]]
     'chat': [[Player, string]]
-    'command': [[Player, ...any]]
+    'cmd:': [[Player, ...any]] // This is mainly used for type hinting/ auto complete.
+    [key: `cmd:${string}`]: [[Player, ...any]]
     'player:face': [[Player, number, number]]
     'player:god': [[Player]]
     'player:mod': [[Player]]

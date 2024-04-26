@@ -83,7 +83,7 @@ export default (client: Client) => {
 
         for (const match of cmd.matchAll(arg_regex)) args.push(match[0])
 
-        client.emit(`command`, args)
+        client.emit(`cmd:${cmd}`, args)
     })
 
     /**
