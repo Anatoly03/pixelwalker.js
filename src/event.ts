@@ -174,12 +174,11 @@ export default class Client extends EventEmitter {
         })
 
         this.players.set(id, self)
-
         this.emit('start', [self])
     }
 
-    private internal_player_join([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]: any[]) {
-        this.players.set(id, new Player({
+    private async internal_player_join([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]: any[]) {
+        const player = new Player({
             client: this,
             id,
             cuid,
@@ -191,19 +190,30 @@ export default class Client extends EventEmitter {
             god_mode,
             mod_mode,
             has_crown
-        }))
+        })
+
+        this.players.set(id, player)
+        this.emit('player:join', [player])
     }
 
-    private internal_player_leave([id]: [number]) {
+    private async internal_player_leave([id]: [number]) {
+        const player = await this.wait_for(() => this.players.get(id))
+        this.emit('player:leave', [player])
         this.players.delete(id)
     }
 
-    private internal_player_chat([id, message]: [number, string]) {
+    private async internal_player_chat([id, message]: [number, string]) {
+        const player = await this.wait_for(() => this.players.get(id))
         const prefix = this.cmdPrefix.find(v => message.startsWith(v))
-        if (prefix == undefined) return
+
+        if (prefix == undefined) {
+            this.emit('chat', [player, message])
+            return
+        }
+
         const cmd = message.substring(prefix.length).toLowerCase()
         const arg_regex = /"[^"]+"|'[^']+'|\w+/gi // TODO add escape char \
-        const args: any[] = [id]
+        const args: any[] = [player]
         for (const match of cmd.matchAll(arg_regex)) {
             args.push(match[0])
         }
@@ -211,55 +221,74 @@ export default class Client extends EventEmitter {
     }
 
     private async internal_player_move([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]: any[]) {
-        // if (!this.players.get(id)) return
-        let player: Player = await this.wait_for(() => this.players.get(id))
+        const player = await this.wait_for(() => this.players.get(id))
 
         player.x = x / 16
         player.y = y / 16
 
-        // TODO fix
+        // TODO
+        // this.emit('player:move', [player])
     }
 
     private async internal_player_face([id, face]: [number, number]) {
-        let player = await this.wait_for(() => this.players.get(id))
+        const player = await this.wait_for(() => this.players.get(id))
+        const old_face = player.face
         player.face = face
+        this.emit('player:face', [player, old_face, face])
     }
 
     private async internal_player_godmode([id, god_mode]: [number, boolean]) {
-        let player = await this.wait_for(() => this.players.get(id))
+        const player = await this.wait_for(() => this.players.get(id))
+        const old_mode = player.god_mode
         player.god_mode = god_mode
+        this.emit('player:god', [player]) // TODO
     }
 
     private async internal_player_modmode([id, mod_mode]: [number, boolean]) {
         let player = await this.wait_for(() => this.players.get(id))
         player.mod_mode = mod_mode
+        // TODO emit
     }
 
     private async internal_player_crown([id]: [number]) {
+        const player = await this.wait_for(() => this.players.get(id))
         const players = await this.wait_for(() => this.players)
+        const old_crown = Array.from(players.values()).find(p => p.has_crown)
         players.forEach((p) => p.has_crown = p.id == id)
+        this.emit('player:crown', [player, old_crown])
     }
 
     private async internal_player_stat_change([id, gold_coins, blue_coins, death_count]: number[]) {
         const player = await this.wait_for(() => this.players.get(id))
+
+        const old_coins = player.coins
+        const old_blue_coins = player.blue_coins
+        const old_death_count = player.deaths
+
         player.coins = gold_coins
         player.blue_coins = blue_coins
         player.deaths = death_count
+
+        if (old_coins != gold_coins) this.emit('player:coin', [player, old_coins, gold_coins])
+        if (old_blue_coins != blue_coins) this.emit('player:blue_coin', [player, old_blue_coins, blue_coins])
+        if (old_death_count != death_count) this.emit('player:death', [player, old_death_count, death_count])
     }
 
     private async internal_player_block([x, y, layer, id, ...args]: any[]) {
         const world = await this.wait_for(() => this.world)
-        world.place(x, y, layer, id, args)
-        // TODO handle
+        const [position, block] = world.place(x, y, layer, id, args)
+        this.emit('world:block', [position, block])
     }
 
     private async internal_world_clear() {
         const world = await this.wait_for(() => this.world)
         world.clear(true)
+        this.emit('world:clear', [])
     }
 
     private async internal_world_reload() {
         if (this.debug) console.debug('World Reload not yet implemented.')
+        // TODO
     }
 
     //

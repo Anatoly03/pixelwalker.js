@@ -1,6 +1,6 @@
 
 import stream from "stream"
-import Block from "./types/block.js"
+import Block, { WorldPosition } from "./types/block.js"
 import { HeaderTypes, SpecialBlockData } from "./data/consts.js"
 import { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
 import { get2dArray } from "./math.js"
@@ -85,12 +85,14 @@ export default class World {
         return [block, offset]
     }
 
-    place(x: number, y: number, l: 0 | 1, id: number, args: any) {
+    place(x: number, y: number, l: 0 | 1, id: number, args: any): [WorldPosition, Block] {
         const layer = l == 1 ? this.foreground : this.background
         const block = layer[x][y] = new Block(id)
 
         if (SpecialBlockData[block.name])
             block.data = args
+
+        return [[x, y, l], block]
     }
 
     blockAt(x: number, y: number, l: 0 | 1) {
