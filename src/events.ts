@@ -37,7 +37,7 @@ export default (client: Client) => {
      * On player join, create a player object with data
      * and emit `player:join` with said object.
      */
-    client.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, x, y, god_mode, mod_mode, has_crown]) => {
+    client.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, x, y, coins, blue_coins, deaths, god_mode, mod_mode, has_crown]) => {
         const player = new Player({
             client,
             id,
@@ -49,7 +49,10 @@ export default (client: Client) => {
             y: y / 16,
             god_mode,
             mod_mode,
-            has_crown
+            has_crown,
+            coins,
+            blue_coins,
+            deaths
         })
 
         client.players.set(id, player)
@@ -93,7 +96,7 @@ export default (client: Client) => {
 
         player.x = x / 16
         player.y = y / 16
-        
+
         // TODO
         // this.emit('player:move', [player])
     })

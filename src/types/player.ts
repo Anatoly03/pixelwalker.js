@@ -20,17 +20,20 @@ export default class Player {
     public deaths: number
 
     constructor(args: {
-        client: Client,
-        id: number,
-        cuid: string,
-        username: string,
-        face: number,
-        isAdmin: boolean,
-        x: number,
-        y: number,
+        client: Client
+        id: number
+        cuid: string
+        username: string
+        face: number
+        isAdmin: boolean
+        x: number
+        y: number
         god_mode?: boolean
         mod_mode?: boolean
         has_crown?: boolean
+        coins?: number
+        blue_coins?: number
+        deaths?: number
     }) {
         this.client = args.client
 
@@ -47,9 +50,9 @@ export default class Player {
         this.mod_mode = args.mod_mode || false
         this.has_crown = args.has_crown || false
 
-        this.coins = 0
-        this.blue_coins = 0
-        this.deaths = 0
+        this.coins = args.coins || 0
+        this.blue_coins = args.blue_coins || 0
+        this.deaths = args.deaths || 0
     }
 
     public equals(other: Player): boolean {
