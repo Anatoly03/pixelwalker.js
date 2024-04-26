@@ -75,15 +75,15 @@ export default (client: Client) => {
      */
     client.raw.on('chatMessage', async ([id, message]) => {
         const player = await client.wait_for(() => client.players.get(id))
-        const prefix = client.cmdPrefix.find(v => message.startsWith(v))
+        const prefix = client.cmdPrefix.find(v => message.toLowerCase().startsWith(v))
 
         if (!prefix) return client.emit('chat', [player, message])
 
-        const cmd = message.substring(prefix.length).toLowerCase()
+        const slice = message.substring(prefix.length).toLowerCase()
         const arg_regex = /"[^"]+"|'[^']+'|\w+/gi // TODO add escape char \
         const args: [Player, ...any] = [player]
-
-        for (const match of cmd.matchAll(arg_regex)) args.push(match[0])
+        for (const match of slice.matchAll(arg_regex)) args.push(match[0])
+        const cmd = args[1]
 
         client.emit(`cmd:${cmd}`, args)
     })
