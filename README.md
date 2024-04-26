@@ -31,7 +31,7 @@ npm i --save pixelwalker.js
 
 ## Events: Receive
 
-To receive serialized, unprocessed events from the game, see [](REFERENCE.md)
+To receive serialized, unprocessed events from the game, see [REFERENCE.md](REFERENCE.md)
 
 | Event | Data | Description |
 |:-:|-|-|
