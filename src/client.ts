@@ -58,6 +58,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         // DO NOT merge this into one function, otherwise it does not work.
         process.on('SIGINT', (signal) => {
             this.disconnect()
+            process.exit(0)
         })
     }
 
