@@ -61,9 +61,10 @@ export default class Client extends EventEmitter {
     /**
      * Connect client to server
      */
-    public async connect(world_id: string, room_type: string) {
+    public async connect(world_id: string, room_type?: string) {
         if (world_id == undefined) throw new Error('`world_id` was not provided in `Client.connect()`')
-        if (!RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
+        if (room_type && !RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
+        if (!room_type) room_type = RoomTypes[0]
 
         const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
 
