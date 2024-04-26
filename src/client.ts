@@ -163,18 +163,17 @@ export default class Client extends EventEmitter<LibraryEvents> {
         })
     }
 
-    public async say(content: string) {
-        await this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
+    public say(content: string) {
+        return this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
     }
 
-    public async block(x: number, y: number, layer: number, id: number | string | Block) {
+    public block(x: number, y: number, layer: number, id: number | string | Block) {
         if (typeof id == 'string') {
             id = BlockMappings[id]
         }
 
         if (typeof id == 'number') {
-            await this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(id))
-            return
+            return this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(id))
         }
 
         if (id instanceof Block) {
@@ -191,20 +190,21 @@ export default class Client extends EventEmitter<LibraryEvents> {
                 }
             }
 
-            await this.send(Buffer.concat(buffer))
+            return this.send(Buffer.concat(buffer))
         }
     }
 
-    public async god(value: boolean, mod_mode: boolean) {
-        await this.send(Magic(0x6B), Bit7(MessageType[mod_mode ? 'playerModMode' : 'playerGodMode']), Boolean(value))
+    public god(value: boolean, mod_mode: boolean) {
+        return this.send(Magic(0x6B), Bit7(MessageType[mod_mode ? 'playerModMode' : 'playerGodMode']), Boolean(value))
     }
 
-    public async face(value: number) {
-        await this.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
+    public face(value: number) {
+        return this.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
     }
 
     public async move(x: number, y: number) {
         // TODO
+        return new Promise((r, _) => {r(true)})
     }
 
     // TODO add types for animation header
