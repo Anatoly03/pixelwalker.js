@@ -1,9 +1,13 @@
 import Client from "./client.js";
 import { MessageType } from "./data/consts.js";
 import { Bit7, Magic } from "./types.js";
+import Block, { WorldPosition } from "./types/block.js";
 import Player from "./types/player.js";
 import World from "./world.js";
 
+/**
+ * Event Initialiser for Client
+ */
 export default (client: Client) => {
 
     /**
@@ -81,11 +85,11 @@ export default (client: Client) => {
 
         const cmd = message.substring(prefix.length).toLowerCase()
         const arg_regex = /"[^"]+"|'[^']+'|\w+/gi // TODO add escape char \
-        const args: any[] = [player]
+        const args: [Player, ...any] = [player]
 
         for (const match of cmd.matchAll(arg_regex)) args.push(match[0])
 
-        client.emit(`cmd:${args[1]}`, args)
+        client.emit(`command`, args)
     })
 
     /**
@@ -136,7 +140,7 @@ export default (client: Client) => {
      */
     client.raw.on('crownTouched', async ([id]: [number]) => {
         const players = await client.wait_for(() => client.players)
-        const player = players.get(id)
+        const player: Player = players.get(id) as Player
         const old_crown = Array.from(players.values()).find(p => p.has_crown)
         players.forEach((p) => p.has_crown = p.id == id)
         client.emit('player:crown', [player, old_crown || null])

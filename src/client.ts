@@ -4,7 +4,7 @@ import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 
 import { read7BitInt, deserialise } from './math.js'
-import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK } from './data/consts.js'
+import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents } from './data/consts.js'
 import { Magic, Bit7, String, Int32, Boolean } from './types.js'
 import { BlockMappings } from './data/mappings.js'
 import World from './world.js'
@@ -14,7 +14,7 @@ import { FIFO, RANDOM } from './types/animation.js'
 import { RoomTypes } from './data/room_types.js'
 import init_events from './events.js'
 
-export default class Client extends EventEmitter {
+export default class Client extends EventEmitter<LibraryEvents> {
     public raw: EventEmitter
 
     private pocketbase: PocketBase
@@ -77,7 +77,7 @@ export default class Client extends EventEmitter {
 
         this.socket.on('message', (event) => this.receive_message(Buffer.from(event as any)))
         this.socket.on('error', (err) => this.emit('error', [err]))
-        this.socket.on('close', (code, reason) => this.emit('close', [code, reason]))
+        this.socket.on('close', (code, buffer) => this.emit('close', [code, buffer]))
 
         init_events(this)
     }

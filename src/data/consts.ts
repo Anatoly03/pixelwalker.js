@@ -1,3 +1,5 @@
+import Block, { WorldPosition } from "../types/block"
+import Player from "../types/player"
 
 export const API_ACCOUNT_LINK = 'api.pixelwalker.net'
 export const API_ROOM_LINK = 'game.pixelwalker.net'
@@ -12,6 +14,25 @@ export const enum HeaderTypes {
     Double = 6,
     Boolean = 7,
     ByteArray = 8
+}
+
+export interface LibraryEvents {
+    'error': [[Error]]
+    'close': [[number, Buffer]]
+    'start': [[Player]]
+    'player:join': [[Player]]
+    'player:leave': [[Player]]
+    'chat': [[Player, string]]
+    'command': [[Player, ...any]]
+    'player:face': [[Player, number, number]]
+    'player:god': [[Player]]
+    'player:mod': [[Player]]
+    'player:crown': [[Player, Player | null]]
+    'player:coin': [[Player, number]]
+    'player:coin:blue': [[Player, number]]
+    'player:death': [[Player, number]]
+    'player:block': [[Player, WorldPosition, Block]]
+    'world:clear': [[]]
 }
 
 export const MessageType = {
