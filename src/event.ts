@@ -13,6 +13,7 @@ import World from './world.js'
 import Block, { WorldPosition } from './types/block.js'
 import Player from './types/player.js'
 import { FIFO, RANDOM } from './types/animation.js'
+import { RoomTypes } from './data/room_types.js'
 
 export default class Client extends EventEmitter {
     public raw: EventEmitter
@@ -63,7 +64,7 @@ export default class Client extends EventEmitter {
      */
     public async connect(world_id: string, room_type: string) {
         if (world_id == undefined) throw new Error('`world_id` was not provided in `Client.connect()`')
-        if (room_type == undefined) throw new Error('`room_type` was not provided in `Client.connect()`')
+        if (!RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
 
         const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
 
