@@ -112,8 +112,7 @@ export default class Client extends EventEmitter {
                 return
             }
 
-            this.emit(event_name, data)
-            return
+            return this.emit(event_name, data)
         }
 
         this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
