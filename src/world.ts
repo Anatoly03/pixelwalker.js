@@ -4,7 +4,7 @@ import YAML from 'yaml'
 import Block, { WorldPosition } from "./types/block.js"
 import { HeaderTypes, SpecialBlockData } from "./data/consts.js"
 import { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
-import { get2dArray } from "./math.js"
+import { get2dArray, read7BitInt } from "./math.js"
 
 /**
  * A World is an offline-saved chunk of two dimensional
@@ -76,9 +76,42 @@ export default class World {
 
         for (const type of arg_types) {
             switch(type) {
+                case HeaderTypes.String:
+                    [length, offset] = read7BitInt(buffer, offset)
+                    block.data.push(buffer.subarray(offset, offset + length).toString('ascii'))
+                    offset += length
+                    break
+                case HeaderTypes.Byte: // = Byte
+                    block.data.push(buffer.readUInt8(offset++))
+                    break
+                case HeaderTypes.Int16: // = Int16 (short)
+                    block.data.push(buffer.readInt16BE(offset))
+                    offset += 2
+                    break
                 case HeaderTypes.Int32:
                     block.data.push(buffer.readInt32LE(offset))
                     offset += 4
+                    break
+
+                case HeaderTypes.Int64:
+                    block.data.push(buffer.readBigInt64BE(offset))
+                    offset += 8
+                    break
+                case HeaderTypes.Float:
+                    block.data.push(buffer.readFloatBE(offset))
+                    offset += 4
+                    break
+                case HeaderTypes.Double:
+                    block.data.push(buffer.readDoubleBE(offset))
+                    offset += 8
+                    break
+                case HeaderTypes.Boolean:
+                    block.data.push(!!buffer.readUInt8(offset++)) // !! is truthy
+                    break
+                case HeaderTypes.ByteArray:
+                    [length, offset] = read7BitInt(buffer, offset)
+                    block.data.push(buffer.subarray(offset, offset + length))
+                    offset += length
                     break
             }
         }
