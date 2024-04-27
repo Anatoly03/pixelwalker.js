@@ -79,4 +79,8 @@ export default class Player {
     public async edit(value: boolean) {
         this.client.say(`/${value ? 'giveedit' : 'takeedit'} ${this.username}`)
     }
+
+    public async reset() {
+        this.client.say(`/resetplayer ${this.username}`)
+    }
 }
