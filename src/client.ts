@@ -5,7 +5,7 @@ import { EventEmitter } from 'events'
 
 import { read7BitInt, deserialise } from './math.js'
 import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
-import { Magic, Bit7, String, Int32, Boolean } from './types.js'
+import { Magic, Bit7, String, Int32, Boolean, Double } from './types.js'
 import { BlockMappings } from './data/mappings.js'
 import World from './world.js'
 import Block, { WorldPosition } from './types/block.js'
@@ -15,7 +15,7 @@ import { RoomTypes } from './data/room_types.js'
 import init_events from './events.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
-    public raw: EventEmitter<RawGameEvents>
+    public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
 
     private pocketbase: PocketBase
     private socket: WebSocket | null
@@ -23,17 +23,17 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     public world: World | undefined
     public cmdPrefix: string[]
-    public players: Map<number, Player>
+    public readonly players: Map<number, Player> = new Map()
+
+    private move_tick: number = 0
 
     constructor(args: { token?: string, user?: string, pass?: string, flags?: {}, debug?: boolean }) {
         super()
 
-        this.raw = new EventEmitter()
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
         this.socket = null
         this.world = undefined
         this.cmdPrefix = ['.', '!']
-        this.players = new Map()
 
         if (args.token) {
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
@@ -155,7 +155,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
         // if (this.debug && Buffer.concat(args)[0] != 0x3f) console.debug('Sending', Buffer.concat(args))
 
         return new Promise((res, rej) => {
-            if (!this.socket) return true
+            if (!this.socket) return rej(false)
+            if (this.socket.readyState != this.socket.OPEN) return rej(false)
             const buffer = Buffer.concat(args)
             this.socket.send(buffer, {}, (err: any) => {
                 if (err) return rej(err)
@@ -203,9 +204,16 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
     }
 
-    public async move(x: number, y: number) {
-        // TODO
-        return new Promise((r, _) => {r(true)})
+    public move(x: number, y: number, xVel: number, yVel: number, xMod: number, yMod: number, horizontal: number, vertical: number, space_down: boolean, space_just_down: boolean) {
+        return this.send(
+            Magic(0x6B), Bit7(MessageType['playerMoved']),
+            Double(x), Double(y),
+            Double(xVel), Double(yVel),
+            Double(xMod), Double(yMod),
+            Int32(horizontal), Int32(vertical),
+            Boolean(space_down), Boolean(space_just_down),
+            Int32(this.move_tick++)
+        )
     }
 
     // TODO add types for animation header
