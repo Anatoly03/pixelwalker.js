@@ -1,27 +1,29 @@
 
-import Block from "./block.js"
-import { HeaderTypes, SpecialBlockData } from "./consts.js"
-import { BlockMappings, BlockMappingsReverse } from './mappings.js'
+import stream from "stream"
+import YAML from 'yaml'
+import Block, { WorldPosition } from "./types/block.js"
+import { HeaderTypes, SpecialBlockData } from "./data/consts.js"
+import { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
+import { get2dArray, read7BitInt } from "./math.js"
 
-function get2dArray(width: number, height: number) {
-    const arr = new Array(width)
-    for (let i = 0; i < width; i++) {
-        arr[i] = new Array(height)
-    }
-    return arr
-}
-
+/**
+ * A World is an offline-saved chunk of two dimensional
+ * block-data. Worlds can be used to manipulate map fragments
+ * like a pixel raster.
+ */
 export default class World {
     public width: number
     public height: number
     public foreground: Block[][]
     public background: Block[][]
+    public meta: {[keys: string]: any}
 
     constructor(width: number, height: number) {
         this.width = width
         this.height = height
         this.foreground = get2dArray(width, height)
         this.background = get2dArray(width, height)
+        this.meta = {}
     }
 
     clear(border: boolean) {
@@ -76,9 +78,42 @@ export default class World {
 
         for (const type of arg_types) {
             switch(type) {
+                case HeaderTypes.String:
+                    [length, offset] = read7BitInt(buffer, offset)
+                    block.data.push(buffer.subarray(offset, offset + length).toString('ascii'))
+                    offset += length
+                    break
+                case HeaderTypes.Byte: // = Byte
+                    block.data.push(buffer.readUInt8(offset++))
+                    break
+                case HeaderTypes.Int16: // = Int16 (short)
+                    block.data.push(buffer.readInt16BE(offset))
+                    offset += 2
+                    break
                 case HeaderTypes.Int32:
                     block.data.push(buffer.readInt32LE(offset))
                     offset += 4
+                    break
+
+                case HeaderTypes.Int64:
+                    block.data.push(buffer.readBigInt64BE(offset))
+                    offset += 8
+                    break
+                case HeaderTypes.Float:
+                    block.data.push(buffer.readFloatBE(offset))
+                    offset += 4
+                    break
+                case HeaderTypes.Double:
+                    block.data.push(buffer.readDoubleBE(offset))
+                    offset += 8
+                    break
+                case HeaderTypes.Boolean:
+                    block.data.push(!!buffer.readUInt8(offset++)) // !! is truthy
+                    break
+                case HeaderTypes.ByteArray:
+                    [length, offset] = read7BitInt(buffer, offset)
+                    block.data.push(buffer.subarray(offset, offset + length))
+                    offset += length
                     break
             }
         }
@@ -86,12 +121,14 @@ export default class World {
         return [block, offset]
     }
 
-    place(x: number, y: number, l: 0 | 1, id: number, args: any) {
+    place(x: number, y: number, l: 0 | 1, id: number, args: any): [WorldPosition, Block] {
         const layer = l == 1 ? this.foreground : this.background
         const block = layer[x][y] = new Block(id)
 
         if (SpecialBlockData[block.name])
             block.data = args
+
+        return [[x, y, l], block]
     }
 
     blockAt(x: number, y: number, l: 0 | 1) {
@@ -112,5 +149,114 @@ export default class World {
             }
 
         return world
+    }
+
+    /**
+     * Paste World chunk into this world
+     */
+    paste(xt: number, yt: number, data: World) {
+        for (let x = 0; x < data.width; x++)
+            for (let y = 0; y < data.height; y++) {
+                this.foreground[x + xt][y + yt] = data.foreground[x][y]
+                this.background[x + xt][y + yt] = data.background[x][y]
+            }
+    }
+
+    /**
+     * Write world data into a stream
+     */
+    public toString(writer: stream.Writable): string {
+        const data: any = {
+            'file-version': 0,
+            meta: this.meta,
+            width: this.width,
+            height: this.height,
+            palette: ['empty'],
+            layers: {
+                foreground: '',
+                background: '',
+                data: [],
+            }
+        }
+
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height; y++) {
+                const block = this.foreground[x][y]
+
+                if (!data.palette.includes(block.name))
+                    data.palette.push(block.name)
+                
+                const shortcut = data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
+
+                data.layers.foreground += shortcut + ' '
+
+                if (block.data.length > 0)
+                    data.layers.data.push(block.data)
+            }
+
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height; y++) {
+                const block = this.background[x][y]
+
+                if (!data.palette.includes(block.name))
+                    data.palette.push(block.name)
+
+                const shortcut = data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
+
+                data.layers.background += shortcut + ' '
+
+                if (block.data.length > 0)
+                    data.layers.data.push(block.data)
+            }
+
+        return YAML.stringify(data)
+    }
+
+    public static fromString(data: string): World {
+        const value = YAML.parse(data)
+        const world = new World(value.width, value.height)
+        
+        world.meta = value.meta
+
+        const palette: string[] = value.palette
+        const foreground: number[] = value.layers.foreground.split(' ').map((v: string) => parseInt(v, 36))
+        const background: number[] = value.layers.background.split(' ').map((v: string) => parseInt(v, 36))
+        const block_data: any[][] = value.layers.data
+
+        let idx = 0
+        let data_idx = 0
+
+        for (let x = 0; x < world.width; x++)
+            for (let y = 0; y < world.height; y++) {
+                world.foreground[x][y] = new Block(palette[foreground[idx++]])
+
+                if (world.foreground[x][y].data_count > 0)
+                    world.foreground[x][y].data = block_data[data_idx++]
+            }
+
+        idx = 0
+
+        for (let x = 0; x < world.width; x++)
+            for (let y = 0; y < world.height; y++) {
+                world.background[x][y] = new Block(palette[background[idx++]])
+
+                if (world.background[x][y].data_count > 0)
+                    world.background[x][y].data = block_data[data_idx++]
+            }
+
+        return world
+    }
+
+    //
+    // World Information
+    //
+
+    public get total_coins(): number {
+        let value = 0
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height; y++)
+                if (this.foreground[x][y].name == 'coin')
+                    value++
+        return value
     }
 }

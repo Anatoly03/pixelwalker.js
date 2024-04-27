@@ -31,35 +31,27 @@ npm i --save pixelwalker.js
 
 ## Events: Receive
 
+To receive serialized, unprocessed events from the game, see [REFERENCE.md](REFERENCE.md)
+
 | Event | Data | Description |
 |:-:|-|-|
-| `init` | `id`, `cuid`, `username`, `face`, `isAdmin`, `x`<sup>1</sup>, `y`<sup>1</sup>, `can_edit`, `can_god`, `title`, `plays`, `owner`, `width`, `height` | Client joined the room. **Do not use unless intentional. Instead use `start`, which is compatible with the bindings!** |
-| `start`<sup>2</sup> | `id` | Client joined the room after init. |
-| `error`<sup>2</sup> | `err` | Called on API errors |
-| `updateRights` |  | |
-| `worldMetadata` |  | |
-| `worldCleared` |  | |
-| `chatMessage` |  | |
-| `cmd:*`<sup>2</sup> | `id`, ...`args` | Retrieve specific commands from messages. Replace `*` with command to listen to. For `!ping`, the event is `cmd:ping`. Arguments are provided by the player in chat. You can access `client.cmdPrefix` to set a list of allowed command prefices. |
-| `systemMessage` |  | |
-| `playerJoined` |  | |
-| `playerLeft` |  | |
-| `playerMoved` |  | |
-| `playerFace` |  | |
-| `playerGodMode` |  | |
-| `playerModMode` |  | |
-| `playerCheckpoint` |  | |
-| `playerRespawn` |  | |
-| `placeBlock` |  | |
-| `crownTouched` |  | |
-| `keyPressed` |  | |
-<!-- | `coinCollected`<sup>2</sup> | `id`, `coins` | Fires when a user collects a coin. Note: Delayed Fire. If a player falls or glides by momentum through a coin, the coin event will only fire once the player moves again. Not good event for checking when a player touched a coin. |
-| `blueCoinCollected`<sup>2</sup> | `id`, `blue_coins` |  | -->
+| `start` | `id` | Client joined the room after init. |
+| `error` | `err` | Called on API errors |
+| `player:join` | `Player` | Player joined the game.
+| `player:leave` | `Player` | Player left the game. The player object will be destroyed after the event processed.
+| `player:face` | `Player`, `number`, `number` | Player changed the face. First number is new face, second number is old face. |
+| `player:god` | `Player`, `boolean` | Player changed god mode |
+| `player:mod` | `Player`, `boolean` | Player changed mod mode |
+| `player:crown` | `Player`, `Player` | A player touched the crown. First player is who touched, second player is who had the crown before. |
+| `player:coin` | `Player`, `number` | A player touched a gold coin. Second number is old coin count. To get new coin count, use `Player.coins` |
+| `player:coin:blue` | `Player`, `number` | A player touched a blue coin. Second number is old blue coin count. To get new blue coin count, use `Player.blue_coins` |
+| `player:death` | `Player`, `number` | A player died. Second number is old death count. To get new death count, use `Player.deaths` |
+| `player:block` | `Player`, `WorldPosition`, `Block` | A block was placed. |
+| `cmd:*` | `Player`, ...`args` | Retrieve specific commands from messages. Replace `*` with command to listen to. For `!ping`, the event is `cmd:ping`. Arguments are provided by the player in chat. You can access `client.cmdPrefix` to set a list of allowed command prefices. |
+| `world:clear` | | The World was cleared. |
 
-- <sup>1</sup> This integer needs to be divided by 16 for downscale
-- <sup>2</sup> This is a pseudo event (Created by the API for quality-of-life and not emitted by the game)
 
-## Events: Send
+## Client
 
 | Event | Description |
 |:-:|-|

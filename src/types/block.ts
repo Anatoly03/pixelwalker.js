@@ -1,5 +1,8 @@
 
-import { BlockMappings, BlockMappingsReverse } from "./mappings.js"
+import { SpecialBlockData } from "../data/consts.js"
+import { BlockMappings, BlockMappingsReverse } from "../data/mappings.js"
+
+export type WorldPosition = [number, number, 0 | 1]
 
 export default class Block {
     public id: number
@@ -22,5 +25,10 @@ export default class Block {
 
     public get name(): string {
         return BlockMappingsReverse[this.id]
+    }
+
+    public get data_count(): number {
+        if (SpecialBlockData[this.name] == undefined) return 0
+        return SpecialBlockData[this.name].length
     }
 }
