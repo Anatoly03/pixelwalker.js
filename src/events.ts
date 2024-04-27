@@ -74,6 +74,8 @@ export default (client: Client) => {
      * emit command, otherwise emit chat message
      */
     client.raw.on('chatMessage', async ([id, message]) => {
+        if (!message) return
+        
         const player = await client.wait_for(() => client.players.get(id))
         const prefix = client.cmdPrefix.find(v => message.toLowerCase().startsWith(v))
 

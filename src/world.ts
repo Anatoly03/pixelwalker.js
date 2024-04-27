@@ -16,12 +16,14 @@ export default class World {
     public height: number
     public foreground: Block[][]
     public background: Block[][]
+    public meta: {[keys: string]: any}
 
     constructor(width: number, height: number) {
         this.width = width
         this.height = height
         this.foreground = get2dArray(width, height)
         this.background = get2dArray(width, height)
+        this.meta = {}
     }
 
     clear(border: boolean) {
@@ -163,9 +165,10 @@ export default class World {
     /**
      * Write world data into a stream
      */
-    public toString(writer: stream.Writable, args?: {[keys: string]: any}): string {
+    public toString(writer: stream.Writable): string {
         const data: any = {
             'file-version': 0,
+            meta: this.meta,
             width: this.width,
             height: this.height,
             palette: ['empty'],
@@ -174,10 +177,6 @@ export default class World {
                 background: '',
                 data: [],
             }
-        }
-
-        for (const key in (args || {})) {
-            data[key] = args?.[key]
         }
 
         for (let x = 0; x < this.width; x++)
@@ -216,6 +215,8 @@ export default class World {
     public static fromString(data: string): World {
         const value = YAML.parse(data)
         const world = new World(value.width, value.height)
+        
+        world.meta = value.meta
 
         const palette: string[] = value.palette
         const foreground: number[] = value.layers.foreground.split(' ').map((v: string) => parseInt(v, 36))
@@ -244,5 +245,18 @@ export default class World {
             }
 
         return world
+    }
+
+    //
+    // World Information
+    //
+
+    public get total_coins(): number {
+        let value = 0
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height; y++)
+                if (this.foreground[x][y].name == 'coin')
+                    value++
+        return value
     }
 }
