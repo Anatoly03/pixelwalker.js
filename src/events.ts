@@ -85,6 +85,8 @@ export default (client: Client) => {
         const arg_regex = /"[^"]+"|'[^']+'|[\w\-]+/gi // TODO add escape char \
         const args: [Player, ...any] = [player]
         for (const match of slice.matchAll(arg_regex)) args.push(match[0])
+        if (args.length < 2) return
+
         const cmd = args[1].toLowerCase()
 
         client.emit(`cmd:${cmd}`, args)
