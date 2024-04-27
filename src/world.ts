@@ -139,6 +139,7 @@ export default class World {
             layers: {
                 foreground: '',
                 background: '',
+                data: [],
             }
         }
 
@@ -152,11 +153,13 @@ export default class World {
 
                 if (!data.palette.includes(block.name))
                     data.palette.push(block.name)
+                
+                const shortcut = data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
 
-                data.layers.foreground += data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
+                data.layers.foreground += shortcut + ' '
+
                 if (block.data.length > 0)
-                    data.layers.foreground += block.data
-                data.layers.foreground += ' '
+                    data.layers.data.push(block.data)
             }
 
         for (let x = 0; x < this.width; x++)
@@ -166,18 +169,47 @@ export default class World {
                 if (!data.palette.includes(block.name))
                     data.palette.push(block.name)
 
-                data.layers.background += data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
+                const shortcut = data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
+
+                data.layers.background += shortcut + ' '
+
                 if (block.data.length > 0)
-                    data.layers.background += block.data
-                data.layers.background += ' '
+                    data.layers.data.push(block.data)
             }
 
         return YAML.stringify(data)
     }
 
-    public static fromString(data: string) {
+    public static fromString(data: string): World {
         const value = YAML.parse(data)
+        const world = new World(value.width, value.height)
 
-        console.log(value)
+        const palette: string[] = value.palette
+        const foreground: number[] = value.layers.foreground.split(' ').map((v: string) => parseInt(v, 36))
+        const background: number[] = value.layers.background.split(' ').map((v: string) => parseInt(v, 36))
+        const block_data: any[][] = value.layers.data
+
+        let idx = 0
+        let data_idx = 0
+
+        for (let x = 0; x < world.width; x++)
+            for (let y = 0; y < world.height; y++) {
+                world.foreground[x][y] = new Block(palette[foreground[idx++]])
+
+                if (world.foreground[x][y].data_count > 0)
+                    world.foreground[x][y].data = block_data[data_idx++]
+            }
+
+        idx = 0
+
+        for (let x = 0; x < world.width; x++)
+            for (let y = 0; y < world.height; y++) {
+                world.background[x][y] = new Block(palette[background[idx++]])
+
+                if (world.background[x][y].data_count > 0)
+                    world.background[x][y].data = block_data[data_idx++]
+            }
+
+        return world
     }
 }
