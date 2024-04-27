@@ -31,8 +31,8 @@ export default class World {
             for (let y = 0; y < this.height; y++) {
                 const atBorder = border && (x == 0 || y == 0 || x == this.width - 1 || y == this.height - 1)
 
-                this.foreground[x][y] = atBorder ? new Block(BlockMappings['basic_gray']) : new Block(0),
-                    this.background[x][y] = new Block(0)
+                this.foreground[x][y] = atBorder ? new Block(BlockMappings['basic_gray']) : new Block(0)
+                this.background[x][y] = new Block(0)
             }
         }
     }
