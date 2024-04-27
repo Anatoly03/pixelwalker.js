@@ -97,8 +97,17 @@ export default (client: Client) => {
         player.x = x / 16
         player.y = y / 16
 
+        // TODO if (player.mod_x != undefined && player.mod_x != mod_x) // hit key right or left
+        // TODO if (player.mod_y != undefined && player.mod_y != mod_y) // hit key up or down
+        // TODO hit space
+
         // TODO
         // this.emit('player:move', [player])
+
+        player.horizontal = horizontal
+        player.vertical = vertical
+        player.space_down = space_down
+        player.space_just_down = space_just_down
     })
 
     /**

@@ -204,7 +204,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
     }
 
-    public move(x: number, y: number, xVel: number, yVel: number, xMod: number, yMod: number, horizontal: number, vertical: number, space_down: boolean, space_just_down: boolean) {
+    public move(x: number, y: number, xVel: number, yVel: number, xMod: number, yMod: number, horizontal: -1 | 0 | 1, vertical: -1 | 0 | 1, space_down: boolean, space_just_down: boolean) {
         return this.send(
             Magic(0x6B), Bit7(MessageType['playerMoved']),
             Double(x), Double(y),
