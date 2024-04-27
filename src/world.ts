@@ -1,5 +1,6 @@
 
 import stream from "stream"
+import YAML from 'yaml'
 import Block, { WorldPosition } from "./types/block.js"
 import { HeaderTypes, SpecialBlockData } from "./data/consts.js"
 import { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
@@ -129,50 +130,54 @@ export default class World {
     /**
      * Write world data into a stream
      */
-    public writeStringTo(writer: stream.Writable, args?: {[keys: string]: any}) {
-        const mapping = ['empty']
-
-        for (const key in (args || {})) {
-            writer.write(`${key.toLowerCase()} = `)
+    public toString(writer: stream.Writable, args?: {[keys: string]: any}): string {
+        const data: any = {
+            'file-version': 0,
+            width: this.width,
+            height: this.height,
+            palette: ['empty'],
+            layers: {
+                foreground: '',
+                background: '',
+            }
         }
 
-        writer.write(`file-version: 0\n`)
-        writer.write(`width: ${this.width}\n`)
-        writer.write(`height: ${this.height}\n`)
-        
-        let FOREGROUND = '', BACKGROUND = ''
+        for (const key in (args || {})) {
+            data[key] = args?.[key]
+        }
 
         for (let x = 0; x < this.width; x++)
             for (let y = 0; y < this.height; y++) {
                 const block = this.foreground[x][y]
 
-                if (!mapping.includes(block.name))
-                    mapping.push(block.name)
+                if (!data.palette.includes(block.name))
+                    data.palette.push(block.name)
 
-                FOREGROUND += mapping.indexOf(block.name).toString(36).toLocaleUpperCase()
+                data.layers.foreground += data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
                 if (block.data.length > 0)
-                    FOREGROUND += block.data.toString()
-                FOREGROUND += ' '
+                    data.layers.foreground += block.data
+                data.layers.foreground += ' '
             }
 
         for (let x = 0; x < this.width; x++)
             for (let y = 0; y < this.height; y++) {
                 const block = this.background[x][y]
 
-                if (!mapping.includes(block.name))
-                    mapping.push(block.name)
+                if (!data.palette.includes(block.name))
+                    data.palette.push(block.name)
 
-                BACKGROUND += mapping.indexOf(block.name).toString(36).toLocaleUpperCase()
+                data.layers.background += data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
                 if (block.data.length > 0)
-                    BACKGROUND += block.data.toString()
-                BACKGROUND += ' '
+                    data.layers.background += block.data
+                data.layers.background += ' '
             }
 
-        writer.write(`palette: ${mapping}\n`)
-        writer.write('layers:\n')
-        writer.write(' - foreground: ' + FOREGROUND + '\n')
-        writer.write(' - background: ' + BACKGROUND + '\n')
+        return YAML.stringify(data)
+    }
 
-        writer.end()
+    public static fromString(data: string) {
+        const value = YAML.parse(data)
+
+        console.log(value)
     }
 }
