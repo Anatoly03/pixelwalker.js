@@ -12,7 +12,7 @@ export default (client: Client) => {
     /**
      * On init, set everything up
      */
-    client.raw.on('init', async ([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
+    client.raw.once('init', async ([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
         await client.send(Magic(0x6B), Bit7(MessageType['init']))
 
         client.world = new World(width, height)
@@ -191,9 +191,10 @@ export default (client: Client) => {
     })
 
     /**
-     * TODO
+     * Reload world with new buffer.
      */
-    client.raw.on('worldReloaded', async ([]) => {
-        console.debug('World Reload not yet implemented.')
+    client.raw.on('worldReloaded', async ([buffer]) => {
+        const world = await client.wait_for(() => client.world)
+        world.init(buffer)
     })
 }
