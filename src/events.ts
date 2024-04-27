@@ -80,7 +80,7 @@ export default (client: Client) => {
         if (!prefix) return client.emit('chat', [player, message])
 
         const slice = message.substring(prefix.length).toLowerCase()
-        const arg_regex = /"[^"]+"|'[^']+'|\w+/gi // TODO add escape char \
+        const arg_regex = /"[^"]+"|'[^']+'|[\w\-]+/gi // TODO add escape char \
         const args: [Player, ...any] = [player]
         for (const match of slice.matchAll(arg_regex)) args.push(match[0])
         const cmd = args[1]
