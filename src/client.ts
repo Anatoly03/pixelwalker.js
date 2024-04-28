@@ -217,16 +217,20 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     // TODO add types for animation header
-    public async fill(xt: number, yt: number, world: World, args: { animation: (b: any) => any }) {
+    public async fill(xt: number, yt: number, world: World, args?: { animation?: (b: any) => any, write_empty?: boolean }) {
+        if (!args) args = { write_empty: true }
+
         this.world = await this.wait_for(() => this.world)
         const to_be_placed: [WorldPosition, Block][] = []
 
         for (let x = 0; x < world.width; x++)
             for (let y = 0; y < world.height; y++) {
                 if (!world.foreground[x][y] || !world.foreground[x][y].isSameAs(this.world.foreground[xt + x][yt + y])) {
+                    if ((world.blockAt(x, y, 1).name == 'empty') && !args.write_empty) continue
                     to_be_placed.push([[xt + x, yt + y, 1], world.blockAt(x, y, 1)])
                 }
                 if (!world.foreground[x][y] || !world.background[x][y].isSameAs(this.world.background[xt + x][yt + y])) {
+                    if ((world.blockAt(x, y, 0).name == 'empty') && !args.write_empty) continue
                     to_be_placed.push([[xt + x, yt + y, 0], world.blockAt(x, y, 0)])
                 }
             }
