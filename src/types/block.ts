@@ -25,6 +25,10 @@ export default class Block {
         return true
     }
 
+    public isNotSameAs(other: Block | string | number) {
+        return !this.isSameAs(other)
+    }
+
     public get name(): string {
         return BlockMappingsReverse[this.id]
     }
