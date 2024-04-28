@@ -15,7 +15,9 @@ export default class Block {
         this.id = id
     }
 
-    public isSameAs(other: Block) {
+    public isSameAs(other: Block | string | number) {
+        if (typeof other == 'number') other = new Block(other)
+        if (typeof other == 'string') other = new Block(other)
         if (this.id != other.id) return false
         if (this.data.length != other.data.length) return false
         for (let i = 0; i < this.data.length; i++)
