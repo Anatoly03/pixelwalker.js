@@ -24,6 +24,7 @@ export default class World {
         this.foreground = get2dArray(width, height)
         this.background = get2dArray(width, height)
         this.meta = {}
+        this.clear(false)
     }
 
     clear(border: boolean) {
