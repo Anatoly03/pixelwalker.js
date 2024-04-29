@@ -1,6 +1,6 @@
 {
   "name": "browserwalker.js",
-  "version": "1.0.7",
+  "version": "0.1.0",
   "description": "Pixelwalker.JS API bindings for browser development.",
   "main": "dist/index.js",
   "type": "module",
@@ -8,7 +8,7 @@
     "build": "tsc",
     "test": "jest --verbose ./test"
   },
-  "keywords": [],
+  "keywords": ["Pixelwalker", "pixelwalker.js"],
   "author": "Connor McGehee",
   "license": "ISC",
   "dependencies": {
