@@ -169,9 +169,9 @@ export default (client: Client) => {
         player.blue_coins = blue_coins
         player.deaths = death_count
 
-        if (old_coins != gold_coins) client.emit('player:coin', [player, old_coins])
-        if (old_blue_coins != blue_coins) client.emit('player:coin:blue', [player, old_blue_coins])
-        if (old_death_count != death_count) client.emit('player:death', [player, old_death_count])
+        if (old_coins < gold_coins) client.emit('player:coin', [player, old_coins])
+        if (old_blue_coins < blue_coins) client.emit('player:coin:blue', [player, old_blue_coins])
+        if (old_death_count < death_count) client.emit('player:death', [player, old_death_count])
     })
 
     /**
