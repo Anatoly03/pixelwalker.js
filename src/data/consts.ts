@@ -59,7 +59,7 @@ export interface RawGameEvents {
     'playerWin':                [[number]], // CURRENTLY NOT IMPLEMENTED IN THE GAME
     'localSwitchChange':        [[number, number, number]],
     'localSwitchReset':         [[number, number]],
-    'globalSwitchChange':       [[number, number]],
+    'globalSwitchChange':       [[number, number, number]],
     'globalSwitchReset':        [[number, number]],
 }
 
