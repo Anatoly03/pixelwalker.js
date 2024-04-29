@@ -1,5 +1,5 @@
 
-<center><h1>PixelWalker API</h1></center>
+<center><h1>Pixelwalker Library for Browser</h1></center>
 
 [NPM](https://www.npmjs.com/package/pixelwalker.js) | [GitHub](https://github.com/Anatoly03/pixelwalker.js)
 

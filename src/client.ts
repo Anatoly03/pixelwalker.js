@@ -1,8 +1,6 @@
 
 import PocketBase from 'pocketbase'
-import WebSocket from 'ws'
 import { EventEmitter } from 'events'
-
 import { read7BitInt, deserialise } from './math.js'
 import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
 import { Magic, Bit7, String, Int32, Boolean, Double } from './types.js'
@@ -54,12 +52,11 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         this.debug = args.debug || false
 
-        // On process interrupt, gracefully disconnect.
-        // DO NOT merge this into one function, otherwise it does not work.
-        process.on('SIGINT', (signal) => {
-            this.disconnect()
-            process.exit(0)
-        })
+        // On "beforeunload", attempt to disconnect.
+
+        window.addEventListener('beforeunload', () => {
+            this.disconnect();
+        });
     }
 
     /**
@@ -79,9 +76,17 @@ export default class Client extends EventEmitter<LibraryEvents> {
             throw new Error('Socket failed to connect.')
         }
 
-        this.socket.on('message', (event) => this.receive_message(Buffer.from(event as any)))
-        this.socket.on('error', (err) => this.emit('error', [err]))
-        this.socket.on('close', (code, buffer) => this.emit('close', [code, buffer]))
+        this.socket.addEventListener('message', (event) => {
+            const buffer = event.data;
+            const uint8Array = new Uint8Array(buffer);
+            this.receive_message(uint8Array);
+        });
+
+        this.socket.addEventListener('close', (event) => {
+            const code = event.code;
+            const reason = event.reason;
+            this.emit('close', [code, reason]);
+        });
 
         init_events(this)
     }
@@ -90,17 +95,17 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * This function is called when a message is received
      * from the server.
      */
-    private async receive_message(buffer: Buffer) {
-        if (buffer[0] == 0x3F) { // 63
+    private async receive_message(uint8Array: Uint8Array) {
+        if (uint8Array[0] == 0x3F) { // 63
             return await this.send(Magic(0x3F))
         }
 
-        if (buffer[0] == 0x6B) { // 107
-            let [event_id, offset] = read7BitInt(buffer, 1)
+        if (uint8Array[0] == 0x6B) { // 107
+            let [event_id, offset] = read7BitInt(uint8Array, 1)
             const event_name = Object.entries(MessageType).find((k) => k[1] == event_id)?.[0] as keyof RawGameEvents
-            const data = deserialise(buffer, offset)
+            const data = deserialise(uint8Array, offset)
 
-            if (this.debug && buffer[1] != MessageType['playerMoved']) console.debug('Receive', event_name, data)
+            if (this.debug && uint8Array[1] != MessageType['playerMoved']) console.debug('Receive', event_name, data)
 
             if (event_name == undefined) {
                 console.warn((`Unknown event type ${event_id}. API may be out of date. Deserialised: ${data}`))
@@ -110,7 +115,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
             return this.raw.emit(event_name, data as any)
         }
 
-        this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
+        this.emit('error', [new Error(`Unknown header byte received: got ${uint8Array[0]}, expected 63 or 107.`)])
     }
 
     /**
@@ -151,18 +156,22 @@ export default class Client extends EventEmitter<LibraryEvents> {
     //
     //
 
-    public send(...args: Buffer[]): Promise<any | undefined> {
-        // if (this.debug && Buffer.concat(args)[0] != 0x3f) console.debug('Sending', Buffer.concat(args))
-
+    public send(...args: Uint8Array[]): Promise<any | undefined> {
         return new Promise((res, rej) => {
-            if (!this.socket) return rej(false)
-            if (this.socket.readyState != this.socket.OPEN) return rej(false)
-            const buffer = Buffer.concat(args)
-            this.socket.send(buffer, {}, (err: any) => {
-                if (err) return rej(err)
-                res(true)
-            })
-        })
+            if (!this.socket) return rej(false);
+            if (this.socket.readyState != this.socket.OPEN) return rej(false);
+
+            // Concatenate Uint8Array objects into a single Uint8Array
+            const uint8Array = args.reduce((acc, curr) => {
+                return new Uint8Array([...acc, ...curr]);
+            }, new Uint8Array());
+
+            // Send the concatenated Uint8Array directly
+            this.socket.send(uint8Array);
+
+            // Assuming send() is asynchronous, we can resolve once the data is sent
+            res(true);
+        });
     }
 
     public say(content: string) {
@@ -179,20 +188,20 @@ export default class Client extends EventEmitter<LibraryEvents> {
         }
 
         if (id instanceof Block) {
-            const block: Block = id
-            const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
-            const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
+            const block: Block = id;
+            const uint8Arrays: Uint8Array[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)];
+            const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || [];
 
             for (let i = 0; i < arg_types.length; i++) {
                 switch (arg_types[i]) {
                     // TODO other types
                     case HeaderTypes.Int32:
-                        buffer.push(Int32(block.data[i]))
-                        break
+                        uint8Arrays.push(Int32(block.data[i]));
+                        break;
                 }
             }
 
-            return this.send(Buffer.concat(buffer))
+            return this.send(...uint8Arrays);
         }
     }
 

@@ -10,16 +10,14 @@ import { HeaderTypes } from "./data/consts"
  * 
  * This function reads such compression.
  */
-export function read7BitInt(buffer: Buffer, offset: number): [number, number] {
-    let value = 0, shift = 0, byte = 0xFF
-
+export function read7BitInt(uint8Array: Uint8Array, offset: number): [number, number] {
+    let value = 0, shift = 0, byte = 0xFF;
     while (byte & 0x80) {
-        byte = buffer.readUInt8(offset++)
-        value |= (byte & 0x7F) << shift
-        shift += 7
+        byte = uint8Array[offset++];
+        value |= (byte & 0x7F) << shift;
+        shift += 7;
     }
-
-    return [value, offset]
+    return [value, offset];
 }
 
 /**
@@ -40,69 +38,60 @@ export function length7BitInt(value: number): number {
 /**
  * Write a normal integer value into buffer at offset.
  */
-export function write7BitInt(buffer: Buffer, value: number, offset: number) {
+export function write7BitInt(uint8Array: Uint8Array, value: number, offset: number) {
     while (value >= 128) {
-        buffer.writeUInt8(value & 127 | 128, offset++)
-        value >>= 7
+        uint8Array[offset++] = (value & 127) | 128;
+        value >>= 7;
     }
-    buffer.writeUInt8(value, offset)
+    uint8Array[offset] = value;
 }
 
 /**
  * Deserialise incoming buffer from server to JS values.
  */
-export function deserialise(buffer: Buffer, offset: number): any[] {
-    const arr: (string | number | boolean | Buffer | bigint)[] = []
-    let type, length
-
-    while (offset < buffer.length) {
-        [type, offset] = read7BitInt(buffer, offset)
-
+export function deserialise(uint8Array: Uint8Array, offset: number) {
+    const arr = [];
+    let type, length;
+    while (offset < uint8Array.length) {
+        [type, offset] = read7BitInt(uint8Array, offset);
         switch (type) {
-            case HeaderTypes.String:
-                [length, offset] = read7BitInt(buffer, offset)
-                arr.push(buffer.subarray(offset, offset + length).toString('ascii'))
-                offset += length
-                break
-            case HeaderTypes.Byte: // = Byte
-                arr.push(buffer.readUInt8(offset++))
-                break
-            case HeaderTypes.Int16: // = Int16 (short)
-                arr.push(buffer.readInt16BE(offset))
-                offset += 2
-                break
-            case HeaderTypes.Int32: // = Int32
-                arr.push(buffer.readInt32BE(offset))
-                offset += 4
-                break
-            case HeaderTypes.Int64:
-                arr.push(buffer.readBigInt64BE(offset))
-                offset += 8
-                break
-            case HeaderTypes.Float:
-                arr.push(buffer.readFloatBE(offset))
-                offset += 4
-                break
-            case HeaderTypes.Double:
-                arr.push(buffer.readDoubleBE(offset))
-                offset += 8
-                break
-            case HeaderTypes.Boolean:
-                arr.push(!!buffer.readUInt8(offset++)) // !! is truthy
-                break
-            case HeaderTypes.ByteArray:
-                [length, offset] = read7BitInt(buffer, offset)
-                arr.push(buffer.subarray(offset, offset + length))
-                offset += length
-                break
+            case 0 /* HeaderTypes.String */:
+                [length, offset] = read7BitInt(uint8Array, offset);
+                arr.push(uint8Array.subarray(offset, offset + length).toString());
+                offset += length;
+                break;
+            case 1 /* HeaderTypes.Byte */: // = Byte
+                arr.push(uint8Array[offset++]);
+                break;
+            case 2 /* HeaderTypes.Int16 */: // = Int16 (short)
+                arr.push((uint8Array[offset++] << 8) | uint8Array[offset++]); // Combine two bytes to form Int16
+                break;
+            case 3 /* HeaderTypes.Int32 */: // = Int32
+                arr.push((uint8Array[offset++] << 24) | (uint8Array[offset++] << 16) | (uint8Array[offset++] << 8) | uint8Array[offset++]); // Combine four bytes to form Int32
+                break;
+            case 4 /* HeaderTypes.Int64 */:
+                // Note: JavaScript doesn't support Int64 directly. You may need to handle this differently.
+                arr.push((BigInt(uint8Array[offset++]) << 56n) | (BigInt(uint8Array[offset++]) << 48n) | (BigInt(uint8Array[offset++]) << 40n) | (BigInt(uint8Array[offset++]) << 32n) | (BigInt(uint8Array[offset++]) << 24n) | (BigInt(uint8Array[offset++]) << 16n) | (BigInt(uint8Array[offset++]) << 8n) | BigInt(uint8Array[offset++])); // Combine eight bytes to form Int64
+                break;
+            case 5 /* HeaderTypes.Float */:
+                // Float data format might need to be adjusted based on your specific data representation
+                arr.push(uint8Array[offset++] | (uint8Array[offset++] << 8) | (uint8Array[offset++] << 16) | (uint8Array[offset++] << 24)); // Combine four bytes to form Float
+                break;
+            case 6 /* HeaderTypes.Double */:
+                // Double data format might need to be adjusted based on your specific data representation
+                arr.push(uint8Array[offset++] | (uint8Array[offset++] << 8) | (uint8Array[offset++] << 16) | (uint8Array[offset++] << 24) | (uint8Array[offset++] << 32) | (uint8Array[offset++] << 40) | (uint8Array[offset++] << 48) | (uint8Array[offset++] << 56)); // Combine eight bytes to form Double
+                break;
+            case 7 /* HeaderTypes.Boolean */:
+                arr.push(!!uint8Array[offset++]); // !! is truthy
+                break;
+            case 8 /* HeaderTypes.ByteArray */:
+                [length, offset] = read7BitInt(uint8Array, offset);
+                arr.push(uint8Array.subarray(offset, offset + length));
+                offset += length;
+                break;
         }
-
-        // types.push(type)
     }
-
-    // console.log(types)
-
-    return arr
+    return arr;
 }
 
 /**

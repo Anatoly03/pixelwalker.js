@@ -18,7 +18,7 @@ export const enum HeaderTypes {
 
 export interface LibraryEvents {
     'error': [[Error]]
-    'close': [[number, Buffer]]
+    'close': [[number, string]]
     'start': [[Player]]
     'player:join': [[Player]]
     'player:leave': [[Player]]
@@ -37,15 +37,15 @@ export interface LibraryEvents {
 }
 
 export interface RawGameEvents {
-    'init':                     [[number, string, string, number, boolean, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
+    'init':                     [[number, string, string, number, boolean, number, number, boolean, boolean, string, number, string, Uint8Array, number, number, Uint8Array]],
     'updateRights':             [[boolean, boolean]],
     'worldMetadata':            [[string, number, string]],
     'worldCleared':             [[]],
-    'worldReloaded':            [[Buffer]],
+    'worldReloaded':            [[Uint8Array]],
     'placeBlock':               [[number, number, number, 0 | 1, number, ...any]],
     'chatMessage':              [[number, string]],
     'systemMessage':            [[string, string, boolean]],
-    'playerJoined':             [[number, string, string, number, boolean, number, number, number, number, number, boolean, boolean, boolean, Buffer]],
+    'playerJoined':             [[number, string, string, number, boolean, number, number, number, number, number, boolean, boolean, boolean, Uint8Array]],
     'playerLeft':               [[number]],
     'playerMoved':              [[number, number, number, number, number, number, number, -1 | 0 | 1, -1 | 0 | 1, boolean, boolean, number]],
     'playerFace':               [[number, number]],
