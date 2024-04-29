@@ -57,7 +57,8 @@ export function deserialise(uint8Array: Uint8Array, offset: number) {
         switch (type) {
             case 0 /* HeaderTypes.String */:
                 [length, offset] = read7BitInt(uint8Array, offset);
-                arr.push(uint8Array.subarray(offset, offset + length).toString());
+                const stringData = new TextDecoder().decode(uint8Array.subarray(offset, offset + length));
+                arr.push(stringData);
                 offset += length;
                 break;
             case 1 /* HeaderTypes.Byte */: // = Byte
