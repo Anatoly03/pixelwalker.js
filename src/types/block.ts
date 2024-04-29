@@ -15,7 +15,8 @@ export default class Block {
         this.id = id
     }
 
-    public isSameAs(other: Block | string | number) {
+    public isSameAs(other: Block | string | number | null) {
+        if (other == null) return false
         if (typeof other == 'number') other = new Block(other)
         if (typeof other == 'string') other = new Block(other)
         if (this.id != other.id) return false
@@ -25,7 +26,7 @@ export default class Block {
         return true
     }
 
-    public isNotSameAs(other: Block | string | number) {
+    public isNotSameAs(other: Block | string | number | null) {
         return !this.isSameAs(other)
     }
 
