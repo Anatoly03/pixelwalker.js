@@ -15,7 +15,7 @@ export default (client: Client) => {
     client.raw.once('init', async ([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
         await client.send(Magic(0x6B), Bit7(MessageType['init']))
 
-        client.world = new World(width, height)
+        client.world = new World(id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height)
         client.world.init(buffer)
 
         const self = new Player({

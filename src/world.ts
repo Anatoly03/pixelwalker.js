@@ -12,13 +12,39 @@ import { get2dArray, read7BitInt } from "./math.js"
  * like a pixel raster.
  */
 export default class World {
+    public id: number
+    public cuid: string
+    public username: string
+    public face: number
+    public isAdmin: boolean
+    public x: number
+    public y: number
+    public can_edit: boolean
+    public can_god: boolean
+    public title: string
+    public plays: number
+    public owner: string
+    public global_switch_states: Buffer
     public width: number
     public height: number
     public foreground: Block[][]
     public background: Block[][]
-    public meta: {[keys: string]: any}
+    public meta: { [keys: string]: any }
 
-    constructor(width: number, height: number) {
+    constructor(id: number, cuid: string, username: string, face: number, isAdmin: boolean, x: number, y: number, can_edit: boolean, can_god: boolean, title: string, plays: number, owner: string, global_switch_states: Buffer, width: number, height: number) {
+        this.id = id
+        this.cuid = cuid
+        this.username = username
+        this.face = face
+        this.isAdmin = isAdmin
+        this.x = x
+        this.y = y
+        this.can_edit = can_edit
+        this.can_god = can_god
+        this.title = title
+        this.plays = plays
+        this.owner = owner
+        this.global_switch_states = global_switch_states
         this.width = width
         this.height = height
         this.foreground = get2dArray(width, height)
@@ -77,7 +103,7 @@ export default class World {
         const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
 
         for (const type of arg_types) {
-            switch(type) {
+            switch (type) {
                 case HeaderTypes.String:
                     [length, offset] = read7BitInt(buffer, offset)
                     block.data.push(buffer.subarray(offset, offset + length).toString('ascii'))
@@ -140,7 +166,23 @@ export default class World {
         if (x2 < x1) { let tmp = x2; x2 = x1; x1 = tmp }
         if (y2 < y1) { let tmp = y2; y2 = y1; y1 = tmp }
 
-        const world = new World(x2 - x1 + 1, y2 - y1 + 1)
+        const world = new World(
+            this.id,
+            this.cuid,
+            this.username,
+            this.face,
+            this.isAdmin,
+            this.x,
+            this.y,
+            this.can_edit,
+            this.can_god,
+            this.title,
+            this.plays,
+            this.owner,
+            this.global_switch_states,
+            x2 - x1 + 1,  // Calculated new width
+            y2 - y1 + 1   // Calculated new height
+        );
 
         for (let x = x1; x <= x2; x++)
             for (let y = y1; y <= y2; y++) {
@@ -185,7 +227,7 @@ export default class World {
 
                 if (!data.palette.includes(block.name))
                     data.palette.push(block.name)
-                
+
                 const shortcut = data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
 
                 data.layers.foreground += shortcut + ' '
@@ -214,8 +256,24 @@ export default class World {
 
     public static fromString(data: string): World {
         const value = YAML.parse(data)
-        const world = new World(value.width, value.height)
-        
+        const world = new World(
+            value.id,
+            value.cuid,
+            value.username,
+            value.face,
+            value.isAdmin,
+            value.x,
+            value.y,
+            value.can_edit,
+            value.can_god,
+            value.title,
+            value.plays,
+            value.owner,
+            value.global_switch_states,
+            value.width,
+            value.height
+        );
+
         world.meta = value.meta
 
         const palette: string[] = value.palette
