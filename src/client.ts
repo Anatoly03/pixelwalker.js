@@ -12,26 +12,32 @@ import Block, { WorldPosition } from './types/block.js'
 import Player from './types/player.js'
 import { FIFO, RANDOM } from './types/animation.js'
 import { RoomTypes } from './data/room_types.js'
-import init_events from './events.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
+
+    public connected = false
 
     private pocketbase: PocketBase | null
     private socket: WebSocket | null
     private debug: boolean
 
+    public self: Player | null
     public world: World | undefined
     public cmdPrefix: string[]
+
     public readonly players: Map<number, Player> = new Map()
 
     private move_tick: number = 0
+    private intervals: NodeJS.Timeout[] = []
+    private block_queue: Map<`${number}.${number}.${0|1}`, Block> = new Map()
 
     constructor(args: { token?: string, user?: string, pass?: string, flags?: {}, debug?: boolean }) {
         super()
 
         this.pocketbase = null
         this.socket = null
+        this.self = null
         this.world = undefined
         this.cmdPrefix = ['.', '!']
 
@@ -57,10 +63,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         // On process interrupt, gracefully disconnect.
         // DO NOT merge this into one function, otherwise it does not work.
-        process.on('SIGINT', (signal) => {
-            this.disconnect()
-            process.exit(0)
-        })
+        process.on('SIGINT', (signal) => this.disconnect())
     }
 
     /**
@@ -85,7 +88,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.socket.on('error', (err) => this.emit('error', [err]))
         this.socket.on('close', (code, buffer) => this.emit('close', [code, buffer]))
 
-        init_events(this)
+        this.connected = true
+
+        this.intervals.push(setInterval(() => this.fill_block_loop(), 25))
+        // this.fill_block_loop()
+
+        this.init_events()
     }
 
     /**
@@ -116,6 +124,46 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /**
+     * This function is called by the internal block event loop
+     * to automatically schedule block placement.
+     */
+    private async fill_block_loop() {
+        let i, entry
+        // console.log(this.block_queue)
+
+        const entries = this.block_queue.entries()
+
+        for (i = 0, entry = entries.next(); i < 400 && !entry.done; i++) {
+            const [pos, block] = entry.value
+            const [x, y, layer] = pos.split('.').map(v => parseInt(v))
+
+            const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
+            const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
+
+            for (let i = 0; i < arg_types.length; i++) {
+                switch (arg_types[i]) {
+                    case HeaderTypes.Byte:
+                        buffer.push(Byte(block.data[i]))
+                    // TODO other types
+                    case HeaderTypes.Int32:
+                        buffer.push(Int32(block.data[i]))
+                        break
+                    // TODO other types
+                    case HeaderTypes.Boolean:
+                        buffer.push(Boolean(block.data[i]))
+                        break
+                }
+            }
+
+            await this.send(Buffer.concat(buffer))
+
+            entry = entries.next()
+        }
+
+        // setTimeout(this.fill_block_loop.bind(this), Math.max(2 * i, 50))
+    }
+
+    /**
      * Wait in the local thread for a numeric value of miliseconds.
      * The numeric magic constant 5 is chosen as an estimate 
      */
@@ -143,6 +191,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public disconnect() {
         if (this.debug) console.debug('Disconnect')
+        this.intervals.forEach(i => clearInterval(i))
         this.pocketbase?.authStore.clear()
         this.socket?.close()
     }
@@ -153,10 +202,11 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public include(client: Client): Client {
         client.send = (...args) => this.send(...args)
+        client.block_queue = this.block_queue
 
         for (const event_name of client.eventNames()) {
             // https://stackoverflow.com/questions/49177088/nodejs-eventemitter-get-listeners-check-if-listener-is-of-type-on-or-once
-            let functions : (() => void)[] = (client as any)._events[event_name]
+            let functions: (() => void)[] = (client as any)._events[event_name]
             if (typeof functions == 'function') functions = [functions]
 
             for (const listener of functions) {
@@ -195,42 +245,20 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
     }
 
-    public block(x: number, y: number, layer: number, id: number | string | Block) {
-        if (typeof id == 'string') {
-            id = new Block(id)
-            // id = BlockMappings[id]
-        }
+    public async block(x: number, y: number, layer: 0 | 1, block: number | string | Block): Promise<true> {
+        if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
+        if (!(block instanceof Block)) return Promise.resolve(true)
 
-        if (typeof id == 'number') {
-            return this.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(id))
-        }
+        this.block_queue.set(`${x}.${y}.${layer}`, block)
 
-        if (id instanceof Block) {
-            const block: Block = id
-            const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
-            const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
-
-            // if (block.name == 'local_switch_activator')  SpecialBlockData[block.name]
-
-            for (let i = 0; i < arg_types.length; i++) {
-                switch (arg_types[i]) {
-                    case HeaderTypes.Byte:
-                        buffer.push(Byte(block.data[i]))
-                    // TODO other types
-                    case HeaderTypes.Int32:
-                        buffer.push(Int32(block.data[i]))
-                        break
-                    // TODO other types
-                    case HeaderTypes.Boolean:
-                        buffer.push(Boolean(block.data[i]))
-                        break
-                }
+        const promise = (res: (v: any) => void, rej: (v: any) => void) => {
+            if (!this.block_queue.get(`${x}.${y}.${layer}`)) {
+                return res(true)
             }
-
-            // if (block.name == 'local_switch_activator') console.log(buffer)
-
-            return this.send(Buffer.concat(buffer))
+            setTimeout(() => promise(res, rej), 5)
         }
+
+        return new Promise(promise)
     }
 
     public god(value: boolean, mod_mode: boolean) {
@@ -281,6 +309,215 @@ export default class Client extends EventEmitter<LibraryEvents> {
             await this.block(x, y, layer, block)
             await this.wait()
         }
+    }
+
+    /**
+     * Event Initialiser for Client
+     */
+    private async init_events () {
+
+        /**
+         * On init, set everything up
+         */
+        this.raw.once('init', async ([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
+            await this.send(Magic(0x6B), Bit7(MessageType['init']))
+
+            this.world = new World(width, height)
+            this.world.init(buffer)
+
+            this.self = new Player({
+                client: this,
+                id,
+                cuid,
+                username,
+                face,
+                isAdmin,
+                x: x / 16,
+                y: y / 16,
+            })
+
+            this.players.set(id, this.self)
+            this.emit('start', [this.self])
+        })
+
+        /**
+         * On player join, create a player object with data
+         * and emit `player:join` with said object.
+         */
+        this.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, x, y, coins, blue_coins, deaths, god_mode, mod_mode, has_crown]) => {
+            const player = new Player({
+                client: this,
+                id,
+                cuid,
+                username,
+                face,
+                isAdmin,
+                x: x / 16,
+                y: y / 16,
+                god_mode,
+                mod_mode,
+                has_crown,
+                coins,
+                blue_coins,
+                deaths
+            })
+
+            this.players.set(id, player)
+            this.emit('player:join', [player])
+        })
+
+        /**
+         * On player leave, send the object of the player
+         * and destroy it.
+         */
+        this.raw.on('playerLeft', async ([id]) => {
+            const player = await this.wait_for(() => this.players.get(id))
+            this.emit('player:leave', [player])
+            this.players.delete(id)
+        })
+
+        /**
+         * When receiving a chat message, if it is a command,
+         * emit command, otherwise emit chat message
+         */
+        this.raw.on('chatMessage', async ([id, message]) => {
+            if (!message) return
+            
+            const player = await this.wait_for(() => this.players.get(id))
+            const prefix = this.cmdPrefix.find(v => message.toLowerCase().startsWith(v))
+
+            if (!prefix) return this.emit('chat', [player, message])
+
+            const slice = message.substring(prefix.length)
+            const arg_regex = /"[^"]+"|'[^']+'|[\w\-]+/gi // TODO add escape char \
+            const args: [Player, ...any] = [player]
+            for (const match of slice.matchAll(arg_regex)) args.push(match[0])
+            if (args.length < 2) return
+
+            const cmd = args[1].toLowerCase()
+
+            this.emit(`cmd:${cmd}`, args)
+        })
+
+        /**
+         * TODO Player movement
+         */
+        this.raw.on('playerMoved', async ([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]) => {
+            const player = await this.wait_for(() => this.players.get(id))
+
+            player.x = x / 16
+            player.y = y / 16
+
+            // TODO if (player.mod_x != undefined && player.mod_x != mod_x) // hit key right or left
+            // TODO if (player.mod_y != undefined && player.mod_y != mod_y) // hit key up or down
+            // TODO hit space
+
+            // TODO
+            // this.emit('player:move', [player])
+
+            player.horizontal = horizontal
+            player.vertical = vertical
+            player.space_down = space_down
+            player.space_just_down = space_just_down
+        })
+
+        /**
+         * When player changes face, update.
+         */
+        this.raw.on('playerFace', async ([id, face]) => {
+            const player = await this.wait_for(() => this.players.get(id))
+            const old_face = player.face
+            player.face = face
+            this.emit('player:face', [player, face, old_face])
+        })
+
+        /**
+         * TODO When player changes god mode, update.
+         */
+        this.raw.on('playerGodMode', async ([id, god_mode]) => {
+            const player = await this.wait_for(() => this.players.get(id))
+            const old_mode = player.god_mode
+            player.god_mode = god_mode
+            this.emit('player:god', [player])
+        })
+
+        /**
+         * TODO When player changes mod mode, update.
+         */
+        this.raw.on('playerModMode', async ([id, mod_mode]) => {
+            const player = await this.wait_for(() => this.players.get(id))
+            const old_mode = player.god_mode
+            player.mod_mode = mod_mode
+            this.emit('player:mod', [player])
+        })
+
+        /**
+         * TODO
+         */
+        this.raw.on('crownTouched', async ([id]) => {
+            const players = await this.wait_for(() => this.players)
+            const player: Player = players.get(id) as Player
+            const old_crown = Array.from(players.values()).find(p => p.has_crown)
+            players.forEach((p) => p.has_crown = p.id == id)
+            this.emit('player:crown', [player, old_crown || null])
+        })
+
+        /**
+         * TODO
+         */
+        this.raw.on('playerStatsChanged', async ([id, gold_coins, blue_coins, death_count]) => {
+            const player = await this.wait_for(() => this.players.get(id))
+
+            const old_coins = player.coins
+            const old_blue_coins = player.blue_coins
+            const old_death_count = player.deaths
+
+            player.coins = gold_coins
+            player.blue_coins = blue_coins
+            player.deaths = death_count
+
+            if (old_coins < gold_coins) this.emit('player:coin', [player, old_coins])
+            if (old_blue_coins < blue_coins) this.emit('player:coin:blue', [player, old_blue_coins])
+            if (old_death_count < death_count) this.emit('player:death', [player, old_death_count])
+        })
+
+        /**
+         * TODO
+         */
+        this.raw.on('placeBlock', async ([id, x, y, layer, bid, ...args]) => {
+            const player = await this.wait_for(() => this.players.get(id))
+            const world = await this.wait_for(() => this.world)
+            const [position, block] = world.place(x, y, layer, bid, args)
+            
+            const key: `${number}.${number}.${0|1}` = `${x}.${y}.${layer}`
+            const entry = this.block_queue.get(key)
+
+            if (this.self && entry && this.self.id == id) {
+                if (this.block_queue.get(key)?.isSameAs(block)) {
+                    this.block_queue.delete(key)
+                }
+            }
+
+            this.emit('player:block', [player, position, block])
+        })
+
+        /**
+         * TODO
+         */
+        this.raw.on('worldCleared', async ([]) => {
+            console.debug('World Reload not yet implemented.')
+            const world = await this.wait_for(() => this.world)
+            world.clear(true)
+            this.emit('world:clear', [])
+        })
+
+        /**
+         * Reload world with new buffer.
+         */
+        this.raw.on('worldReloaded', async ([buffer]) => {
+            const world = await this.wait_for(() => this.world)
+            world.init(buffer)
+        })
     }
 
 }
