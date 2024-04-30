@@ -17,7 +17,7 @@ import init_events from './events.js'
 export default class Client extends EventEmitter<LibraryEvents> {
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
 
-    private pocketbase: PocketBase
+    private pocketbase: PocketBase | null
     private socket: WebSocket | null
     private debug: boolean
 
@@ -30,12 +30,13 @@ export default class Client extends EventEmitter<LibraryEvents> {
     constructor(args: { token?: string, user?: string, pass?: string, flags?: {}, debug?: boolean }) {
         super()
 
-        this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
+        this.pocketbase = null
         this.socket = null
         this.world = undefined
         this.cmdPrefix = ['.', '!']
 
         if (args.token) {
+            this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
             this.pocketbase.authStore.save(args.token, { verified: true })
             if (!this.pocketbase.authStore.isValid) throw new Error('Invalid Token')
@@ -69,6 +70,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         if (world_id == undefined) throw new Error('`world_id` was not provided in `Client.connect()`')
         if (room_type && !RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
         if (!room_type) room_type = RoomTypes[0]
+        if (this.pocketbase == null) throw new Error('Can\'t connect to a world without having pocketbase data.')
 
         const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
 
@@ -143,6 +145,28 @@ export default class Client extends EventEmitter<LibraryEvents> {
         if (this.debug) console.debug('Disconnect')
         this.pocketbase?.authStore.clear()
         this.socket?.close()
+    }
+
+    /**
+     * Include Event handler from another client instance. This function
+     * gets the event calls from `client` and a links them to `this`
+     */
+    public include(client: Client): Client {
+        for (const event_name of client.eventNames()) {
+            // https://stackoverflow.com/questions/49177088/nodejs-eventemitter-get-listeners-check-if-listener-is-of-type-on-or-once
+            let functions : (() => void)[] = (client as any)._events[event_name]
+            if (typeof functions == 'function') functions = [functions]
+
+            for (const listener of functions) {
+                const is_once = listener.name.includes('onceWrapper')
+
+                if (is_once)
+                    this.once(event_name, listener.bind(this))
+                else
+                    this.on(event_name, listener.bind(this))
+            }
+        }
+        return this
     }
 
     //
