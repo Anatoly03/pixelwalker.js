@@ -88,6 +88,10 @@ export default class Player {
         // this.client.say(`/${value ? 'givegod' : 'takegod'} ${this.username}`)
     }
 
+    public async crown(value: boolean) {
+        this.client.say(`/${value ? 'givecrown' : 'takecrown'} #${this.id}`)
+    }
+
     public async reset() {
         this.client.say(`/resetplayer ${this.username}`)
     }
