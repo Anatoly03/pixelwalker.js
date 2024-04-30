@@ -2,7 +2,7 @@ import Client from "./client.js";
 import { MessageType } from "./data/consts.js";
 import { Bit7, Magic } from "./types.js";
 import Player from "./types/player.js";
-import World from "./world.js";
+import World from "./types/world.js";
 
 /**
  * Event Initialiser for Client

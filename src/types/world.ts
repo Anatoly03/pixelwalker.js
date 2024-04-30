@@ -1,10 +1,10 @@
 
 import stream from "stream"
 import YAML from 'yaml'
-import Block, { WorldPosition } from "./types/block.js"
-import { HeaderTypes, SpecialBlockData } from "./data/consts.js"
-import { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
-import { get2dArray, read7BitInt } from "./math.js"
+import Block, { WorldPosition } from "./block.js"
+import { HeaderTypes, SpecialBlockData } from "../data/consts.js"
+import { BlockMappings, BlockMappingsReverse } from '../data/mappings.js'
+import { get2dArray, read7BitInt } from "../math.js"
 
 /**
  * A World is an offline-saved chunk of two dimensional
