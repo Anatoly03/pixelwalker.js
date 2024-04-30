@@ -5,7 +5,7 @@ import { EventEmitter } from 'events'
 
 import { read7BitInt, deserialise } from './math.js'
 import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
-import { Magic, Bit7, String, Int32, Boolean, Double } from './types.js'
+import { Magic, Bit7, String, Int32, Boolean, Double, Byte } from './types.js'
 import { BlockMappings } from './data/mappings.js'
 import World from './world.js'
 import Block, { WorldPosition } from './types/block.js'
@@ -171,7 +171,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     public block(x: number, y: number, layer: number, id: number | string | Block) {
         if (typeof id == 'string') {
-            id = BlockMappings[id]
+            id = new Block(id)
+            // id = BlockMappings[id]
         }
 
         if (typeof id == 'number') {
@@ -183,14 +184,24 @@ export default class Client extends EventEmitter<LibraryEvents> {
             const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
             const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
 
+            // if (block.name == 'local_switch_activator')  SpecialBlockData[block.name]
+
             for (let i = 0; i < arg_types.length; i++) {
                 switch (arg_types[i]) {
+                    case HeaderTypes.Byte:
+                        buffer.push(Byte(block.data[i]))
                     // TODO other types
                     case HeaderTypes.Int32:
                         buffer.push(Int32(block.data[i]))
                         break
+                    // TODO other types
+                    case HeaderTypes.Boolean:
+                        buffer.push(Boolean(block.data[i]))
+                        break
                 }
             }
+
+            // if (block.name == 'local_switch_activator') console.log(buffer)
 
             return this.send(Buffer.concat(buffer))
         }
