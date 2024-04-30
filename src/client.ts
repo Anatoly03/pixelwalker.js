@@ -152,6 +152,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * gets the event calls from `client` and a links them to `this`
      */
     public include(client: Client): Client {
+        client.send = (...args) => this.send(...args)
+
         for (const event_name of client.eventNames()) {
             // https://stackoverflow.com/questions/49177088/nodejs-eventemitter-get-listeners-check-if-listener-is-of-type-on-or-once
             let functions : (() => void)[] = (client as any)._events[event_name]
