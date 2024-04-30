@@ -106,14 +106,14 @@ export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
     'spikes':                   [HeaderTypes.Int32],
 
     'local_switch':             [HeaderTypes.Int32],
-    'local_switch_activator':   [HeaderTypes.Int32, HeaderTypes.Boolean],
-    'local_switch_resetter':    [HeaderTypes.Boolean],
+    'local_switch_activator':   [HeaderTypes.Int32, HeaderTypes.Byte],
+    'local_switch_resetter':    [HeaderTypes.Byte],
     'local_switch_door':        [HeaderTypes.Int32],
     'local_switch_gate':        [HeaderTypes.Int32],
 
     'global_switch':            [HeaderTypes.Int32],
-    'global_switch_activator':  [HeaderTypes.Int32, HeaderTypes.Boolean],
-    'global_switch_resetter':   [HeaderTypes.Boolean],
+    'global_switch_activator':  [HeaderTypes.Int32, HeaderTypes.Byte],
+    'global_switch_resetter':   [HeaderTypes.Byte],
     'global_switch_door':       [HeaderTypes.Int32],
     'global_switch_gate':       [HeaderTypes.Int32],
 }
