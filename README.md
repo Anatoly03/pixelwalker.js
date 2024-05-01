@@ -6,22 +6,31 @@
 #### Example
 
 ```js
+// index file
 import Client from 'pixelwalker.js'
+import CommandManager from './command.js'
 
 const client = new Client({ token: 'YOUR TOKEN HERE' })
 
 client.on('start', () => world.say('🤖 Connected!'))
 client.on('error', ([error]) => {throw error})
 
-client.on('cmd:hello', async ([user, message]) => {
-    // Wait the event till the player is loaded
-    // (dependency information), and get the 
-    // players' username. Then, greet every "!hello"
-    const { username } = await client.wait_for(() => client.players.get(user))
-    client.say(`🤖 Hello, ${username}! `)
+client
+    .include(CommandManager)
+    .connect('WORLD ID')
+```
+
+```js
+// command file
+import Client from 'pixelwalker.js'
+
+const client = new Client({})
+
+client.on('cmd:hello', async ([player, _]) => {
+    client.say(`🤖 Hello, ${player.username}! `)
 })
 
-client.connect('WORLD ID', 'pixelwalker3')
+export default client
 ```
 
 ## Installation
