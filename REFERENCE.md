@@ -5,6 +5,7 @@
 
 ```js
 connect: boolean                    // Get connection state of client.
+raw: EventEmitter                   // Event Emitter for unprocessed game events.
 self: Player?                       // Once connected, get bot player.
 world: World?                       // Once connected, access world data.
 cmdPrefix: string[] = ['.', '!']    // Set accepted prefici for commands.
@@ -140,6 +141,8 @@ async respond(content: string)
 async kick(reason: string)
 async edit(value: boolean)
 ```
+
+
 
 ### Events: Game
 
