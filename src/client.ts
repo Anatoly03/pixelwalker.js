@@ -16,9 +16,10 @@ import init_events from './events.js'
 import Scheduler from './types/scheduler.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
-    public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
-
     public connected = false
+
+    public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
+    public scheduler: Scheduler = new Scheduler(this)
 
     private pocketbase: PocketBase | null
     private socket: WebSocket | null
@@ -30,9 +31,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     public readonly players: Map<number, Player> = new Map()
 
+    private inclusions: Client[] = []
+
     private move_tick: number = 0
 
-    public scheduler: Scheduler | null
 
     constructor(args: { token?: string, user?: string, pass?: string, flags?: {}, debug?: boolean }) {
         super()
@@ -42,7 +44,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.self = null
         this.world = undefined
         this.cmdPrefix = ['.', '!']
-        this.scheduler = null
 
         if (args.token) {
             this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
@@ -98,9 +99,19 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         this.connected = true
 
-        this.scheduler = new Scheduler(this)
-
+        this.scheduler.start()
         init_events(this)
+
+        this.inclusions.forEach((client) => {
+            // client.world = get function () {}
+            client.scheduler = this.scheduler
+            client.socket = this.socket
+
+            // for (const key in client) {
+            //     if (typeof (client as any)[key] == 'function') { (client as any)[key] = (...args: any) => { (this as any)[key](...args) }; }
+            //     else { (client as any)[key] = (this as any)[key]; }
+            // }
+        })
     }
 
     /**
@@ -159,7 +170,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public disconnect() {
         if (this.debug) console.debug('Disconnect')
         this.connected = false
-        this.scheduler?.disconnect()
+        this.scheduler.stop()
         this.pocketbase?.authStore.clear()
         this.socket?.close()
     }
@@ -169,6 +180,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * gets the event calls from `client` and a links them to `this`
      */
     public include(client: Client): Client {
+        this.inclusions.push(client)
         client.disconnect()
         client.send = (...args) => this.send(...args)
         client.block = (...args) => this.block(...args)
@@ -188,11 +200,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
                     this.on(event_name, listener.bind(this))
             }
         }
-
-        // for (const key in client) {
-        //     if (typeof (client as any)[key] == 'function') { (client as any)[key] = (...args: any) => { (this as any)[key](...args) }; }
-        //     else { (client as any)[key] = (this as any)[key]; }
-        // }
 
         return this
     }
@@ -225,7 +232,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         if (!this.connected) return Promise.resolve(false)
         if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
         if (!(block instanceof Block)) return Promise.resolve(true)
-        if (!this.scheduler) { console.log(this); throw new Error('Scheduler is not defined.') }
+        if (!this.scheduler.running) { throw new Error('Scheduler is not defined.') }
         if (this.world?.[layer == 1 ? 'foreground' : 'background'][x][y]?.isSameAs(block)) return Promise.resolve(true)
 
         return this.scheduler.block([x, y, layer], block)
