@@ -87,7 +87,7 @@ export default function init_events (client: Client) {
         if (!prefix) return
 
         const slice = message.substring(prefix.length)
-        const arg_regex = /"[^"]+"|'[^']+'|[\w\-]+/gi // TODO add escape char \
+        const arg_regex = /"[^"]+"|'[^']+'|[^\s]+/gi // TODO add escape char \
         const args: [Player, ...any] = [player]
         for (const match of slice.matchAll(arg_regex)) args.push(match[0])
         if (args.length < 2) return
