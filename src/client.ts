@@ -247,6 +247,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public async fill(xt: number, yt: number, world: World, args?: { animation?: (b: any) => any, write_empty?: boolean }) {
         if (!args) args = { write_empty: true }
 
+        const promises = []
         this.world = await this.wait_for(() => this.world)
         const to_be_placed: [WorldPosition, Block][] = []
 
@@ -268,8 +269,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
         while (to_be_placed.length > 0) {
             const yielded = generator.next()
             const [[x, y, layer], block]: any = yielded.value
-            await this.block(x, y, layer, block)
-            await this.wait()
+            promises.push(this.block(x, y, layer, block))
         }
+
+        await Promise.all(promises)
     }
 }
