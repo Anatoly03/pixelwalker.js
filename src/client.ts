@@ -93,7 +93,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         }
 
         this.socket.on('message', (event) => this.receive_message(Buffer.from(event as any)))
-        this.socket.on('error', (err: Buffer) => { this.emit('error', [err.toString('ascii')]); this.disconnect() })
+        this.socket.on('error', (err) => { this.emit('error', [err]); this.disconnect() })
         this.socket.on('close', (code, buffer) => { this.emit('close', [code, buffer]); this.disconnect() })
 
         this.connected = true
@@ -127,7 +127,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
             return this.raw.emit(event_name, data as any)
         }
 
-        this.emit('error', [`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`])
+        this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
     }
 
     /**
