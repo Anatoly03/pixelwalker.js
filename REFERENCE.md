@@ -4,7 +4,7 @@
 ## `Client` extends [`EventEmitter`](https://nodejs.org/api/events.html#class-eventemitter)
 
 ```js
-connect: boolean                    // Get connection state of client.
+connected: boolean                    // Get connection state of client.
 raw: EventEmitter                   // Event Emitter for unprocessed game events.
 self: Player?                       // Once connected, get bot player.
 world: World?                       // Once connected, access world data.
@@ -21,6 +21,8 @@ const client = new Client({ token: process.env.TOKEN })
 ```
 
 #### `connect(world_id: string, world_type?: string)`
+
+If world type is omitted, `RoomTypes[0]` is set. The exported variable `RoomTypes` is an array of allowed room types (strings)
 
 ```js
 client.connect('r450e0e380a815a')
