@@ -76,6 +76,8 @@ client.on('cmd:replace', async ([player, _, from, to]) => {
 
 To replace all blocks of a kind, you can use the following procedure: List all blocks of replacing type in the world data, then place on all given coordinates the wished block type. If you want to make sure, that code continues to run only after all blocks are placed (without caring about placement order), await all promises.
 
+##### Brush Size Variations
+
 ```js
 const brushes = {}
 
