@@ -4,6 +4,9 @@ import { MessageType, HeaderTypes, SpecialBlockData } from "../data/consts.js"
 import { Magic, Bit7, Int32, Byte, Boolean } from "../types.js"
 import Block, { WorldPosition } from "./block.js"
 
+const BLOCKS_PER_QUEUE_TICK = 200
+const BLOCK_TICK = 50
+
 export default class Scheduler {
     private client: Client
     private intervals: NodeJS.Timeout[] = []
@@ -14,7 +17,7 @@ export default class Scheduler {
         this.intervals = []
         this.block_queue = new Map()
 
-        this.intervals.push(setInterval(() => this.fill_block_loop(), 25))
+        this.intervals.push(setInterval(() => this.fill_block_loop(), BLOCK_TICK))
     }
 
     /**
@@ -22,14 +25,17 @@ export default class Scheduler {
      * to automatically schedule block placement.
      */
     private async fill_block_loop() {
-        let i, entry
+        if (this.block_queue.size == 0) return
+
+        // let i, entry
 
         const entries = this.block_queue.entries()
+        // let entry = entries.next()
 
         // console.log(this.block_queue.size)
 
-        for (i = 0, entry = entries.next(); i < 500 && !entry.done; i++, entry = entries.next()) {
-            const [pos, block] = entry.value
+        for (let placed = 0, entry = entries.next(); placed < BLOCKS_PER_QUEUE_TICK && !entry.done; placed++, entry = entries.next()) {
+            const [pos, block]: [string, Block] = entry.value
             const [x, y, layer] = pos.split('.').map(v => parseInt(v))
 
             const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
@@ -52,7 +58,7 @@ export default class Scheduler {
 
             // console.log(pos, block)
 
-            await this.client.send(Buffer.concat(buffer))
+            this.client.send(Buffer.concat(buffer))
         }
     }
 
