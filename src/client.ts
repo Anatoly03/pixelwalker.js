@@ -94,7 +94,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         this.socket.on('message', (event) => this.receive_message(Buffer.from(event as any)))
         this.socket.on('error', (err) => { this.emit('error', [err]); this.disconnect() })
-        this.socket.on('close', (code, buffer) => { this.emit('close', [code, buffer]); this.disconnect() })
+        this.socket.on('close', (code, buffer) => { this.emit('close', [code, buffer.toString('ascii')]); this.disconnect() })
 
         this.connected = true
 
