@@ -13,6 +13,7 @@ import Player from './types/player.js'
 import { FIFO, RANDOM } from './types/animation.js'
 import { RoomTypes } from './data/room_types.js'
 import init_events from './events.js'
+import Scheduler from './types/scheduler.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
@@ -30,8 +31,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public readonly players: Map<number, Player> = new Map()
 
     private move_tick: number = 0
-    private intervals: NodeJS.Timeout[] = []
-    public block_queue: Map<`${number}.${number}.${0|1}`, Block> = new Map()
+
+    public scheduler: Scheduler | null
 
     constructor(args: { token?: string, user?: string, pass?: string, flags?: {}, debug?: boolean }) {
         super()
@@ -41,6 +42,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.self = null
         this.world = undefined
         this.cmdPrefix = ['.', '!']
+        this.scheduler = null
 
         if (args.token) {
             this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
@@ -91,8 +93,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         this.connected = true
 
-        this.intervals.push(setInterval(() => this.fill_block_loop(), 25))
-        // this.fill_block_loop()
+        this.scheduler = new Scheduler(this)
 
         init_events(this)
     }
@@ -125,46 +126,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /**
-     * This function is called by the internal block event loop
-     * to automatically schedule block placement.
-     */
-    private async fill_block_loop() {
-        let i, entry
-        // console.log(this.block_queue)
-
-        const entries = this.block_queue.entries()
-
-        for (i = 0, entry = entries.next(); i < 400 && !entry.done; i++) {
-            const [pos, block] = entry.value
-            const [x, y, layer] = pos.split('.').map(v => parseInt(v))
-
-            const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
-            const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
-
-            for (let i = 0; i < arg_types.length; i++) {
-                switch (arg_types[i]) {
-                    case HeaderTypes.Byte:
-                        buffer.push(Byte(block.data[i]))
-                    // TODO other types
-                    case HeaderTypes.Int32:
-                        buffer.push(Int32(block.data[i]))
-                        break
-                    // TODO other types
-                    case HeaderTypes.Boolean:
-                        buffer.push(Boolean(block.data[i]))
-                        break
-                }
-            }
-
-            await this.send(Buffer.concat(buffer))
-
-            entry = entries.next()
-        }
-
-        // setTimeout(this.fill_block_loop.bind(this), Math.max(2 * i, 50))
-    }
-
-    /**
      * Wait in the local thread for a numeric value of miliseconds.
      * The numeric magic constant 5 is chosen as an estimate 
      */
@@ -192,7 +153,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public disconnect() {
         if (this.debug) console.debug('Disconnect')
-        this.intervals.forEach(i => clearInterval(i))
+        this.scheduler?.disconnect()
         this.pocketbase?.authStore.clear()
         this.socket?.close()
     }
@@ -203,7 +164,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public include(client: Client): Client {
         client.send = (...args) => this.send(...args)
-        client.block_queue = this.block_queue
+        client.block = (...args) => this.block(...args)
+        client.scheduler = this.scheduler
 
         for (const event_name of client.eventNames()) {
             // https://stackoverflow.com/questions/49177088/nodejs-eventemitter-get-listeners-check-if-listener-is-of-type-on-or-once
@@ -219,6 +181,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
                     this.on(event_name, listener.bind(this))
             }
         }
+
+        // for (const key in client) {
+        //     if (typeof (client as any)[key] == 'function') { (client as any)[key] = (...args: any) => { (this as any)[key](...args) }; }
+        //     else { (client as any)[key] = (this as any)[key]; }
+        // }
+
         return this
     }
 
@@ -246,20 +214,23 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
     }
 
-    public async block(x: number, y: number, layer: 0 | 1, block: number | string | Block): Promise<true> {
+    public block(x: number, y: number, layer: 0 | 1, block: number | string | Block): Promise<true> {
         if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
         if (!(block instanceof Block)) return Promise.resolve(true)
+        if (!this.scheduler) {console.log(this); throw new Error('Scheduler is not defined.')}
 
-        this.block_queue.set(`${x}.${y}.${layer}`, block)
+        return this.scheduler.block([x, y, layer], block)
 
-        const promise = (res: (v: any) => void, rej: (v: any) => void) => {
-            if (!this.block_queue.get(`${x}.${y}.${layer}`)) {
-                return res(true)
-            }
-            setTimeout(() => promise(res, rej), 5)
-        }
+        // this.block_queue.set(`${x}.${y}.${layer}`, block)
 
-        return new Promise(promise)
+        // const promise = (res: (v: any) => void, rej: (v: any) => void) => {
+        //     if (!this.block_queue.get(`${x}.${y}.${layer}`)) {
+        //         return res(true)
+        //     }
+        //     setTimeout(() => promise(res, rej), 5)
+        // }
+
+        // return new Promise(promise)
     }
 
     public god(value: boolean, mod_mode: boolean) {

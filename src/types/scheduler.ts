@@ -1,0 +1,85 @@
+
+import Client from "../client.js"
+import { MessageType, HeaderTypes, SpecialBlockData } from "../data/consts.js"
+import { Magic, Bit7, Int32, Byte, Boolean } from "../types.js"
+import Block, { WorldPosition } from "./block.js"
+
+export default class Scheduler {
+    private client: Client
+    private intervals: NodeJS.Timeout[] = []
+    public block_queue: Map<`${number}.${number}.${0|1}`, Block>
+
+    constructor(client: Client) {
+        this.client = client
+        this.intervals = []
+        this.block_queue = new Map()
+
+        this.intervals.push(setInterval(() => this.fill_block_loop(), 25))
+    }
+
+    /**
+     * This function is called by the internal block event loop
+     * to automatically schedule block placement.
+     */
+    private async fill_block_loop() {
+        let i, entry
+
+        const entries = this.block_queue.entries()
+
+        // console.log(this.block_queue.size)
+
+        for (i = 0, entry = entries.next(); i < 500 && !entry.done; i++, entry = entries.next()) {
+            const [pos, block] = entry.value
+            const [x, y, layer] = pos.split('.').map(v => parseInt(v))
+
+            const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
+            const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
+
+            for (let i = 0; i < arg_types.length; i++) {
+                switch (arg_types[i]) {
+                    case HeaderTypes.Byte:
+                        buffer.push(Byte(block.data[i]))
+                    // TODO other types
+                    case HeaderTypes.Int32:
+                        buffer.push(Int32(block.data[i]))
+                        break
+                    // TODO other types
+                    case HeaderTypes.Boolean:
+                        buffer.push(Boolean(block.data[i]))
+                        break
+                }
+            }
+
+            // console.log(pos, block)
+
+            await this.client.send(Buffer.concat(buffer))
+        }
+    }
+
+    /**
+     * Place a block to the scheduler
+     */
+    public block([x, y, layer]: WorldPosition, block: Block) {
+        const key: `${number}.${number}.${0|1}` = `${x}.${y}.${layer}`
+
+        this.block_queue.set(key, block)
+
+        const promise = (res: (v: any) => void, rej: (v: any) => void) => {
+            if (!this.block_queue.get(key)) {
+                return res(true)
+            }
+            setTimeout(() => promise(res, rej), 5)
+        }
+
+        // console.log(key, block)
+
+        return new Promise(promise)
+    }
+
+    /**
+     * Disconnect the intervals
+     */
+    public disconnect() {
+        this.intervals.forEach(i => clearInterval(i))
+    }
+}

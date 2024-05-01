@@ -183,11 +183,13 @@ export default function init_events (client: Client) {
         const [position, block] = world.place(x, y, layer, bid, args)
         
         const key: `${number}.${number}.${0|1}` = `${x}.${y}.${layer}`
-        const entry = client.block_queue.get(key)
+        const entry = client.scheduler?.block_queue.get(key)
+
+        // console.log('receive', block.name)
 
         if (client.self && entry && client.self.id == id) {
-            if (client.block_queue.get(key)?.isSameAs(block)) {
-                client.block_queue.delete(key)
+            if (client.scheduler?.block_queue.get(key)?.isSameAs(block)) {
+                client.scheduler?.block_queue.delete(key)
             }
         }
 
