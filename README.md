@@ -10,7 +10,7 @@ import Client from 'pixelwalker.js'
 import CommandManager from './hello.js'
 const client = new Client({ token: 'YOUR TOKEN HERE' })
 
-client.on('start', () => world.say('🤖 Connected!'))
+client.on('start', () => client.say('🤖 Connected!'))
 client.on('error', ([error]) => {throw error})
 
 client
