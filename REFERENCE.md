@@ -95,8 +95,6 @@ Fill the structure `world` at given coordinates.
 
 ### Client Events
 
-To receive serialized, unprocessed events from the game, see [REFERENCE.md](REFERENCE.md)
-
 | Event | Data | Description |
 |:-:|-|-|
 | `start` | `id` | Client joined the room after init. |
@@ -133,18 +131,67 @@ coins: number
 blue_coins: number
 deaths: number
 
-// Methods
-
-equals(other: Player): boolean
-async pm(content: string)
-async respond(content: string)
-async kick(reason: string)
-async edit(value: boolean)
+horizontal: -1 | 0 | 1 | undefined
+vertical: -1 | 0 | 1 | undefined
+space_down: boolean | undefined
+space_just_down: boolean | undefined
 ```
 
+#### `equals(player: Player): boolean`
 
+#### `pm(content: string)`
 
-### Events: Game
+```js
+player.pm('🤖 Bot wanted to whisper you in the ear.')
+```
+
+#### `respond(content: string)`
+
+This is an alias for `client.say(player.username + ': ' + message)`
+
+```js
+player.respond('🤖 Very loud talking!')
+```
+
+#### `kick(reason: string)`
+
+Kick the player
+
+```js
+player.kick('🤖 Please don\'t misbehave :c')
+```
+
+#### `edit(value: boolean)`
+
+Give or take players' edit rights
+
+```js
+player.edit(true)
+```
+
+#### `god(value: boolean)`
+
+Give or take the players' god mode rights
+
+```js
+player.god(true)
+```
+
+#### `crown(value: boolean)`
+
+Give or take the players crown. Note: Only one crown may exist per player.
+
+```js
+player.crown(true)
+```
+
+#### `reset()`
+
+```js
+player.reset()
+```
+
+## Events: Game
 
 TODO describe properly
 
