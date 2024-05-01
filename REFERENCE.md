@@ -1,17 +1,92 @@
 
 # API Reference
 
-#### `Client`
+## `Client`
 
-| Event | Description |
-|:-:|-|
-| `.send(buffer[])` | Send raw binaries. |
-| `.say(string)` | Write into chat |
-| `.block(x, y, layer, id)` | Place a block |
-| `.god(value, mode)` | Set god mode. If `mode` is true, then mod mode. |
-| `.face(value)` | Change player face. |
-| `.wait(time)` | Wait for a specific amount of time in miliseconds |
-| `.wait_for(callback)` | Wait till `callback` is a value. If awaited, this function will block the current function and busy wait for callback to be true. Use only for events that will eventually come true, or you create memory leaks. |
+- `constructor({ token: string })` Login with token.
+
+- `connected: boolean` Get connection state of client.
+- `self: Player?` Once connected, get bot player.
+- `world: World?` Once connected, access world data.
+- `cmdPrefix: string[]` Set accepted prefici for commands.
+
+#### `connect(world_id: string, world_type?: string)`
+
+```js
+client.connect('r450e0e380a815a')
+client.connect('r450e0e380a815a', 'pixelwalker4')
+```
+
+#### `disconnect()`
+
+Disconnect client
+
+#### unstable `include(client: Client)`
+
+Include a module into the current client.
+
+```js
+// index.js
+import Module from './path/to/mod.js'
+client.on('init', ([p]) => console.log('Main Called'))
+client.include(Module)
+
+// mod.js
+const client = new Client({})
+client.on('init', ([p]) => console.log('Module Called'))
+export default client
+```
+
+#### `wait(ms: number): Promise`
+
+```js
+await client.wait(50) // in miliseconds
+```
+
+#### `send(buffer[])`
+
+Send raw binaries to the client.
+
+```js
+import { Type, MessageType, BlockMappings } from 'pixelwalker.js'
+const { Magic, Bit7, Int32 } = Type
+client.send(Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(5), Int32(5), Int32(1), Int32(BlockMappings['basic_blue']))
+```
+
+#### `say(content: string)`
+
+```js
+client.say('🤖 Simon the Bot says, move to the right.')
+```
+
+#### `block(x, y, layer, block)`
+
+```js
+client.block(19, 31, 0, 'basic_blue_bg')
+client.block(19, 31, 1, new Block('gravity_slow_dot'))
+client.block(19, 31, 0, 0)
+```
+
+#### `god(value, mod)`
+
+Set self into god mode, if mod is set to true, mod mode.
+
+#### `face(value)`
+
+Set self face
+
+#### `move(x, y, xVel, yVel, xMod, yMod, horizontal, vertical, space_down, space_just_down)`
+
+Set self into motion
+
+#### unstable `fill(x, y, world)`
+
+Fill the structure `world` at given coordinates.
+
+
+
+
+
 
 ### Receive
 
