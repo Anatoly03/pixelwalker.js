@@ -99,19 +99,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         this.connected = true
 
+        this.ping_modules(client => client.socket = this.socket)
+
         this.scheduler.start()
         init_events(this)
-
-        this.inclusions.forEach((client) => {
-            // client.world = get function () {}
-            client.scheduler = this.scheduler
-            client.socket = this.socket
-
-            // for (const key in client) {
-            //     if (typeof (client as any)[key] == 'function') { (client as any)[key] = (...args: any) => { (this as any)[key](...args) }; }
-            //     else { (client as any)[key] = (this as any)[key]; }
-            // }
-        })
     }
 
     /**
@@ -181,10 +172,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public include(client: Client): Client {
         this.inclusions.push(client)
-        client.disconnect()
+
+        client.scheduler = this.scheduler
         client.send = (...args) => this.send(...args)
         client.block = (...args) => this.block(...args)
-        client.scheduler = this.scheduler
 
         for (const event_name of client.eventNames()) {
             // https://stackoverflow.com/questions/49177088/nodejs-eventemitter-get-listeners-check-if-listener-is-of-type-on-or-once
@@ -192,9 +183,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
             if (typeof functions == 'function') functions = [functions]
 
             for (const listener of functions) {
-                const is_once = listener.name.includes('onceWrapper')
-
-                if (is_once)
+                if (listener.name.includes('onceWrapper'))
                     this.once(event_name, listener.bind(this))
                 else
                     this.on(event_name, listener.bind(this))
@@ -202,6 +191,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
         }
 
         return this
+    }
+
+    public ping_modules(callback: (c: Client) => void) {
+        this.inclusions.forEach(callback)
     }
 
     //
