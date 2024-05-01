@@ -9,7 +9,6 @@
 // index file
 import Client from 'pixelwalker.js'
 import CommandManager from './command.js'
-
 const client = new Client({ token: 'YOUR TOKEN HERE' })
 
 client.on('start', () => world.say('🤖 Connected!'))
@@ -23,7 +22,6 @@ client
 ```js
 // command file
 import Client from 'pixelwalker.js'
-
 const client = new Client({})
 
 client.on('cmd:hello', async ([player, _]) => {
