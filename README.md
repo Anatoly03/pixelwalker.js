@@ -75,3 +75,24 @@ client.on('cmd:replace', async ([player, _, from, to]) => {
 ```
 
 To replace all blocks of a kind, you can use the following procedure: List all blocks of replacing type in the world data, then place on all given coordinates the wished block type. If you want to make sure, that code continues to run only after all blocks are placed (without caring about placement order), await all promises.
+
+```js
+const brushes = {}
+
+client.on('player:block', async ([player, pos, block]) => {
+    let brush = brushes[player.id]
+    if (brush == undefined) return
+    for (let x = -Math.floor(brush / 2); x < brush / 2; x++)
+    for (let y = -Math.floor(brush / 2); y < brush / 2; y++)
+    if ((x +.5) ** 2 + (y+.5) ** 2 <= (brush/2) ** 2)
+        client.block(pos[0] + x, pos[1] + y, pos[2], block)
+})
+
+client.on('cmd:brush', ([player, _, size]) => {
+    const value = parseInt(size)
+    brushes[player.id] = value != NaN ? value : 1
+})
+```
+
+In this example you create a public command `!brush <size>` which will store an individual brush setting for every player. This will be then used by the bot to create a a circle of the given radius. To make it a square, you can remove the if-condition that uses the pythagorean theorem.
+
