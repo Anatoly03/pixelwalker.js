@@ -1,14 +1,23 @@
 
 # API Reference
 
-## `Client`
+## `Client` extends [`EventEmitter`](https://nodejs.org/api/events.html#class-eventemitter)
 
-- `constructor({ token: string })` Login with token.
+```js
+connect: boolean                    // Get connection state of client.
+self: Player?                       // Once connected, get bot player.
+world: World?                       // Once connected, access world data.
+cmdPrefix: string[] = ['.', '!']    // Set accepted prefici for commands.
+```
 
-- `connected: boolean` Get connection state of client.
-- `self: Player?` Once connected, get bot player.
-- `world: World?` Once connected, access world data.
-- `cmdPrefix: string[]` Set accepted prefici for commands.
+#### Constructor
+
+You can login with only one way right now, by providing your token. It is recommended to use [dotenv](https://www.npmjs.com/package/dotenv). Do not forget to put `.env` into `.gitignore`
+
+```js
+import 'dotenv/config'
+const client = new Client({ token: process.env.TOKEN })
+```
 
 #### `connect(world_id: string, world_type?: string)`
 
@@ -83,12 +92,7 @@ Set self into motion
 
 Fill the structure `world` at given coordinates.
 
-
-
-
-
-
-### Receive
+### Client Events
 
 To receive serialized, unprocessed events from the game, see [REFERENCE.md](REFERENCE.md)
 
@@ -109,8 +113,7 @@ To receive serialized, unprocessed events from the game, see [REFERENCE.md](REFE
 | `cmd:*` | `Player`, ...`args` | Retrieve specific commands from messages. Replace `*` with command to listen to. For `!ping`, the event is `cmd:ping`. Arguments are provided by the player in chat. You can access `client.cmdPrefix` to set a list of allowed command prefices. |
 | `world:clear` | | The World was cleared. |
 
-
-### `class Player`
+## `Player`
 
 ```js
 readonly id: number
