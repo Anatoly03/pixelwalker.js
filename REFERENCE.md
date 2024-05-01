@@ -71,6 +71,8 @@ client.say('🤖 Simon the Bot says, move to the right.')
 
 #### `block(x, y, layer, block)`
 
+Place a block. Note that the promise that is returned awaits the actual placement of the block server side. Do not await individual block messages unless needed.
+
 ```js
 client.block(19, 31, 0, 'basic_blue_bg')
 client.block(19, 31, 1, new Block('gravity_slow_dot'))
