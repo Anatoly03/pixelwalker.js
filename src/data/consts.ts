@@ -17,7 +17,7 @@ export const enum HeaderTypes {
 }
 
 export interface LibraryEvents {
-    'error': [[Error]]
+    'error': [[string]]
     'close': [[number, Buffer]]
     'start': [[Player]]
     'player:join': [[Player]]

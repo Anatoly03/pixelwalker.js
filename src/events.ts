@@ -178,20 +178,25 @@ export default function init_events (client: Client) {
      * TODO
      */
     client.raw.on('placeBlock', async ([id, x, y, layer, bid, ...args]) => {
+        if (client.scheduler == null) return
+
         const player = await client.wait_for(() => client.players.get(id))
         const world = await client.wait_for(() => client.world)
         const [position, block] = world.place(x, y, layer, bid, args)
         
         const key: `${number}.${number}.${0|1}` = `${x}.${y}.${layer}`
-        const entry = client.scheduler?.block_queue.get(key)
+        const entry = client.scheduler.block_queue.get(key)
 
         // console.log('receive', block.name)
 
-        if (client.self && entry && client.self.id == id) {
-            if (client.scheduler?.block_queue.get(key)?.isSameAs(block)) {
-                client.scheduler?.block_queue.delete(key)
-            }
+        if (entry) {
+            client.scheduler.block_queue.delete(key)
         }
+        // if (client.self && entry && client.self.id == id) {
+        //     if (client.scheduler.block_queue.get(key)?.isSameAs(block)) {
+        //         client.scheduler.block_queue.delete(key)
+        //     }
+        // }
 
         client.emit('player:block', [player, position, block])
     })

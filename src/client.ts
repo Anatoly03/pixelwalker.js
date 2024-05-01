@@ -67,6 +67,11 @@ export default class Client extends EventEmitter<LibraryEvents> {
         // On process interrupt, gracefully disconnect.
         // DO NOT merge this into one function, otherwise it does not work.
         process.on('SIGINT', (signal) => this.disconnect())
+
+        // Print unhandled promises after termination
+        process.on("unhandledRejection", (error) => {
+            console.error(error); // This prints error with stack included (as for normal errors)
+        });
     }
 
     /**
@@ -88,8 +93,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
         }
 
         this.socket.on('message', (event) => this.receive_message(Buffer.from(event as any)))
-        this.socket.on('error', (err) => this.emit('error', [err]))
-        this.socket.on('close', (code, buffer) => this.emit('close', [code, buffer]))
+        this.socket.on('error', (err: Buffer) => { this.emit('error', [err.toString('ascii')]); this.disconnect() })
+        this.socket.on('close', (code, buffer) => { this.emit('close', [code, buffer]); this.disconnect() })
 
         this.connected = true
 
@@ -122,7 +127,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
             return this.raw.emit(event_name, data as any)
         }
 
-        this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
+        this.emit('error', [`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`])
     }
 
     /**
@@ -153,6 +158,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public disconnect() {
         if (this.debug) console.debug('Disconnect')
+        this.connected = false
         this.scheduler?.disconnect()
         this.pocketbase?.authStore.clear()
         this.socket?.close()
@@ -163,6 +169,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * gets the event calls from `client` and a links them to `this`
      */
     public include(client: Client): Client {
+        client.disconnect()
         client.send = (...args) => this.send(...args)
         client.block = (...args) => this.block(...args)
         client.scheduler = this.scheduler
@@ -200,8 +207,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
         // if (this.debug && Buffer.concat(args)[0] != 0x3f) console.debug('Sending', Buffer.concat(args))
 
         return new Promise((res, rej) => {
-            if (!this.socket) return rej(false)
-            if (this.socket.readyState != this.socket.OPEN) return rej(false)
+            if (!this.socket) throw new Error('Socket not existing.')
+            if (this.socket.readyState != this.socket.OPEN) throw new Error('Socket not connected.')
             const buffer = Buffer.concat(args)
             this.socket.send(buffer, {}, (err: any) => {
                 if (err) return rej(err)
@@ -214,10 +221,11 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
     }
 
-    public block(x: number, y: number, layer: 0 | 1, block: number | string | Block): Promise<true> {
+    public block(x: number, y: number, layer: 0 | 1, block: number | string | Block): Promise<boolean> {
+        if (!this.connected) return Promise.resolve(false)
         if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
         if (!(block instanceof Block)) return Promise.resolve(true)
-        if (!this.scheduler) {console.log(this); throw new Error('Scheduler is not defined.')}
+        if (!this.scheduler) { console.log(this); throw new Error('Scheduler is not defined.') }
         if (this.world?.[layer == 1 ? 'foreground' : 'background'][x][y]?.isSameAs(block)) return Promise.resolve(true)
 
         return this.scheduler.block([x, y, layer], block)
@@ -247,7 +255,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public async fill(xt: number, yt: number, world: World, args?: { animation?: (b: any) => any, write_empty?: boolean }) {
         if (!args) args = { write_empty: true }
 
-        const promises = []
+        const promises: Promise<boolean>[] = []
+        // const promises_debug: Block[] = []
+
         this.world = await this.wait_for(() => this.world)
         const to_be_placed: [WorldPosition, Block][] = []
 
@@ -270,8 +280,13 @@ export default class Client extends EventEmitter<LibraryEvents> {
             const yielded = generator.next()
             const [[x, y, layer], block]: any = yielded.value
             promises.push(this.block(x, y, layer, block))
+            // promises_debug.push(block)
         }
 
-        await Promise.all(promises)
+        // for (let i = 0; i < promises.length; i++) {
+        //     console.log(promises_debug[i], promises[i])
+        // }
+
+        return Promise.all(promises)
     }
 }

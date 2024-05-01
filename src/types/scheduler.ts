@@ -66,13 +66,15 @@ export default class Scheduler {
      * Place a block to the scheduler
      */
     public block([x, y, layer]: WorldPosition, block: Block) {
+        if (!this.client.connected) return Promise.reject("Client not connected!")
+
         const key: `${number}.${number}.${0|1}` = `${x}.${y}.${layer}`
         this.block_queue.set(key, block)
 
         const promise = (res: (v: any) => void, rej: (v: any) => void) => {
-            if (!this.block_queue.get(key)) {
-                return res(true)
-            }
+            if (!this.client.connected) return rej("Client not connected")
+            if (!this.block_queue.get(key)) return res(true)
+            // console.log(this.block_queue)
             setTimeout(() => promise(res, rej), 5)
         }
 
