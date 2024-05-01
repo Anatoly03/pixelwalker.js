@@ -65,7 +65,8 @@ export default class Player {
     }
 
     public async pm(content: string) {
-        this.client.say(`/pm ${this.username} ${content}`)
+        this.client.say(`/pm #${this.id} ${content}`)
+        // this.client.say(`/pm ${this.username} ${content}`)
     }
 
     public async respond(content: string) {
@@ -73,11 +74,22 @@ export default class Player {
     }
 
     public async kick(reason: string) {
-        this.client.say(`/kick ${this.username} ${reason}`)
+        this.client.say(`/kick #${this.id} ${reason}`)
+        // this.client.say(`/kick ${this.username} ${reason}`)
     }
 
     public async edit(value: boolean) {
-        this.client.say(`/${value ? 'giveedit' : 'takeedit'} ${this.username}`)
+        this.client.say(`/${value ? 'giveedit' : 'takeedit'} #${this.id}`)
+        // this.client.say(`/${value ? 'giveedit' : 'takeedit'} ${this.username}`)
+    }
+
+    public async god(value: boolean) {
+        this.client.say(`/${value ? 'givegod' : 'takegod'} #${this.id}`)
+        // this.client.say(`/${value ? 'givegod' : 'takegod'} ${this.username}`)
+    }
+
+    public async crown(value: boolean) {
+        this.client.say(`/${value ? 'givecrown' : 'takecrown'} #${this.id}`)
     }
 
     public async reset() {

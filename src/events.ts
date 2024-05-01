@@ -1,14 +1,14 @@
-import Client from "./client.js";
-import { MessageType } from "./data/consts.js";
-import { Bit7, Magic } from "./types.js";
-import Player from "./types/player.js";
-import World from "./world.js";
+
+import Client from "./client.js"
+import { MessageType } from "./data/consts.js"
+import { Magic, Bit7 } from "./types.js"
+import Player from "./types/player.js"
+import World from "./types/world.js"
 
 /**
  * Event Initialiser for Client
  */
-export default (client: Client) => {
-
+export default function init_events (client: Client) {
     /**
      * On init, set everything up
      */
@@ -18,7 +18,7 @@ export default (client: Client) => {
         client.world = new World(width, height)
         client.world.init(buffer)
 
-        const self = new Player({
+        client.self = new Player({
             client,
             id,
             cuid,
@@ -29,8 +29,8 @@ export default (client: Client) => {
             y: y / 16,
         })
 
-        client.players.set(id, self)
-        client.emit('start', [self])
+        client.players.set(id, client.self)
+        client.emit('start', [client.self])
     })
 
     /**
@@ -106,7 +106,7 @@ export default (client: Client) => {
         // TODO hit space
 
         // TODO
-        // this.emit('player:move', [player])
+        // client.emit('player:move', [player])
 
         player.horizontal = horizontal
         player.vertical = vertical
@@ -169,9 +169,9 @@ export default (client: Client) => {
         player.blue_coins = blue_coins
         player.deaths = death_count
 
-        if (old_coins != gold_coins) client.emit('player:coin', [player, old_coins])
-        if (old_blue_coins != blue_coins) client.emit('player:coin:blue', [player, old_blue_coins])
-        if (old_death_count != death_count) client.emit('player:death', [player, old_death_count])
+        if (old_coins < gold_coins) client.emit('player:coin', [player, old_coins])
+        if (old_blue_coins < blue_coins) client.emit('player:coin:blue', [player, old_blue_coins])
+        if (old_death_count < death_count) client.emit('player:death', [player, old_death_count])
     })
 
     /**
@@ -181,6 +181,18 @@ export default (client: Client) => {
         const player = await client.wait_for(() => client.players.get(id))
         const world = await client.wait_for(() => client.world)
         const [position, block] = world.place(x, y, layer, bid, args)
+        
+        const key: `${number}.${number}.${0|1}` = `${x}.${y}.${layer}`
+        const entry = client.scheduler?.block_queue.get(key)
+
+        // console.log('receive', block.name)
+
+        if (client.self && entry && client.self.id == id) {
+            if (client.scheduler?.block_queue.get(key)?.isSameAs(block)) {
+                client.scheduler?.block_queue.delete(key)
+            }
+        }
+
         client.emit('player:block', [player, position, block])
     })
 

@@ -86,9 +86,10 @@ export function Double(value: number): Buffer {
  * @returns Buffer
  */
 export function Boolean(value: boolean): Buffer {
-    const buf = Buffer.from([7, 0])
-    if (value) buf.writeUInt8(1, 1)
-    return buf
+    return Buffer.from([7, value ? 1 : 0])
+    // const buf = Buffer.from([7, 0])
+    // if (value) buf.writeUInt8(1, 1)
+    // return buf
 }
 
 /**

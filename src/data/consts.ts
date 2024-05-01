@@ -23,8 +23,7 @@ export interface LibraryEvents {
     'player:join': [[Player]]
     'player:leave': [[Player]]
     'chat': [[Player, string]]
-    'cmd:': [[Player, ...any]] // This is mainly used for type hinting/ auto complete.
-    [key: `cmd:${string}`]: [[Player, ...any]]
+    [key: `cmd:${string}`]: [[Player, ...string[]]]
     'player:face': [[Player, number, number]]
     'player:god': [[Player]]
     'player:mod': [[Player]]
@@ -60,7 +59,7 @@ export interface RawGameEvents {
     'playerWin':                [[number]], // CURRENTLY NOT IMPLEMENTED IN THE GAME
     'localSwitchChange':        [[number, number, number]],
     'localSwitchReset':         [[number, number]],
-    'globalSwitchChange':       [[number, number]],
+    'globalSwitchChange':       [[number, number, number]],
     'globalSwitchReset':        [[number, number]],
 }
 
@@ -107,14 +106,14 @@ export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
     'spikes':                   [HeaderTypes.Int32],
 
     'local_switch':             [HeaderTypes.Int32],
-    'local_switch_activator':   [HeaderTypes.Int32, HeaderTypes.Boolean],
-    'local_switch_resetter':    [HeaderTypes.Boolean],
+    'local_switch_activator':   [HeaderTypes.Int32, HeaderTypes.Byte],
+    'local_switch_resetter':    [HeaderTypes.Byte],
     'local_switch_door':        [HeaderTypes.Int32],
     'local_switch_gate':        [HeaderTypes.Int32],
 
     'global_switch':            [HeaderTypes.Int32],
-    'global_switch_activator':  [HeaderTypes.Int32, HeaderTypes.Boolean],
-    'global_switch_resetter':   [HeaderTypes.Boolean],
+    'global_switch_activator':  [HeaderTypes.Int32, HeaderTypes.Byte],
+    'global_switch_resetter':   [HeaderTypes.Byte],
     'global_switch_door':       [HeaderTypes.Int32],
     'global_switch_gate':       [HeaderTypes.Int32],
 }

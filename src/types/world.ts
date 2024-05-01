@@ -1,10 +1,10 @@
 
 import stream from "stream"
 import YAML from 'yaml'
-import Block, { WorldPosition } from "./types/block.js"
-import { HeaderTypes, SpecialBlockData } from "./data/consts.js"
-import { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
-import { get2dArray, read7BitInt } from "./math.js"
+import Block, { WorldPosition } from "./block.js"
+import { HeaderTypes, SpecialBlockData } from "../data/consts.js"
+import { BlockMappings, BlockMappingsReverse } from '../data/mappings.js'
+import { get2dArray, read7BitInt } from "../math.js"
 
 /**
  * A World is an offline-saved chunk of two dimensional
@@ -16,7 +16,7 @@ export default class World {
     public height: number
     public foreground: Block[][]
     public background: Block[][]
-    public meta: {[keys: string]: any}
+    public meta: { [keys: string]: any }
 
     constructor(width: number, height: number) {
         this.width = width
@@ -24,6 +24,7 @@ export default class World {
         this.foreground = get2dArray(width, height)
         this.background = get2dArray(width, height)
         this.meta = {}
+        this.clear(false)
     }
 
     clear(border: boolean) {
@@ -31,8 +32,8 @@ export default class World {
             for (let y = 0; y < this.height; y++) {
                 const atBorder = border && (x == 0 || y == 0 || x == this.width - 1 || y == this.height - 1)
 
-                this.foreground[x][y] = atBorder ? new Block(BlockMappings['basic_gray']) : new Block(0),
-                    this.background[x][y] = new Block(0)
+                this.foreground[x][y] = atBorder ? new Block(BlockMappings['basic_gray']) : new Block(0)
+                this.background[x][y] = new Block(0)
             }
         }
     }
@@ -77,7 +78,7 @@ export default class World {
         const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
 
         for (const type of arg_types) {
-            switch(type) {
+            switch (type) {
                 case HeaderTypes.String:
                     [length, offset] = read7BitInt(buffer, offset)
                     block.data.push(buffer.subarray(offset, offset + length).toString('ascii'))
@@ -162,6 +163,22 @@ export default class World {
             }
     }
 
+    public replace_all(block: Block, new_block: Block) {
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height; y++) {
+                if (this.foreground[x][y].name == block.name)
+                    this.foreground[x][y] = new_block
+                if (this.background[x][y].name == block.name)
+                    this.background[x][y] = new_block
+            }
+    }
+
+    //
+    //
+    // Parsers
+    //
+    //
+
     /**
      * Write world data into a stream
      */
@@ -185,7 +202,7 @@ export default class World {
 
                 if (!data.palette.includes(block.name))
                     data.palette.push(block.name)
-                
+
                 const shortcut = data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
 
                 data.layers.foreground += shortcut + ' '
@@ -215,7 +232,7 @@ export default class World {
     public static fromString(data: string): World {
         const value = YAML.parse(data)
         const world = new World(value.width, value.height)
-        
+
         world.meta = value.meta
 
         const palette: string[] = value.palette
@@ -248,15 +265,29 @@ export default class World {
     }
 
     //
+    //
     // World Information
     //
+    //
 
-    public get total_coins(): number {
+    public total(block: string): number {
         let value = 0
         for (let x = 0; x < this.width; x++)
             for (let y = 0; y < this.height; y++)
-                if (this.foreground[x][y].name == 'coin')
+                if (this.foreground[x][y].name == block)
                     value++
+        return value
+    }
+
+    public list(block: string): WorldPosition[] {
+        let value: WorldPosition[] = []
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height; y++) {
+                if (this.foreground[x][y].name == block)
+                    value.push([x, y, 1])
+                if (this.background[x][y].name == block)
+                    value.push([x, y, 0])
+            }
         return value
     }
 }
