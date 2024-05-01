@@ -218,21 +218,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
         if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
         if (!(block instanceof Block)) return Promise.resolve(true)
         if (!this.scheduler) {console.log(this); throw new Error('Scheduler is not defined.')}
-
         if (this.world?.[layer == 1 ? 'foreground' : 'background'][x][y]?.isSameAs(block)) return Promise.resolve(true)
 
         return this.scheduler.block([x, y, layer], block)
-
-        // this.block_queue.set(`${x}.${y}.${layer}`, block)
-
-        // const promise = (res: (v: any) => void, rej: (v: any) => void) => {
-        //     if (!this.block_queue.get(`${x}.${y}.${layer}`)) {
-        //         return res(true)
-        //     }
-        //     setTimeout(() => promise(res, rej), 5)
-        // }
-
-        // return new Promise(promise)
     }
 
     public god(value: boolean, mod_mode: boolean) {

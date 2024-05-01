@@ -67,7 +67,6 @@ export default class Scheduler {
      */
     public block([x, y, layer]: WorldPosition, block: Block) {
         const key: `${number}.${number}.${0|1}` = `${x}.${y}.${layer}`
-
         this.block_queue.set(key, block)
 
         const promise = (res: (v: any) => void, rej: (v: any) => void) => {
@@ -76,8 +75,6 @@ export default class Scheduler {
             }
             setTimeout(() => promise(res, rej), 5)
         }
-
-        // console.log(key, block)
 
         return new Promise(promise)
     }
