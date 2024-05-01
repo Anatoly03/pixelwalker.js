@@ -8,6 +8,8 @@ const BLOCKS_PER_QUEUE_TICK = 200
 const BLOCK_TICK = 50
 
 export default class Scheduler {
+    public running = false
+
     private client: Client
     private intervals: NodeJS.Timeout[] = []
     public block_queue: Map<`${number}.${number}.${0|1}`, Block>
@@ -16,8 +18,11 @@ export default class Scheduler {
         this.client = client
         this.intervals = []
         this.block_queue = new Map()
+    }
 
+    public start() {
         this.intervals.push(setInterval(() => this.fill_block_loop(), BLOCK_TICK))
+        this.running = true
     }
 
     /**
@@ -66,18 +71,17 @@ export default class Scheduler {
      * Place a block to the scheduler
      */
     public block([x, y, layer]: WorldPosition, block: Block) {
-        const key: `${number}.${number}.${0|1}` = `${x}.${y}.${layer}`
+        if (!this.client.connected) return Promise.reject("Client not connected!")
 
+        const key: `${number}.${number}.${0|1}` = `${x}.${y}.${layer}`
         this.block_queue.set(key, block)
 
         const promise = (res: (v: any) => void, rej: (v: any) => void) => {
-            if (!this.block_queue.get(key)) {
-                return res(true)
-            }
+            if (!this.client.connected) return rej("Client not connected")
+            if (!this.block_queue.get(key)) return res(true)
+            // console.log(this.block_queue)
             setTimeout(() => promise(res, rej), 5)
         }
-
-        // console.log(key, block)
 
         return new Promise(promise)
     }
@@ -85,7 +89,8 @@ export default class Scheduler {
     /**
      * Disconnect the intervals
      */
-    public disconnect() {
+    public stop() {
         this.intervals.forEach(i => clearInterval(i))
+        this.running = false
     }
 }

@@ -16,9 +16,10 @@ import init_events from './events.js'
 import Scheduler from './types/scheduler.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
-    public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
-
     public connected = false
+
+    public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
+    public scheduler: Scheduler = new Scheduler(this)
 
     private pocketbase: PocketBase | null
     private socket: WebSocket | null
@@ -30,9 +31,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     public readonly players: Map<number, Player> = new Map()
 
+    private inclusions: Client[] = []
+
     private move_tick: number = 0
 
-    public scheduler: Scheduler | null
 
     constructor(args: { token?: string, user?: string, pass?: string, flags?: {}, debug?: boolean }) {
         super()
@@ -42,7 +44,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.self = null
         this.world = undefined
         this.cmdPrefix = ['.', '!']
-        this.scheduler = null
 
         if (args.token) {
             this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
@@ -67,6 +68,11 @@ export default class Client extends EventEmitter<LibraryEvents> {
         // On process interrupt, gracefully disconnect.
         // DO NOT merge this into one function, otherwise it does not work.
         process.on('SIGINT', (signal) => this.disconnect())
+
+        // Print unhandled promises after termination
+        process.on("unhandledRejection", (error) => {
+            console.error(error); // This prints error with stack included (as for normal errors)
+        });
     }
 
     /**
@@ -88,13 +94,14 @@ export default class Client extends EventEmitter<LibraryEvents> {
         }
 
         this.socket.on('message', (event) => this.receive_message(Buffer.from(event as any)))
-        this.socket.on('error', (err) => this.emit('error', [err]))
-        this.socket.on('close', (code, buffer) => this.emit('close', [code, buffer]))
+        this.socket.on('error', (err) => { this.emit('error', [err]); this.disconnect() })
+        this.socket.on('close', (code, buffer) => { this.emit('close', [code, buffer.toString('ascii')]); this.disconnect() })
 
         this.connected = true
 
-        this.scheduler = new Scheduler(this)
+        this.ping_modules(client => client.socket = this.socket)
 
+        this.scheduler.start()
         init_events(this)
     }
 
@@ -153,7 +160,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public disconnect() {
         if (this.debug) console.debug('Disconnect')
-        this.scheduler?.disconnect()
+        this.connected = false
+        this.scheduler.stop()
         this.pocketbase?.authStore.clear()
         this.socket?.close()
     }
@@ -163,9 +171,11 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * gets the event calls from `client` and a links them to `this`
      */
     public include(client: Client): Client {
+        this.inclusions.push(client)
+
+        client.scheduler = this.scheduler
         client.send = (...args) => this.send(...args)
         client.block = (...args) => this.block(...args)
-        client.scheduler = this.scheduler
 
         for (const event_name of client.eventNames()) {
             // https://stackoverflow.com/questions/49177088/nodejs-eventemitter-get-listeners-check-if-listener-is-of-type-on-or-once
@@ -173,21 +183,18 @@ export default class Client extends EventEmitter<LibraryEvents> {
             if (typeof functions == 'function') functions = [functions]
 
             for (const listener of functions) {
-                const is_once = listener.name.includes('onceWrapper')
-
-                if (is_once)
+                if (listener.name.includes('onceWrapper'))
                     this.once(event_name, listener.bind(this))
                 else
                     this.on(event_name, listener.bind(this))
             }
         }
 
-        // for (const key in client) {
-        //     if (typeof (client as any)[key] == 'function') { (client as any)[key] = (...args: any) => { (this as any)[key](...args) }; }
-        //     else { (client as any)[key] = (this as any)[key]; }
-        // }
-
         return this
+    }
+
+    public ping_modules(callback: (c: Client) => void) {
+        this.inclusions.forEach(callback)
     }
 
     //
@@ -200,8 +207,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
         // if (this.debug && Buffer.concat(args)[0] != 0x3f) console.debug('Sending', Buffer.concat(args))
 
         return new Promise((res, rej) => {
-            if (!this.socket) return rej(false)
-            if (this.socket.readyState != this.socket.OPEN) return rej(false)
+            if (!this.socket) throw new Error('Socket not existing.')
+            if (this.socket.readyState != this.socket.OPEN) throw new Error('Socket not connected.')
             const buffer = Buffer.concat(args)
             this.socket.send(buffer, {}, (err: any) => {
                 if (err) return rej(err)
@@ -214,25 +221,14 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
     }
 
-    public block(x: number, y: number, layer: 0 | 1, block: number | string | Block): Promise<true> {
+    public block(x: number, y: number, layer: 0 | 1, block: number | string | Block): Promise<boolean> {
+        if (!this.connected) return Promise.resolve(false)
         if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
         if (!(block instanceof Block)) return Promise.resolve(true)
-        if (!this.scheduler) {console.log(this); throw new Error('Scheduler is not defined.')}
-
-        if (this.world?.[layer == 1 ? 'foreground' : 'background'][x][y].isSameAs(block)) return Promise.resolve(true)
+        if (!this.scheduler.running) { throw new Error('Scheduler is not defined.') }
+        if (this.world?.[layer == 1 ? 'foreground' : 'background'][x][y]?.isSameAs(block)) return Promise.resolve(true)
 
         return this.scheduler.block([x, y, layer], block)
-
-        // this.block_queue.set(`${x}.${y}.${layer}`, block)
-
-        // const promise = (res: (v: any) => void, rej: (v: any) => void) => {
-        //     if (!this.block_queue.get(`${x}.${y}.${layer}`)) {
-        //         return res(true)
-        //     }
-        //     setTimeout(() => promise(res, rej), 5)
-        // }
-
-        // return new Promise(promise)
     }
 
     public god(value: boolean, mod_mode: boolean) {
@@ -259,6 +255,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public async fill(xt: number, yt: number, world: World, args?: { animation?: (b: any) => any, write_empty?: boolean }) {
         if (!args) args = { write_empty: true }
 
+        const promises: Promise<boolean>[] = []
+        // const promises_debug: Block[] = []
+
         this.world = await this.wait_for(() => this.world)
         const to_be_placed: [WorldPosition, Block][] = []
 
@@ -280,8 +279,14 @@ export default class Client extends EventEmitter<LibraryEvents> {
         while (to_be_placed.length > 0) {
             const yielded = generator.next()
             const [[x, y, layer], block]: any = yielded.value
-            await this.block(x, y, layer, block)
-            await this.wait()
+            promises.push(this.block(x, y, layer, block))
+            // promises_debug.push(block)
         }
+
+        // for (let i = 0; i < promises.length; i++) {
+        //     console.log(promises_debug[i], promises[i])
+        // }
+
+        return Promise.all(promises)
     }
 }
