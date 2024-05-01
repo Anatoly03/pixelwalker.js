@@ -77,11 +77,14 @@ export default function init_events (client: Client) {
      */
     client.raw.on('chatMessage', async ([id, message]) => {
         const player = await client.wait_for(() => client.players.get(id))
-        const prefix = client.cmdPrefix.find(v => message.toLowerCase().startsWith(v))
 
         client.emit('chat', [player, message])
 
-        if (!message || !prefix) return
+        if (!message) return
+
+        const prefix = client.cmdPrefix.find(v => message.toLowerCase().startsWith(v))
+
+        if (!prefix) return
 
         const slice = message.substring(prefix.length)
         const arg_regex = /"[^"]+"|'[^']+'|[\w\-]+/gi // TODO add escape char \
