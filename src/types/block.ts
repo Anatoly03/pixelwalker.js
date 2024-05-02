@@ -8,14 +8,14 @@ export default class Block {
     public id: number
     public data: any[] = []
     
-    constructor(id: number | string) {
+    constructor(id: number | keyof typeof BlockMappings) {
         if (typeof id == 'string') {
             id = BlockMappings[id]
         }
         this.id = id
     }
 
-    public isSameAs(other: Block | string | number | null) {
+    public isSameAs(other: Block | keyof typeof BlockMappings | number | null) {
         if (other == null) return false
         if (typeof other == 'number') other = new Block(other)
         if (typeof other == 'string') other = new Block(other)
@@ -26,11 +26,11 @@ export default class Block {
         return true
     }
 
-    public isNotSameAs(other: Block | string | number | null) {
+    public isNotSameAs(other: Block | keyof typeof BlockMappings | number | null) {
         return !this.isSameAs(other)
     }
 
-    public get name(): string {
+    public get name(): keyof typeof BlockMappings {
         return BlockMappingsReverse[this.id]
     }
 
