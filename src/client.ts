@@ -78,7 +78,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * Connect client to server
      */
-    public async connect(world_id: string, room_type?: string) {
+    public async connect(world_id: string, room_type?: typeof RoomTypes[0]) {
         if (world_id == undefined) throw new Error('`world_id` was not provided in `Client.connect()`')
         if (room_type && !RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
         if (!room_type) room_type = RoomTypes[0]
@@ -221,7 +221,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
     }
 
-    public block(x: number, y: number, layer: 0 | 1, block: number | string | Block): Promise<boolean> {
+    public block(x: number, y: number, layer: 0 | 1, block: number | keyof typeof BlockMappings | Block): Promise<boolean> {
         if (!this.connected) return Promise.resolve(false)
         if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
         if (!(block instanceof Block)) return Promise.resolve(true)

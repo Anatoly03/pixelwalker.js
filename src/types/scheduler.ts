@@ -91,6 +91,7 @@ export default class Scheduler {
      */
     public stop() {
         this.intervals.forEach(i => clearInterval(i))
+        this.block_queue.clear()
         this.running = false
     }
 }
