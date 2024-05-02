@@ -235,7 +235,7 @@ export default class World {
 
         world.meta = value.meta
 
-        const palette: string[] = value.palette
+        const palette: (keyof typeof BlockMappings)[] = value.palette
         const foreground: number[] = value.layers.foreground.split(' ').map((v: string) => parseInt(v, 36))
         const background: number[] = value.layers.background.split(' ').map((v: string) => parseInt(v, 36))
         const block_data: any[][] = value.layers.data
@@ -270,7 +270,7 @@ export default class World {
     //
     //
 
-    public total(block: string): number {
+    public total(block: keyof typeof BlockMappings): number {
         let value = 0
         for (let x = 0; x < this.width; x++)
             for (let y = 0; y < this.height; y++)
@@ -279,7 +279,7 @@ export default class World {
         return value
     }
 
-    public list(block: string): WorldPosition[] {
+    public list(block: keyof typeof BlockMappings): WorldPosition[] {
         let value: WorldPosition[] = []
         for (let x = 0; x < this.width; x++)
             for (let y = 0; y < this.height; y++) {
