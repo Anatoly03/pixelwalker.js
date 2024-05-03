@@ -60,7 +60,7 @@ client.on('player:block', async ([player, pos, block]) => {
 
 In this example a very simple snake trail is generated. The block types are stored and iterated over in the array. Note: `Client.block(...)` returns a promise that awaits if the block was placed by the internal queue manager. Awaiting blocks will cause low performance.
 
-##### Replace block types
+##### Replace Block Types
 
 ```js
 client.on('cmd:replace', async ([player, _, from, to]) => {
