@@ -44,7 +44,7 @@ export interface RawGameEvents {
     'placeBlock':               [[number, number, number, 0 | 1, number, ...any]],
     'chatMessage':              [[number, string]],
     'systemMessage':            [[string, string, boolean]],
-    'playerJoined':             [[number, string, string, number, boolean, number, number, number, number, number, boolean, boolean, boolean, Buffer]],
+    'playerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, boolean, boolean, boolean, Buffer]],
     'playerLeft':               [[number]],
     'playerMoved':              [[number, number, number, number, number, number, number, -1 | 0 | 1, -1 | 0 | 1, boolean, boolean, number]],
     'playerFace':               [[number, number]],

@@ -39,7 +39,7 @@ export default function init_events (client: Client) {
      * On player join, create a player object with data
      * and emit `player:join` with said object.
      */
-    client.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, x, y, coins, blue_coins, deaths, god_mode, mod_mode, has_crown]) => {
+    client.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, can_edit, can_godmode, x, y, coins, blue_coins, deaths, god_mode, mod_mode, has_crown]) => {
         const player = new Player({
             client,
             id,
