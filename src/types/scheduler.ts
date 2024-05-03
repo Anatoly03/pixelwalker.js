@@ -5,7 +5,7 @@ import { Magic, Bit7, Int32, Byte, Boolean } from "../types.js"
 import Block, { WorldPosition } from "./block.js"
 
 const BLOCKS_PER_QUEUE_TICK = 200
-const BLOCK_TICK = 50
+const BLOCK_TICK = 25
 
 export default class Scheduler {
     public running = false
