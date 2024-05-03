@@ -189,6 +189,14 @@ Give or take the players crown. Note: Only one crown may exist per player.
 player.crown(true)
 ```
 
+#### `teleport(x, y)`
+
+Teleport a player to coordinates.
+
+```js
+player.teleport(5, 16)
+```
+
 #### `reset()`
 
 ```js
@@ -201,6 +209,7 @@ TODO describe properly
 
 | Event | Data | Description |
 |:-:|-|-|
+| `*` | ... | Receive *all* incoming messages, starting with header. |
 | `init` | `id`, `cuid`, `username`, `face`, `isAdmin`, `x`<sup>1</sup>, `y`<sup>1</sup>, `can_edit`, `can_god`, `title`, `plays`, `owner`, `global_switches`, `width`, `height`, `world_data` | |
 | `updateRights` |  | |
 | `worldMetadata` |  | |
@@ -212,6 +221,7 @@ TODO describe properly
 | `playerJoined` |  | |
 | `playerLeft` |  | |
 | `playerMoved` |  | |
+| `playerTeleported` |  | |
 | `playerFace` |  | |
 | `playerGodMode` |  | |
 | `playerModMode` |  | |
