@@ -95,4 +95,8 @@ export default class Player {
     public async reset() {
         this.client.say(`/resetplayer ${this.username}`)
     }
+
+    public async teleport(x: number, y: number) {
+        this.client.say(`/tp #${this.id} ${x} ${y}`)
+    }
 }
