@@ -92,6 +92,10 @@ export default class Player {
         this.client.say(`/${value ? 'givecrown' : 'takecrown'} #${this.id}`)
     }
 
+    public async teleport(x: number, y: number) {
+        this.client.say(`/tp #${this.id} ${x} ${y}`)
+    }
+
     public async reset() {
         this.client.say(`/resetplayer ${this.username}`)
     }
