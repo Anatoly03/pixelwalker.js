@@ -120,6 +120,18 @@ export default function init_events (client: Client) {
     })
 
     /**
+     * Teleport player and reset movement
+     */
+    client.raw.on('playerTeleported', async ([id, x, y]) => {
+        const player = await client.wait_for(() => client.players.get(id))
+
+        player.x = x / 16
+        player.y = y / 16
+
+        // TODO
+    })
+
+    /**
      * When player changes face, update.
      */
     client.raw.on('playerFace', async ([id, face]) => {
