@@ -3,7 +3,7 @@ import { SpecialBlockData } from "../data/consts.js"
 import { BlockMappings, BlockMappingsReverse } from "../data/mappings.js"
 
 export type WorldPosition = [number, number, 0 | 1]
-export type BlockIdentifier = keyof typeof BlockMappings | Block | number | string | null
+export type BlockIdentifier = keyof typeof BlockMappings | Block | number | null
 
 export default class Block {
     public id: number
@@ -13,7 +13,7 @@ export default class Block {
         if (id == null || id == undefined) id = 0
 
         switch (typeof id) {
-            case 'string':
+            case 'string': // as type `keyof typeof BlockMappings`
                 id = BlockMappings[id]
             case 'number':
                 this.id = id

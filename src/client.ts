@@ -8,7 +8,7 @@ import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_
 import { Magic, Bit7, String, Int32, Boolean, Double, Byte } from './types.js'
 import { BlockMappings } from './data/mappings.js'
 import World from './types/world.js'
-import Block, { WorldPosition } from './types/block.js'
+import Block, { BlockIdentifier, WorldPosition } from './types/block.js'
 import Player from './types/player.js'
 import { FIFO, RANDOM } from './types/animation.js'
 import { RoomTypes } from './data/room_types.js'
@@ -223,7 +223,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
     }
 
-    public block(x: number, y: number, layer: 0 | 1, block: number | keyof typeof BlockMappings | Block): Promise<boolean> {
+    public block(x: number, y: number, layer: 0 | 1, block: BlockIdentifier): Promise<boolean> {
         if (!this.connected) return Promise.reject("Client not connected")
         if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
         if (!(block instanceof Block)) return Promise.resolve(true)
