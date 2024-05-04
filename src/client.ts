@@ -126,6 +126,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
                 return
             }
 
+            this.raw.emit('*', [event_name, ...data])
+
             return this.raw.emit(event_name, data as any)
         }
 
