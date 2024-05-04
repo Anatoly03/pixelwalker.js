@@ -7,6 +7,6 @@ import { RawGameEvents } from "../data/consts";
 export default (events: (keyof RawGameEvents)[]) => {
     return (client: Client) => {
         for (const event_name of events)
-            client.raw.on(event_name, console.log)
+            client.raw.on(event_name, console.debug)
     }
 }
