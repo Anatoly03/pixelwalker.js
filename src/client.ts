@@ -9,7 +9,7 @@ import { Magic, Bit7, String, Int32, Boolean, Double, Byte } from './types.js'
 import { BlockMappings } from './data/mappings.js'
 import World from './types/world.js'
 import Block, { BlockIdentifier, WorldPosition } from './types/block.js'
-import Player, { PlayerBase } from './types/player.js'
+import Player, { PlayerBase, SelfPlayer } from './types/player.js'
 import { FIFO, RANDOM } from './types/animation.js'
 import { RoomTypes } from './data/room_types.js'
 import init_events from './events.js'
@@ -25,7 +25,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     private socket: WebSocket | null
     private debug: boolean
 
-    public self: Player | null
+    public self: SelfPlayer | null
     public world: World | undefined
     public cmdPrefix: string[]
 
@@ -222,10 +222,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
         })
     }
 
-    public say(content: string) {
-        return this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
-    }
-
     public block(x: number, y: number, layer: 0 | 1, block: BlockIdentifier): Promise<boolean> {
         // if (!this.connected) return Promise.reject("Client not connected")
         if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
@@ -236,24 +232,20 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.scheduler.block([x, y, layer], block)
     }
 
+    public say(content: string) {
+        return this.self?.say(content)
+    }
+
     public god(value: boolean, mod_mode: boolean) {
-        return this.send(Magic(0x6B), Bit7(MessageType[mod_mode ? 'playerModMode' : 'playerGodMode']), Boolean(value))
+        return this.self?.[mod_mode ? 'set_mod' : 'set_god'](value)
     }
 
     public face(value: number) {
-        return this.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
+        return this.self?.set_face(value)
     }
 
     public move(x: number, y: number, xVel: number, yVel: number, xMod: number, yMod: number, horizontal: -1 | 0 | 1, vertical: -1 | 0 | 1, space_down: boolean, space_just_down: boolean) {
-        return this.send(
-            Magic(0x6B), Bit7(MessageType['playerMoved']),
-            Double(x), Double(y),
-            Double(xVel), Double(yVel),
-            Double(xMod), Double(yMod),
-            Int32(horizontal), Int32(vertical),
-            Boolean(space_down), Boolean(space_just_down),
-            Int32(this.move_tick++)
-        )
+        return this.self?.move(x, y, xVel, yVel, xMod, yMod, horizontal, vertical, space_down, space_just_down)
     }
 
     // TODO add types for animation header

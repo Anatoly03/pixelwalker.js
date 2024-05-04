@@ -1,4 +1,6 @@
 import Client from "../client.js"
+import { MessageType } from "../data/consts.js"
+import { Bit7, Magic, Boolean, Int32, Double, String } from "../types.js"
 
 /**
  * Player Base
@@ -23,7 +25,7 @@ export class PlayerBase {
  * Player in World
  */
 export default class Player extends PlayerBase {
-    private readonly client: Client
+    protected readonly client: Client
 
     public readonly id: number
     public face: number
@@ -119,5 +121,40 @@ export default class Player extends PlayerBase {
 
     public async reset() {
         this.client.say(`/resetplayer #${this.id}`)
+    }
+}
+
+/**
+ * Self Player
+ */
+export class SelfPlayer extends Player {
+    private move_tick = 0
+
+    public say(content: string) {
+        return this.client.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
+    }
+
+    public set_god(value: boolean) {
+        return this.client.send(Magic(0x6B), Bit7(MessageType['playerGodMode']), Boolean(value))
+    }
+
+    public set_mod(value: boolean) {
+        return this.client.send(Magic(0x6B), Bit7(MessageType['playerModMode']), Boolean(value))
+    }
+
+    public set_face(value: number) {
+        return this.client.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
+    }
+
+    public move(x: number, y: number, xVel: number, yVel: number, xMod: number, yMod: number, horizontal: -1 | 0 | 1, vertical: -1 | 0 | 1, space_down: boolean, space_just_down: boolean) {
+        return this.client.send(
+            Magic(0x6B), Bit7(MessageType['playerMoved']),
+            Double(x), Double(y),
+            Double(xVel), Double(yVel),
+            Double(xMod), Double(yMod),
+            Int32(horizontal), Int32(vertical),
+            Boolean(space_down), Boolean(space_just_down),
+            Int32(this.move_tick++)
+        )
     }
 }

@@ -2,7 +2,7 @@
 import Client from "./client.js"
 import { MessageType } from "./data/consts.js"
 import { Magic, Bit7 } from "./types.js"
-import Player, { PlayerBase } from "./types/player.js"
+import Player, { PlayerBase, SelfPlayer } from "./types/player.js"
 import World from "./types/world.js"
 
 /**
@@ -20,7 +20,7 @@ export default function init_events (client: Client) {
 
         client.ping_modules(c => c.world = client.world)
 
-        client.self = new Player({
+        client.self = new SelfPlayer({
             client,
             id,
             cuid,
