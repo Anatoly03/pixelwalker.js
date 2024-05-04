@@ -6,13 +6,16 @@ import Block, { WorldPosition } from "./block.js"
 
 const BLOCKS_PER_QUEUE_TICK = 200
 const BLOCK_TICK = 25
+const PING_EVERY_MS = 5000
+
+type SchedulerEntry = [Block, number, number]
 
 export default class Scheduler {
     public running = false
 
     private client: Client
     private intervals: NodeJS.Timeout[] = []
-    public block_queue: Map<`${number}.${number}.${0|1}`, Block>
+    public block_queue: Map<`${number}.${number}.${0|1}`, SchedulerEntry>
 
     constructor(client: Client) {
         this.client = client
@@ -32,15 +35,17 @@ export default class Scheduler {
     private async fill_block_loop() {
         if (this.block_queue.size == 0) return
 
-        // let i, entry
+        const time = Date.now()
 
-        const entries = this.block_queue.entries()
-        // let entry = entries.next()
+        const entries = Array.from(this.block_queue.entries())
+            .sort((a, b) => a[1][2] - b[1][2]) // Sort by priority
+            .filter((_, i) => i < BLOCKS_PER_QUEUE_TICK) // Only take first N elements
+            .filter(v => (time - v[1][1]) > PING_EVERY_MS || v[1][2] == 0) // Wait Time exceeds or first time placing block
 
-        // console.log(this.block_queue.size)
+        if (entries.length == 0) return
 
-        for (let placed = 0, entry = entries.next(); placed < BLOCKS_PER_QUEUE_TICK && !entry.done; placed++, entry = entries.next()) {
-            const [pos, block]: [string, Block] = entry.value
+        for (const entry of entries) {
+            const [pos, [block, wait_time, priority]] = entry
             const [x, y, layer] = pos.split('.').map(v => parseInt(v))
 
             const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
@@ -61,10 +66,41 @@ export default class Scheduler {
                 }
             }
 
-            // console.log(pos, block)
+            entry[1][2]++
 
             this.client.send(Buffer.concat(buffer))
         }
+
+        // let entry = entries.next()
+
+        // console.log(this.block_queue.size)
+
+        // for (let placed = 0, entry = entries.next(); placed < BLOCKS_PER_QUEUE_TICK && !entry.done; placed++, entry = entries.next()) {
+        //     const [pos, [block, wait_time, priority]]: [string, SchedulerEntry] = entry.value
+        //     const [x, y, layer] = pos.split('.').map(v => parseInt(v))
+
+        //     const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
+        //     const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
+
+        //     for (let i = 0; i < arg_types.length; i++) {
+        //         switch (arg_types[i]) {
+        //             case HeaderTypes.Byte:
+        //                 buffer.push(Byte(block.data[i]))
+        //             // TODO other types
+        //             case HeaderTypes.Int32:
+        //                 buffer.push(Int32(block.data[i]))
+        //                 break
+        //             // TODO other types
+        //             case HeaderTypes.Boolean:
+        //                 buffer.push(Boolean(block.data[i]))
+        //                 break
+        //         }
+        //     }
+
+        //     // console.log(pos, block)
+
+        //     this.client.send(Buffer.concat(buffer))
+        // }
     }
 
     /**
@@ -74,7 +110,7 @@ export default class Scheduler {
         if (!this.client.connected) return Promise.reject("Client not connected!")
 
         const key: `${number}.${number}.${0|1}` = `${x}.${y}.${layer}`
-        this.block_queue.set(key, block)
+        this.block_queue.set(key, [block, Date.now(), 0])
 
         const promise = (res: (v: any) => void, rej: (v: any) => void) => {
             if (!this.client.connected) return rej("Client not connected")
