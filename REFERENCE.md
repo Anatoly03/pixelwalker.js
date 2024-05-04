@@ -52,7 +52,7 @@ export default (client) => {
 There are different predefined modules, that you can include with `import { Modules } from 'pixelwalker.js'`
 
 | Module | Description |
-|:-:|-|-|
+|:-:|-|
 | `Module.Debug()` | Accepts an array of raw event names as parameter and returns a module that will print the event calls into the console. |
 
 #### `wait(ms: number): Promise`
