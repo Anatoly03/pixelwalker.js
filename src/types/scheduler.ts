@@ -6,7 +6,7 @@ import Block, { WorldPosition } from "./block.js"
 
 const BLOCKS_PER_QUEUE_TICK = 200
 const BLOCK_TICK = 25
-const PING_EVERY_MS = 5000
+const PING_EVERY_MS = 1000
 
 type SchedulerEntry = [Block, number, number]
 
