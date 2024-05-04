@@ -53,7 +53,7 @@ There are different predefined modules, that you can include with `import { Modu
 
 | Module | Description |
 |:-:|-|
-| `Module.Debug()` | Accepts an array of raw event names as parameter and returns a module that will print the event calls into the console. |
+| `Module.Debug(events)` | Accepts an array `events` of raw event names as parameter and returns a module that will debug print the event calls into the console. |
 
 #### `wait(ms: number): Promise`
 
