@@ -92,8 +92,13 @@ export default class Player {
         this.client.say(`/${value ? 'givecrown' : 'takecrown'} #${this.id}`)
     }
 
-    public async teleport(x: number, y: number) {
-        this.client.say(`/tp #${this.id} ${x} ${y}`)
+    public async teleport(x: number, y:number): Promise<void>;
+    public async teleport(p: Player): Promise<void>;
+    public async teleport(x: number | Player, y?: number) {
+        if (typeof x == 'number' && typeof y == 'number')
+            this.client.say(`/tp #${this.id} ${x} ${y}`)
+        else if (x instanceof Player)
+            this.client.say(`/tp #${this.id} #${x.id}`)
     }
 
     public async reset() {
