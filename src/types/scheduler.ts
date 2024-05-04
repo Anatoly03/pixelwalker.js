@@ -9,12 +9,13 @@ type SchedulerEntry = [Block, number, number]
 export default class Scheduler {
     public running = false
 
-    public BLOCKS_PER_QUEUE_TICK = 100
-    public BLOCK_TICK = 5
-    public PING_EVERY_MS = 200
+    public BLOCKS_PER_QUEUE_TICK = 200
+    public BLOCK_TICK = 25
+    public PING_EVERY_MS = 400
 
     private client: Client
     private intervals: NodeJS.Timeout[] = []
+    
     public block_queue: Map<`${number}.${number}.${0|1}`, SchedulerEntry>
 
     constructor(client: Client) {

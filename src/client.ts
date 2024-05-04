@@ -217,7 +217,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     // TODO add types for animation header
-    public async fill(xt: number, yt: number, world: World, args?: { animation?: (b: any) => any, write_empty?: boolean }) {
+    public async fill(xt: number, yt: number, world: World, args?: { animation?: (b: any) => any, ms?: number, write_empty?: boolean }) {
         if (!args) args = { write_empty: true }
 
         const promises: Promise<boolean>[] = []
@@ -238,8 +238,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
                 }
             }
 
-        // TODO const generator = (args.animation || FIFO)(to_be_placed)
-        const generator = RANDOM(to_be_placed)
+        const generator = (args.animation || FIFO)(to_be_placed)
+        // const generator = RANDOM(to_be_placed)
 
         while (to_be_placed.length > 0) {
             const yielded = generator.next()
@@ -250,7 +250,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
                 throw new Error(v)
             })
             promises.push(promise)
-            // promises_debug.push(block)
+
+            if (args.ms) await this.wait(args.ms)
         }
 
         // for (let i = 0; i < promises.length; i++) {
