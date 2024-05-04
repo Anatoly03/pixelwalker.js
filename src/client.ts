@@ -175,22 +175,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public include(callback: (c: Client) => void): Client {
         callback(this)
-
-        // TODO remove
-
-        // for (const event_name of client.eventNames()) {
-        //     // https://stackoverflow.com/questions/49177088/nodejs-eventemitter-get-listeners-check-if-listener-is-of-type-on-or-once
-        //     let functions: (() => void)[] = (client as any)._events[event_name]
-        //     if (typeof functions == 'function') functions = [functions]
-
-        //     for (const listener of functions) {
-        //         if (listener.name.includes('onceWrapper'))
-        //             this.once(event_name, listener.bind(this))
-        //         else
-        //             this.on(event_name, listener.bind(this))
-        //     }
-        // }
-
         return this
     }
 
