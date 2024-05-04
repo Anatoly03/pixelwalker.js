@@ -33,20 +33,20 @@ client.connect('r450e0e380a815a', 'pixelwalker4')
 
 Disconnect client
 
-#### unstable `include(client: Client)`
+#### `include(callback: (client: Client) => void)`
 
-Include a module into the current client.
+Include a module into the current client. A module itself is a lambda function, that accepts `this` (the Client) as argument and provides modifications on the object itself
 
 ```js
 // index.js
 import Module from './path/to/mod.js'
-client.on('init', ([p]) => console.log('Main Called'))
+client.once('start', ([p]) => console.log('Main Called'))
 client.include(Module)
 
 // mod.js
-const client = new Client({})
-client.on('init', ([p]) => console.log('Module Called'))
-export default client
+export default (client) => {
+    client.once('start', ([p]) => console.log('Module Called'))
+}
 ```
 
 #### `wait(ms: number): Promise`
