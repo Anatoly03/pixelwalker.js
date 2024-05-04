@@ -5,6 +5,7 @@ import Block, { WorldPosition } from "./block.js"
 import { HeaderTypes, SpecialBlockData } from "../data/consts.js"
 import { BlockMappings, BlockMappingsReverse } from '../data/mappings.js'
 import { get2dArray, read7BitInt } from "../math.js"
+import { SolidBlocks } from "../data/block_properties.js"
 
 /**
  * A World is an offline-saved chunk of two dimensional
@@ -138,6 +139,16 @@ export default class Structure {
                     value.push([x, y, 1])
                 if (this.background[x][y].name == block)
                     value.push([x, y, 0])
+            }
+        return value
+    }
+
+    public get_walkable_positions(): WorldPosition[] {
+        let value: WorldPosition[] = []
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height - 1; y++) {
+                if ((this.foreground[x][y] == null || this.foreground[x][y].name == 'empty') && SolidBlocks.includes(this.foreground[x][y+1]?.name as string))
+                    value.push([x, y, 1])
             }
         return value
     }
