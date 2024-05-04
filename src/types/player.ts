@@ -102,6 +102,6 @@ export default class Player {
     }
 
     public async reset() {
-        this.client.say(`/resetplayer ${this.username}`)
+        this.client.say(`/resetplayer #${this.id}`)
     }
 }
