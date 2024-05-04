@@ -33,6 +33,17 @@ export interface LibraryEvents {
     'player:death': [[Player, number]]
     'player:block': [[Player, WorldPosition, Block]]
     'world:clear': [[]]
+
+    'player:keyboard:space:up': [[Player]]
+    'player:keyboard:space:down': [[Player]]
+    'player:keyboard:up:up': [[Player]]
+    'player:keyboard:up:down': [[Player]]
+    'player:keyboard:left:up': [[Player]]
+    'player:keyboard:left:down': [[Player]]
+    'player:keyboard:down:up': [[Player]]
+    'player:keyboard:down:down': [[Player]]
+    'player:keyboard:right:up': [[Player]]
+    'player:keyboard:right:down': [[Player]]
 }
 
 export interface RawGameEvents {

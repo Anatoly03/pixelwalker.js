@@ -122,6 +122,37 @@ export default function init_events (client: Client) {
         player.x = x / 16
         player.y = y / 16
 
+        if (player.horizontal != horizontal) {
+            if (player.horizontal == -1)
+                client.emit('player:keyboard:left:up', [player])
+            else if (player.horizontal == 1)
+                client.emit('player:keyboard:right:up', [player])
+
+            if (horizontal == -1)
+                client.emit('player:keyboard:left:down', [player])
+            else if (horizontal == 1)
+                client.emit('player:keyboard:right:down', [player])
+        }
+
+        if (player.vertical != vertical) {
+            if (player.vertical == -1)
+                client.emit('player:keyboard:up:up', [player])
+            else if (player.vertical == 1)
+                client.emit('player:keyboard:down:up', [player])
+
+            if (vertical == -1)
+                client.emit('player:keyboard:up:down', [player])
+            else if (vertical == 1)
+                client.emit('player:keyboard:down:down', [player])
+        }
+
+        if (space_down && space_just_down)
+            client.emit('player:keyboard:space:down', [player])
+
+        if (space_down == false && space_just_down == false && player.space_down == true)
+            client.emit('player:keyboard:space:up', [player])
+
+
         // TODO if (player.mod_x != undefined && player.mod_x != mod_x) // hit key right or left
         // TODO if (player.mod_y != undefined && player.mod_y != mod_y) // hit key up or down
         // TODO hit space
@@ -144,7 +175,7 @@ export default function init_events (client: Client) {
         player.x = x / 16
         player.y = y / 16
 
-        // TODO
+        // TODO momentum changes?
     })
 
     /**
