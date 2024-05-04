@@ -1,14 +1,32 @@
-import Client from "../client.js";
+import Client from "../client.js"
 
-export default class Player {
+/**
+ * Player Base
+ */
+export class PlayerBase {
+    public readonly cuid: string
+    public readonly username: string
+    public readonly isAdmin: boolean
+    
+    constructor(args: {
+        cuid: string
+        username: string
+        isAdmin: boolean
+    }) {
+        this.cuid = args.cuid
+        this.username = args.username
+        this.isAdmin = args.isAdmin
+    }
+}
+
+/**
+ * Player in World
+ */
+export default class Player extends PlayerBase {
     private readonly client: Client
 
     public readonly id: number
-    public readonly cuid: string
-    public readonly username: string
-
     public face: number
-    public isAdmin: boolean
     public x: number
     public y: number
     public god_mode: boolean
@@ -40,14 +58,12 @@ export default class Player {
         blue_coins?: number
         deaths?: number
     }) {
+        super(args)
+
         this.client = args.client
 
         this.id = args.id
-        this.cuid = args.cuid
-        this.username = args.username
-
         this.face = args.face
-        this.isAdmin = args.isAdmin
         this.x = args.x
         this.y = args.y
 
