@@ -99,7 +99,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.socket.on('close', (code, buffer) => { this.emit('close', [code, buffer.toString('ascii')]); this.disconnect() })
 
         this.connected = true
-
+        this.ping_modules(c => c.connected = true)
+        
         this.ping_modules(client => client.socket = this.socket)
 
         this.scheduler.start()
@@ -166,6 +167,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public disconnect() {
         if (this.debug) console.debug('Disconnect')
         this.connected = false
+        this.ping_modules(c => c.connected = false)
         this.scheduler.stop()
         this.pocketbase?.authStore.clear()
         this.socket?.close()
