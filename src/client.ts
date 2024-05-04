@@ -226,9 +226,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     public block(x: number, y: number, layer: 0 | 1, block: BlockIdentifier): Promise<boolean> {
-        if (!this.connected) return Promise.reject("Client not connected")
+        // if (!this.connected) return Promise.reject("Client not connected")
         if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
-        if (!(block instanceof Block)) return Promise.resolve(true)
+        if (!(block instanceof Block)) return Promise.reject("Expected `Block` or block identifier, got unknown object.")
         if (!this.scheduler.running) { throw new Error('Scheduler is not defined.') }
         if (this.world?.[layer == 1 ? 'foreground' : 'background'][x][y]?.isSameAs(block)) return Promise.resolve(true)
 
