@@ -1,4 +1,6 @@
-import Block, { WorldPosition } from "./block";
+import Block, { WorldPosition } from "./block"
+
+// export type AnimatorLambda = (to_be_placed: [WorldPosition, Block][]) => Generator<[WorldPosition, Block] | undefined, boolean, unknown>
 
 export function* FIFO (to_be_placed: [WorldPosition, Block][]) {
     while (to_be_placed.length > 0) {
