@@ -99,9 +99,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.socket.on('close', (code, buffer) => { this.emit('close', [code, buffer.toString('ascii')]); this.disconnect() })
 
         this.connected = true
-        this.ping_modules(c => c.connected = true)
-        
-        this.ping_modules(client => client.socket = this.socket)
 
         this.scheduler.start()
         init_events(this)
@@ -167,7 +164,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public disconnect() {
         if (this.debug) console.debug('Disconnect')
         this.connected = false
-        this.ping_modules(c => c.connected = false)
         this.scheduler.stop()
         this.pocketbase?.authStore.clear()
         this.socket?.close()
@@ -177,31 +173,25 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * Include Event handler from another client instance. This function
      * gets the event calls from `client` and a links them to `this`
      */
-    public include(client: Client): Client {
-        this.inclusions.push(client)
+    public include(callback: (c: Client) => void): Client {
+        callback(this)
 
-        client.scheduler = this.scheduler
-        client.send = (...args) => this.send(...args)
-        client.block = (...args) => this.block(...args)
+        // TODO remove
 
-        for (const event_name of client.eventNames()) {
-            // https://stackoverflow.com/questions/49177088/nodejs-eventemitter-get-listeners-check-if-listener-is-of-type-on-or-once
-            let functions: (() => void)[] = (client as any)._events[event_name]
-            if (typeof functions == 'function') functions = [functions]
+        // for (const event_name of client.eventNames()) {
+        //     // https://stackoverflow.com/questions/49177088/nodejs-eventemitter-get-listeners-check-if-listener-is-of-type-on-or-once
+        //     let functions: (() => void)[] = (client as any)._events[event_name]
+        //     if (typeof functions == 'function') functions = [functions]
 
-            for (const listener of functions) {
-                if (listener.name.includes('onceWrapper'))
-                    this.once(event_name, listener.bind(this))
-                else
-                    this.on(event_name, listener.bind(this))
-            }
-        }
+        //     for (const listener of functions) {
+        //         if (listener.name.includes('onceWrapper'))
+        //             this.once(event_name, listener.bind(this))
+        //         else
+        //             this.on(event_name, listener.bind(this))
+        //     }
+        // }
 
         return this
-    }
-
-    public ping_modules(callback: (c: Client) => void) {
-        this.inclusions.forEach(callback)
     }
 
     //

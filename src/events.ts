@@ -18,8 +18,6 @@ export default function init_events (client: Client) {
         client.world = new World(width, height)
         client.world.init(buffer)
 
-        client.ping_modules(c => c.world = client.world)
-
         client.self = new SelfPlayer({
             client,
             id,

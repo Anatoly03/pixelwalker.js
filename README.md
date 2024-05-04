@@ -20,13 +20,12 @@ client
 
 ```js
 import Client from 'pixelwalker.js'
-const client = new Client({})
 
-client.on('cmd:hello', async ([player, _]) => {
-    client.say(`🤖 Hello, ${player.username}! `)
-})
+export default (client) => 
+    client.on('cmd:hello', async ([player, _]) => {
+        client.say(`🤖 Hello, ${player.username}! `)
+    })
 
-export default client
 ```
 
 ## Installation
