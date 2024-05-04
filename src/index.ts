@@ -8,3 +8,7 @@ export * as Type from './types.js'
 export { MessageType } from './data/consts.js'
 export { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
 export { RoomTypes } from './data/room_types.js'
+
+export const Modules = {
+    Debug: (await import ('./modules/debug.js')).default
+}

@@ -23,7 +23,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     private pocketbase: PocketBase | null
     private socket: WebSocket | null
-    private debug: boolean
 
     public self: SelfPlayer | null
     public world: World | undefined
@@ -37,7 +36,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     private move_tick: number = 0
 
 
-    constructor(args: { token?: string, user?: string, pass?: string, flags?: {}, debug?: boolean }) {
+    constructor(args: { token?: string, user?: string, pass?: string, flags?: {} }) {
         super()
 
         this.pocketbase = null
@@ -63,8 +62,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
             // - 'simulate' = do not simulate player movements and track pseudo events: coins collected
             // - ...
         }
-
-        this.debug = args.debug || false
 
         // On process interrupt, gracefully disconnect.
         // DO NOT merge this into one function, otherwise it does not work.
@@ -118,8 +115,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
             const event_name = Object.entries(MessageType).find((k) => k[1] == event_id)?.[0] as keyof RawGameEvents
             const data = deserialise(buffer, offset)
 
-            if (this.debug && buffer[1] != MessageType['playerMoved']) console.debug('Receive', event_name, data)
-
             if (event_name == undefined) {
                 console.warn((`Unknown event type ${event_id}. API may be out of date. Deserialised: ${data}`))
                 return
@@ -162,7 +157,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * Disconnect client from server
      */
     public disconnect() {
-        if (this.debug) console.debug('Disconnect')
         this.connected = false
         this.scheduler.stop()
         this.pocketbase?.authStore.clear()
@@ -185,8 +179,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
     //
 
     public send(...args: Buffer[]): Promise<any | undefined> {
-        // if (this.debug && Buffer.concat(args)[0] != 0x3f) console.debug('Sending', Buffer.concat(args))
-
         return new Promise((res, rej) => {
             if (!this.socket) throw new Error('Socket not existing.')
             if (this.socket.readyState != this.socket.OPEN) throw new Error('Socket not connected.')

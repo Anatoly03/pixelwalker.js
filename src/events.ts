@@ -238,7 +238,6 @@ export default function init_events (client: Client) {
      * TODO
      */
     client.raw.on('worldCleared', async ([]) => {
-        console.debug('World Reload not yet implemented.')
         const world = await client.wait_for(() => client.world)
         world.clear(true)
         client.emit('world:clear', [])
