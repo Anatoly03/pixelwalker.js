@@ -42,12 +42,23 @@ Include a module into the current client. A module itself is a lambda function, 
 import Module from './path/to/mod.js'
 client.once('start', ([p]) => console.log('Main Called'))
 client.include(Module)
-
-// mod.js
+```
+```
 export default (client) => {
     client.once('start', ([p]) => console.log('Module Called'))
 }
 ```
+
+There are different predefined modules, that you can include importing <div class="highlight highlight-source-js"><code><span class="pl-k">import</span> { Modules } from 'pixelwalker.js'</code></div>
+
+| Event | Data | Description |
+|:-:|-|-|
+| `start` | `id` | Client joined the room after init. |
+| `error` | `err` | Called on API errors |
+| `player:join` | `Player` | Player joined the game.
+| `player:leave` | `Player` | Player left the game. The player object will be destroyed after the event processed.
+| `player:face` | `Player`, `number`, `number` | Player changed the face. First number is new face, second number is old face. |
+| `player:god` | `Player`, `boolean` | Player changed god mode |
 
 #### `wait(ms: number): Promise`
 
