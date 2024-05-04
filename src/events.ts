@@ -96,15 +96,16 @@ export default function init_events (client: Client) {
         let value
 
         // TODO <QUESTIONABLE ADDITION>
-        for (const match of slice.matchAll(arg_regex)) {
-            if (!Number.isNaN(value = parseFloat(match[0]))) {
-                args.push(value)
-            } else if (value = Array.from(client.globalPlayers.entries()).map(([cuid, p]) => p).find(p => p.username == match[0])) {
-                args.push(value)
-            } else {
-                args.push(match[0])
-            }
-        }
+        // for (const match of slice.matchAll(arg_regex)) {
+        //     if (!Number.isNaN(value = parseFloat(match[0]))) {
+        //         args.push(value)
+        //     } else if (value = Array.from(client.globalPlayers.entries()).map(([cuid, p]) => p).find(p => p.username == match[0])) {
+        //         args.push(value)
+        //     } else {
+        //         args.push(match[0])
+        //     }
+        // }
+        for (const match of slice.matchAll(arg_regex)) args.push(match[0])
         // </ QUESTIONABLE ADDITION>
 
         if (args.length < 2) return
