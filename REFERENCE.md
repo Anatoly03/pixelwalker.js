@@ -49,16 +49,11 @@ export default (client) => {
 }
 ```
 
-There are different predefined modules, that you can include importing <div class="highlight highlight-source-js"><code><span class="pl-k">import</span> { Modules } from 'pixelwalker.js'</code></div>
+There are different predefined modules, that you can include with `import { Modules } from 'pixelwalker.js'`
 
-| Event | Data | Description |
+| Module | Description |
 |:-:|-|-|
-| `start` | `id` | Client joined the room after init. |
-| `error` | `err` | Called on API errors |
-| `player:join` | `Player` | Player joined the game.
-| `player:leave` | `Player` | Player left the game. The player object will be destroyed after the event processed.
-| `player:face` | `Player`, `number`, `number` | Player changed the face. First number is new face, second number is old face. |
-| `player:god` | `Player`, `boolean` | Player changed god mode |
+| `Module.Debug()` | Accepts an array of raw event names as parameter and returns a module that will print the event calls into the console. |
 
 #### `wait(ms: number): Promise`
 
