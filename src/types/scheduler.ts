@@ -4,14 +4,14 @@ import { MessageType, HeaderTypes, SpecialBlockData } from "../data/consts.js"
 import { Magic, Bit7, Int32, Byte, Boolean } from "../types.js"
 import Block, { WorldPosition } from "./block.js"
 
-const BLOCKS_PER_QUEUE_TICK = 200
-const BLOCK_TICK = 25
-const PING_EVERY_MS = 1000
-
 type SchedulerEntry = [Block, number, number]
 
 export default class Scheduler {
     public running = false
+
+    public BLOCKS_PER_QUEUE_TICK = 100
+    public BLOCK_TICK = 5
+    public PING_EVERY_MS = 200
 
     private client: Client
     private intervals: NodeJS.Timeout[] = []
@@ -24,7 +24,7 @@ export default class Scheduler {
     }
 
     public start() {
-        this.intervals.push(setInterval(() => this.fill_block_loop(), BLOCK_TICK))
+        this.intervals.push(setInterval(() => this.fill_block_loop(), this.BLOCK_TICK))
         this.running = true
     }
 
@@ -39,8 +39,8 @@ export default class Scheduler {
 
         const entries = Array.from(this.block_queue.entries())
             .sort((a, b) => a[1][2] - b[1][2]) // Sort by priority
-            .filter((_, i) => i < BLOCKS_PER_QUEUE_TICK) // Only take first N elements
-            .filter(v => (time - v[1][1]) > PING_EVERY_MS || v[1][2] == 0) // Wait Time exceeds or first time placing block
+            .filter((_, i) => i < this.BLOCKS_PER_QUEUE_TICK) // Only take first N elements
+            .filter(v => (time - v[1][1]) > this.PING_EVERY_MS || v[1][2] == 0) // Wait Time exceeds or first time placing block
 
         if (entries.length == 0) return
 
