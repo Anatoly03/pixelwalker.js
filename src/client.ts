@@ -9,7 +9,7 @@ import { Magic, Bit7, String, Int32, Boolean, Double, Byte } from './types.js'
 import { BlockMappings } from './data/mappings.js'
 import World from './types/world.js'
 import Block, { BlockIdentifier, WorldPosition } from './types/block.js'
-import Player from './types/player.js'
+import Player, { PlayerBase } from './types/player.js'
 import { FIFO, RANDOM } from './types/animation.js'
 import { RoomTypes } from './data/room_types.js'
 import init_events from './events.js'
@@ -30,6 +30,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public cmdPrefix: string[]
 
     public readonly players: Map<number, Player> = new Map()
+    public readonly globalPlayers: Map<string, PlayerBase> = new Map()
 
     private inclusions: Client[] = []
 
