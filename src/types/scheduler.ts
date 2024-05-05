@@ -8,20 +8,17 @@ const BLOCKS_PER_QUEUE_TICK = 200
 const BLOCK_TICK = 50
 
 export default class Scheduler {
+    private client: Client
     public running = false
 
-    private client: Client
-    private intervals: NodeJS.Timeout[] = []
     public block_queue: Map<`${number}.${number}.${0|1}`, Block>
 
     constructor(client: Client) {
         this.client = client
-        this.intervals = []
         this.block_queue = new Map()
     }
 
     public start() {
-        this.intervals.push(setInterval(() => this.fill_block_loop(), BLOCK_TICK))
         this.running = true
     }
 
@@ -31,13 +28,14 @@ export default class Scheduler {
      */
     private async fill_block_loop() {
         if (this.block_queue.size == 0) return
+        if (!this.running) return
 
         // let i, entry
 
         const entries = this.block_queue.entries()
         // let entry = entries.next()
 
-        // console.log(this.block_queue.size)
+        console.log(this.block_queue.size)
 
         for (let placed = 0, entry = entries.next(); placed < BLOCKS_PER_QUEUE_TICK && !entry.done; placed++, entry = entries.next()) {
             const [pos, block]: [string, Block] = entry.value
@@ -65,6 +63,9 @@ export default class Scheduler {
 
             this.client.send(Buffer.concat(buffer))
         }
+
+        if (this.block_queue.size > 0)
+            setTimeout(this.fill_block_loop.bind(this), BLOCK_TICK)
     }
 
     /**
@@ -83,6 +84,8 @@ export default class Scheduler {
             setTimeout(() => promise(res, rej), 5)
         }
 
+        this.fill_block_loop()
+
         return new Promise(promise)
     }
 
@@ -90,7 +93,6 @@ export default class Scheduler {
      * Disconnect the intervals
      */
     public stop() {
-        this.intervals.forEach(i => clearInterval(i))
         this.block_queue.clear()
         this.running = false
     }
