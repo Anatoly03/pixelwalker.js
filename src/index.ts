@@ -7,7 +7,7 @@ export * as Animation from './types/animation.js'
 export * as Type from './types.js'
 export { MessageType } from './data/consts.js'
 export { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
-export { SolidBlocks } from './data/block_properties.js'
+export { SolidBlocks, Decorations } from './data/block_properties.js'
 export { RoomTypes } from './data/room_types.js'
 
 export const Modules = {

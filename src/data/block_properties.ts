@@ -101,3 +101,51 @@ export const SolidBlocks = [
     
     "beach_sand",
 ]
+
+export const Decorations = [
+    "gravity_down",
+    "gravity_dot",
+    "gravity_slow_dot",
+    "key_red",
+    "key_green",
+    "key_blue",
+    "water",
+    "water_surface",
+    "local_switch",
+    "local_switch_activator",
+    "local_switch_resetter",
+    "global_switch",
+    "global_switch_activator",
+    "global_switch_resetter",
+    
+    "secret_disappear",
+    
+    "meadow_grass_left",
+    "meadow_grass_middle",
+    "meadow_grass_right",
+    "meadow_bush_left",
+    "meadow_bush_middle",
+    "meadow_bush_right",
+    "meadow_yellow_flower",
+    "meadow_small_bush",
+
+    "easter_egg_blue",
+    "easter_egg_pink",
+    "easter_egg_yellow",
+    "easter_egg_red",
+    "easter_egg_green",
+    
+    "candy_cream_small",
+    "candy_cream_large",
+    "candy_gumdrop_red",
+    "candy_gumdrop_green",
+    "candy_gumdrop_pink",
+    "candy_pink_bg",
+    "candy_blue_bg",
+
+    "beach_parasol",
+    "beach_sand_pile_right",
+    "beach_sand_pile_left",
+    "beach_rock",
+    "beach_dry_bush",
+]
