@@ -20,8 +20,9 @@ export default class Scheduler {
     private client: Client
     public running = false
 
-    public static BLOCKS_PER_QUEUE_TICK = 200
+    public static BLOCKS_PER_QUEUE_TICK = 400
     public static BLOCK_TICK = 25
+    public static BLOCK_PING_FREQUENCY = 300
 
     public block_queue_running = false
     public block_queue: Map<`${number}.${number}.${0|1}`, SchedulerEntry<Block>>
@@ -49,15 +50,16 @@ export default class Scheduler {
 
         this.block_queue_running = true
 
-        // let i, entry
-
-        const entries = this.block_queue.entries()
-        // let entry = entries.next()
+        const entries = Array.from(this.block_queue.entries())
+            .sort((a, b) => a[1].priority - b[1].priority) // sort by priority
+            .filter((_, i) => i < Scheduler.BLOCKS_PER_QUEUE_TICK) // only take first N elements
+            .filter((v) => (Date.now() - v[1].timeSince) < Scheduler.BLOCK_PING_FREQUENCY || v[1].priority == 0) // first time ping or re-ping
 
         // console.log(this.block_queue.size)
 
-        for (let placed = 0, entry = entries.next(); placed < Scheduler.BLOCKS_PER_QUEUE_TICK && !entry.done; placed++, entry = entries.next()) {
-            const [pos, {value, priority, timeSince}]: [string, SchedulerEntry<Block>] = entry.value
+        for (const entry of entries) {
+        // for (let placed = 0, entry = entries.next(); placed < Scheduler.BLOCKS_PER_QUEUE_TICK && !entry.done; placed++, entry = entries.next()) {
+            const [pos, {value, priority, timeSince}]: [string, SchedulerEntry<Block>] = entry //.value
             const [x, y, layer] = pos.split('.').map(v => parseInt(v))
 
             const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(value.id)]
@@ -81,6 +83,8 @@ export default class Scheduler {
             // console.log(pos, block)
 
             this.client.send(Buffer.concat(buffer))
+
+            entry[1].priority++
         }
 
         setTimeout(this.fill_block_loop.bind(this), Scheduler.BLOCK_TICK)
