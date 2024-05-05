@@ -4,14 +4,27 @@ import { MessageType, HeaderTypes, SpecialBlockData } from "../data/consts.js"
 import { Magic, Bit7, Int32, Byte, Boolean } from "../types.js"
 import Block, { WorldPosition } from "./block.js"
 
-const BLOCKS_PER_QUEUE_TICK = 200
-const BLOCK_TICK = 50
+class SchedulerEntry<T> {
+    public priority: number
+    public timeSince: number
+    public value: T
+
+    constructor(value: T) {
+        this.priority = 0
+        this.timeSince = Date.now()
+        this.value = value
+    }
+}
 
 export default class Scheduler {
     private client: Client
     public running = false
 
-    public block_queue: Map<`${number}.${number}.${0|1}`, Block>
+    public static BLOCKS_PER_QUEUE_TICK = 200
+    public static BLOCK_TICK = 25
+
+    public block_queue_running = false
+    public block_queue: Map<`${number}.${number}.${0|1}`, SchedulerEntry<Block>>
 
     constructor(client: Client) {
         this.client = client
@@ -27,34 +40,40 @@ export default class Scheduler {
      * to automatically schedule block placement.
      */
     private async fill_block_loop() {
-        if (this.block_queue.size == 0) return
         if (!this.running) return
+
+        if (!this.block_queue || this.block_queue.size == 0) {
+            this.block_queue_running = false
+            return
+        }
+
+        this.block_queue_running = true
 
         // let i, entry
 
         const entries = this.block_queue.entries()
         // let entry = entries.next()
 
-        console.log(this.block_queue.size)
+        // console.log(this.block_queue.size)
 
-        for (let placed = 0, entry = entries.next(); placed < BLOCKS_PER_QUEUE_TICK && !entry.done; placed++, entry = entries.next()) {
-            const [pos, block]: [string, Block] = entry.value
+        for (let placed = 0, entry = entries.next(); placed < Scheduler.BLOCKS_PER_QUEUE_TICK && !entry.done; placed++, entry = entries.next()) {
+            const [pos, {value, priority, timeSince}]: [string, SchedulerEntry<Block>] = entry.value
             const [x, y, layer] = pos.split('.').map(v => parseInt(v))
 
-            const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
-            const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
+            const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(value.id)]
+            const arg_types: HeaderTypes[] = SpecialBlockData[value.name] || []
 
             for (let i = 0; i < arg_types.length; i++) {
                 switch (arg_types[i]) {
                     case HeaderTypes.Byte:
-                        buffer.push(Byte(block.data[i]))
+                        buffer.push(Byte(value.data[i]))
                     // TODO other types
                     case HeaderTypes.Int32:
-                        buffer.push(Int32(block.data[i]))
+                        buffer.push(Int32(value.data[i]))
                         break
                     // TODO other types
                     case HeaderTypes.Boolean:
-                        buffer.push(Boolean(block.data[i]))
+                        buffer.push(Boolean(value.data[i]))
                         break
                 }
             }
@@ -64,8 +83,7 @@ export default class Scheduler {
             this.client.send(Buffer.concat(buffer))
         }
 
-        if (this.block_queue.size > 0)
-            setTimeout(this.fill_block_loop.bind(this), BLOCK_TICK)
+        setTimeout(this.fill_block_loop.bind(this), Scheduler.BLOCK_TICK)
     }
 
     /**
@@ -75,7 +93,6 @@ export default class Scheduler {
         if (!this.client.connected) return Promise.reject("Client not connected!")
 
         const key: `${number}.${number}.${0|1}` = `${x}.${y}.${layer}`
-        this.block_queue.set(key, block)
 
         const promise = (res: (v: any) => void, rej: (v: any) => void) => {
             if (!this.client.connected) return rej("Client not connected")
@@ -84,8 +101,8 @@ export default class Scheduler {
             setTimeout(() => promise(res, rej), 5)
         }
 
-        this.fill_block_loop()
-
+        this.block_queue.set(key, new SchedulerEntry(block))
+        if (!this.block_queue_running) this.fill_block_loop()
         return new Promise(promise)
     }
 
