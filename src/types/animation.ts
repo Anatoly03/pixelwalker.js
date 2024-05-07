@@ -35,3 +35,20 @@ export function* RANDOM (to_be_placed: [WorldPosition, Block][]) {
     }
     return true
 }
+
+// export function* RANDOM (ms_delay: number) {
+//     async function* GEN (to_be_placed: [WorldPosition, Block][]) {
+//         while (to_be_placed.length > 0) {
+//             const index = Math.floor(to_be_placed.length * Math.random())
+//             const block = to_be_placed[index]
+//             to_be_placed.splice(index, 1)
+//             yield block
+//             if (ms_delay) {
+//                 await new Promise(r => setTimeout(r, ms_delay))
+//             }
+//         }
+//         return true
+//     }
+
+//     return GEN
+// }

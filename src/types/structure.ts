@@ -170,7 +170,8 @@ export default class Structure {
     /**
      * Write world data into a stream
      */
-    public toString(writer: stream.Writable): string {
+    // public toString(writer: stream.Writable): string ???
+    public toString(): string {
         const data: any = {
             'file-version': 0,
             meta: this.meta,
