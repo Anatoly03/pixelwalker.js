@@ -120,3 +120,34 @@ export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
     'global_switch_door':       [HeaderTypes.Int32],
     'global_switch_gate':       [HeaderTypes.Int32],
 }
+
+const SystemMessageFormat = {
+    'help': ['* SYSTEM', 'Available commands:%s'],
+    'receivePm': ['* %s > YOU', '%s'],
+    'sendPm': [ '* YOU > %s', '%s' ],
+    'noPm': ['* SYSTEM', 'You must specify a player and a message.'],
+    'playerMute': ['* SYSTEM', 'DOOM was muted.'],
+    'playerUnmute': ['* SYSTEM', 'DOOM was unmuted.'],
+    'alreadyGodMode': ['* SYSTEM', '%s already has god mode rights.'],
+    'noMoreGodMode': [ '* SYSTEM', "%s's god mode rights were taken away."],
+    'givenGodMode': [ '* SYSTEM', '%s was given god mode rights.' ],
+    'alreadyEdit': [ '* SYSTEM', '%s already has editing rights.' ],
+    'noMoreEdit': [ '* SYSTEM', "%s's editing rights were taken away." ],
+    'givenEdit': [ '* SYSTEM', 'ANATOLY was given editing rights.' ],
+    'playerTeleported': ['* SYSTEM', 'Teleported %s to %n, %n.'], // %s is "%n players" or USERNAME
+    'playerNotTeleported': ['* SYSTEM', 'You need to specify a player to teleport and the coordinates.'],
+    'noChangesToSave': ['* SYSTEM', 'There are no unsaved changes to save.'],
+    'savingWorld': ['* SYSTEM', 'Saving world...'],
+    'worldSaved': ['* SYSTEM', 'World saved!'],
+    'reloadingWorld': ['* SYSTEM', 'Reloading world...'],
+    'worldReloaded': ['* SYSTEM', 'World reloaded!'],
+    'worldCleared': ['* SYSTEM', 'World cleared!'],
+    'titleChanges': ['* SYSTEM', 'Title changed to "%s".'],
+    'titleNotChanged': ['* SYSTEM', 'You must specify an alphanumeric title.'],
+    'worldVisibility': ['* SYSTEM', 'World visibility set to %s.'],
+    'onKick': [ '* SYSTEM', '%s was kicked.' ],
+    'onKickWithReason': [ '* SYSTEM', '%s was kicked: %s' ],
+    'onSelfKicked': [ 'You were kicked!', 'Reason: %s' ],
+    'playerNotFound': [ '* SYSTEM', 'Player not found.' ],
+    'cantMuteYourself': [ '* SYSTEM', "You can't mute yourself." ]
+}
