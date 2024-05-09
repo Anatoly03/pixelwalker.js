@@ -167,9 +167,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * Include Event handler from another client instance. This function
      * gets the event calls from `client` and a links them to `this`
      */
-    public include(callback: (c: Client) => void): Client {
-        callback(this)
-        return this
+    public include<T>(callback: (c: Client) => Client & T): Client & T {
+        return callback(this) || this
     }
 
     //
