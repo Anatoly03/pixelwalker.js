@@ -12,5 +12,6 @@ export { SolidBlocks, Decorations } from './data/block_properties.js'
 export { RoomTypes } from './data/room_types.js'
 
 export const Modules = {
-    Debug: (await import ('./modules/debug.js')).default
+    Debug: (await import ('./modules/debug.js')).default,
+    PlayerKeyManager: (await import ('./modules/player-keys-manager.js')).default
 }

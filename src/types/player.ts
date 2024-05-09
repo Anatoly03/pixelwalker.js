@@ -39,11 +39,6 @@ export default class Player extends PlayerBase {
     public blue_coins: number
     public deaths: number
 
-    public horizontal: -1 | 0 | 1 | undefined
-    public vertical: -1 | 0 | 1 | undefined
-    public space_down: boolean | undefined
-    public space_just_down: boolean | undefined
-
     constructor(args: {
         client: Client
         id: number
