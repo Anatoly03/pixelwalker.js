@@ -54,6 +54,7 @@ There are different predefined modules, that you can include with `import { Modu
 | Module | Description |
 |:-:|-|
 | `Module.Debug(events)` | Accepts an array `events` of raw event names as parameter and returns a module that will debug print the event calls into the console. |
+| `Module.PlayerKeyManager(callback)` | Accepts an lambda `callback` that sends an event manager as parameter. This local event manager will emit events in the format `[key]:[state]` where `[key]` is one of `space`, `up`, `left`, `down` or `right` and `[state]` is `down` (when the player pressed key) or `up` where the player releases the key. |
 
 #### `wait(ms: number): Promise`
 
