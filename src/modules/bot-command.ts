@@ -31,6 +31,8 @@ export default function Module(client: Client): Client {
         client.emit(`cmd:${cmd}`, args)
     })
 
+    // TODO private message commands
+
     return client
 }
 
