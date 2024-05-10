@@ -16,6 +16,14 @@ export default function Module(client: Client): Client {
         client.emit('chat', [player, message])
     })
 
+    /**
+     * When receiving a private message, emit.
+     */
+    client.system.on('receivePm', async ([username, message]) => {
+        const players = await client.wait_for(() => Array.from(client.players.values()).filter(p => p.username == username))
+        client.emit('chat:pm', [players[0], message])
+    })
+
     return client
 }
 

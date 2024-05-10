@@ -23,6 +23,7 @@ export interface LibraryEvents {
     'player:join': [[Player]]
     'player:leave': [[Player]]
     'chat': [[Player, string]]
+    'chat:pm': [[Player, string]]
     [key: `cmd:${string}`]: [[Player, ...string[]]]
     'player:face': [[Player, number, number]]
     'player:god': [[Player]]
