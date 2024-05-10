@@ -121,6 +121,8 @@ Fill the structure `world` at given coordinates.
 | `player:death` | `Player`, `number` | A player died. Second number is old death count. To get new death count, use `Player.deaths` |
 | `player:block` | `Player`, `WorldPosition`, `Block` | A block was placed. |
 | `player:keyboard:*:*` | `Player` | Player pressed a key. First asterisk is a macro for one of the following `space`, `left`, `down`, `right`, `up` and the second dictates the state of the key. `down` for just pressed and `up` for released. |
+| `chat` | `Player`, `string` | Called on chat messages |
+| `chat:pm` | `Player`, `string` | Called on private chat messages |
 | `cmd:*` | `Player`, ...`args` | Retrieve specific commands from messages. Replace `*` with command to listen to. For `!ping`, the event is `cmd:ping`. Arguments are provided by the player in chat. You can access `client.cmdPrefix` to set a list of allowed command prefices. |
 | `world:clear` | | The World was cleared. |
 
