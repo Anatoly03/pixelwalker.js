@@ -12,8 +12,13 @@ import Block, { BlockIdentifier, WorldPosition } from './types/block.js'
 import Player, { PlayerBase, SelfPlayer } from './types/player.js'
 import { FIFO, RANDOM } from './types/animation.js'
 import { RoomTypes } from './data/room_types.js'
-import init_events from './events.js'
 import Scheduler from './types/scheduler.js'
+
+import BotCommandModule from './modules/bot-command.js'
+import ChatModule from './modules/chat.js'
+import PlayerManagerModule from './modules/player-manager.js'
+import InitModule from './modules/start.js'
+import WorldManagerModule from './modules/world-manager.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
     public connected = false
@@ -98,7 +103,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.connected = true
 
         this.scheduler.start()
-        init_events(this)
+        
+        this.include(BotCommandModule)
+        this.include(ChatModule)
+        this.include(PlayerManagerModule)
+        this.include(InitModule)
+        this.include(WorldManagerModule)
     }
 
     /**
