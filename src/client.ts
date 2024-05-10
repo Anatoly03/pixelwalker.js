@@ -4,7 +4,7 @@ import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 
 import { read7BitInt, deserialise } from './math.js'
-import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
+import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents, SystemMessageFormat, SystemMessageEvents } from './data/consts.js'
 import { Magic, Bit7, String, Int32, Boolean, Double, Byte } from './types.js'
 import { BlockMappings } from './data/mappings.js'
 import World from './types/world.js'
@@ -18,12 +18,14 @@ import BotCommandModule from './modules/bot-command.js'
 import ChatModule from './modules/chat.js'
 import PlayerManagerModule from './modules/player-manager.js'
 import InitModule from './modules/start.js'
+import SystemMessageModule from './modules/system-command.js'
 import WorldManagerModule from './modules/world-manager.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
     public connected = false
 
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
+    public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
     public scheduler: Scheduler = new Scheduler(this)
 
     private pocketbase: PocketBase | null
@@ -108,6 +110,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.include(ChatModule)
         this.include(PlayerManagerModule)
         this.include(InitModule)
+        this.include(SystemMessageModule)
         this.include(WorldManagerModule)
     }
 
