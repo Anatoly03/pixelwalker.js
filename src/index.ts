@@ -15,3 +15,7 @@ export const Modules = {
     Debug: (await import ('./modules/debug.js')).default,
     PlayerKeyManager: (await import ('./modules/player-keys-manager.js')).default
 }
+
+export const Util = {
+    GameRound: (await import ('./util/game-round.js')).GameRound
+}

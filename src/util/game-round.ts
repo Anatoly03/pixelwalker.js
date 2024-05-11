@@ -1,9 +1,7 @@
 import { Client } from "..";
 import Player from "../types/player";
 
-// TODO This class is currently unused.
-
-export abstract class GameRound<P extends Player> {
+export class GameRound<P extends Player> {
     client: Client
     players: Player[]
 
@@ -20,7 +18,7 @@ export abstract class GameRound<P extends Player> {
         this.players = this.players.filter(q => q.id != p.id)
     }
 
-    protected disqualify_events() {
+    public module(client: Client) {
         this.client.on('player:god', ([p]) => {
             if (p.god_mode) this.eliminate(p, 'turned on godmode')
         })
@@ -32,5 +30,7 @@ export abstract class GameRound<P extends Player> {
         this.client.on('player:leave', ([p]) => {
             this.eliminate(p, 'left the world')
         })
+
+        return client
     }
 }
