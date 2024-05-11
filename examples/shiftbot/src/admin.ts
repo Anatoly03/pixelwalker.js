@@ -9,6 +9,5 @@ export function is_bot_admin(player: Player) {
 
 export function module (client: Client) {
 
-
     return client
 }
