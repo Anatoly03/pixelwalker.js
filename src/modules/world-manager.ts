@@ -17,6 +17,18 @@ export default function Module(client: Client): Client {
     })
 
     /**
+     * Update world metadata
+     * // TODO Emit events?
+     */ 
+    client.raw.on('worldMetadata', async ([title, plays, owner]) => {
+        const world = await client.wait_for(() => client.world)
+
+        world.title = title
+        world.owner = owner
+        world.plays = plays
+    })
+
+    /**
      * TODO
      */
     client.raw.on('worldCleared', async ([]) => {
