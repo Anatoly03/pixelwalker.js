@@ -3,15 +3,16 @@ import PocketBase from 'pocketbase'
 import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 
+import RoomTypes from './data/room_types.js'
+
 import { read7BitInt, deserialise } from './math.js'
-import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents, SystemMessageFormat, SystemMessageEvents } from './data/consts.js'
-import { Magic, Bit7, String, Int32, Boolean, Double, Byte } from './types.js'
-import { BlockMappings } from './data/mappings.js'
-import World from './types/world.js'
-import Block, { BlockIdentifier, WorldPosition } from './types/block.js'
+import { MessageType, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents, SystemMessageEvents } from './data/consts.js'
+import { Magic } from './types.js'
+import Block, { BlockIdentifier } from './types/block.js'
 import Player, { PlayerBase, SelfPlayer } from './types/player.js'
-import { FIFO, RANDOM } from './types/animation.js'
-import { RoomTypes } from './data/room_types.js'
+
+import World from './types/world.js'
+import Structure from './types/structure.js'
 
 import BotCommandModule from './modules/bot-command.js'
 import ChatModule from './modules/chat.js'
@@ -19,6 +20,7 @@ import PlayerManagerModule from './modules/player-manager.js'
 import InitModule from './modules/start.js'
 import SystemMessageModule from './modules/system-command.js'
 import WorldManagerModule from './modules/world-manager.js'
+
 import BlockScheduler from './scheduler/scheduler-block.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
