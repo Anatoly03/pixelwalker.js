@@ -9,7 +9,7 @@ class SchedulerEntry<V> {
     constructor(v: V, priority: number = 0) {
         this.value = v
         this.priority = priority
-        this.timeSince = Date.now()
+        this.timeSince = performance.now()
     }
 }
 
@@ -53,8 +53,8 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
 
     private async try_run_loop(): Promise<any> {
         clearTimeout(this.loopInterval)
-        // console.log(`Trying to run: ${(Date.now() - this.lastTimeBusy) / 1000}s unbusy, looping in ${Math.max(this.LOOP_FREQUENCY - (Date.now() - this.lastTimeBusy), 0)}`)
-        return this.loopInterval = setTimeout(this.loop.bind(this), Math.max(this.LOOP_FREQUENCY - (Date.now() - this.lastTimeBusy), 0))
+        // console.log(`Trying to run: ${(performance.now() - this.lastTimeBusy) / 1000}s unbusy, looping in ${Math.max(this.LOOP_FREQUENCY - (performance.now() - this.lastTimeBusy), 0)}`)
+        return this.loopInterval = setTimeout(this.loop.bind(this), Math.max(this.LOOP_FREQUENCY - (performance.now() - this.lastTimeBusy), 0))
     }
 
     private async loop() {
@@ -63,7 +63,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
         if (!this.queue) return this.unbusy()
         if (this.queue.size == 0) return this.unbusy()
 
-        if (Date.now() - this.lastTimeBusy < this.LOOP_FREQUENCY) {
+        if (performance.now() - this.lastTimeBusy < this.LOOP_FREQUENCY) {
             return this.try_run_loop()
         }
 
@@ -71,7 +71,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
 
         // console.log(this.queue.size)
 
-        const time = Date.now()
+        const time = performance.now()
         const entries = Array.from(this.queue.entries())
             .filter(v => (time - v[1].timeSince) > this.RETRY_FREQUENCY || v[1].priority == 0) // Wait Time exceeds or first time placing block
             .sort((a, b) => b[1].priority - a[1].priority) // Sort by priority
@@ -80,7 +80,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
         // if (entries.length == 0) 
         //     return this.try_run_loop()
 
-        this.lastTimeBusy = Date.now()
+        this.lastTimeBusy = performance.now()
 
         // console.log('Loop', this.queue.size, 'Scheduled', entries.length)
 
