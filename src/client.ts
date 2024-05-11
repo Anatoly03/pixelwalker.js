@@ -22,6 +22,7 @@ import SystemMessageModule from './modules/system-command.js'
 import WorldManagerModule from './modules/world-manager.js'
 
 import BlockScheduler from './scheduler/scheduler-block.js'
+import { BlockMappings } from './data/mappings.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
     public connected = false
@@ -197,14 +198,17 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     // TODO
-    // public block(x: number, y: number, layer: 0 | 1, block: number | null | string, ...args: any[])
-    // public block(x: number, y: number, layer: 0 | 1, block: Block)
-    public block(x: number, y: number, layer: 0 | 1, block: BlockIdentifier): Promise<boolean> {
-        if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
-        if (!(block instanceof Block)) return Promise.reject("Expected `Block` or block identifier, got unknown object.")
-        if (this.world?.[layer == 1 ? 'foreground' : 'background'][x][y]?.isSameAs(block)) return Promise.resolve(true)
+    public block(x: number, y: number, layer: 0 | 1, block: number | null | keyof typeof BlockMappings, ...args: any[]): Promise<boolean>
+    public block(x: number, y: number, layer: 0 | 1, block: Block): Promise<boolean>
+    public block(x: number, y: number, layer: 0 | 1, block: BlockIdentifier, ...args: any[]): Promise<boolean> {
+        if (block == null) block = 0
+        if (typeof block == 'string' || typeof block == 'number') {
+            block = new Block(block)
+            block.data.push(...args)
+        } else if (!(block instanceof Block))
+            return Promise.reject("Expected `Block` or block identifier, got unknown object.")
 
-        return this.block_scheduler.add(`${x}.${y}.${layer}`, block)
+        return this.world?.put_block(x, y, layer, block) || Promise.reject('The `client.world` object was not loaded.')
     }
 
     public say(content: string) {

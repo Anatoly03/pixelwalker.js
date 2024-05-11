@@ -1,7 +1,7 @@
 
 import stream from "stream"
 import YAML from 'yaml'
-import Block, { WorldPosition } from "./block.js"
+import Block, { BlockIdentifier, WorldPosition } from "./block.js"
 import { HeaderTypes, SpecialBlockData } from "../data/consts.js"
 import { BlockMappings, BlockMappingsReverse } from '../data/mappings.js'
 import { get2dArray, read7BitInt } from "../math.js"
@@ -56,7 +56,7 @@ export default class World extends Structure {
             const yielded = generator.next()
             const [[x, y, layer], block]: any = yielded.value
 
-            const promise = this.client.block(x, y, layer, block)
+            const promise = this.put_block(x, y, layer, block)
             promise.catch(v => {
                 throw new Error(v)
             })
@@ -66,6 +66,12 @@ export default class World extends Structure {
         }
 
         return Promise.all(promises)
+    }
+
+    public put_block(x: number, y: number, layer: 0 | 1, block: Block): Promise<boolean> {
+        if (this?.[layer == 1 ? 'foreground' : 'background'][x][y]?.isSameAs(block))
+            return Promise.resolve(true)
+        return this.client.block_scheduler.add(`${x}.${y}.${layer}`, block)
     }
 
     public static fromString(data: string): Structure {

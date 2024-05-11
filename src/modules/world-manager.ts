@@ -11,7 +11,7 @@ export default function Module(client: Client): Client {
     client.raw.on('placeBlock', async ([id, x, y, layer, bid, ...args]) => {
         const player = await client.wait_for(() => client.players.get(id))
         const world = await client.wait_for(() => client.world)
-        const [position, block] = world.place(x, y, layer, bid, args)
+        const [position, block] = world.set(x, y, layer, bid, args)
 
         client.emit('player:block', [player, position, block])
     })

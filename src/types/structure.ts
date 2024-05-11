@@ -62,7 +62,7 @@ export default class Structure {
     /**
      * Place block
      */
-    public place(x: number, y: number, l: 0 | 1, id: number, args: any): [WorldPosition, Block] {
+    public set(x: number, y: number, l: 0 | 1, id: number, args: any): [WorldPosition, Block] {
         const layer = l == 1 ? this.foreground : this.background
         const block = layer[x][y] = new Block(id)
 
