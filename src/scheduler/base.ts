@@ -13,12 +13,12 @@ class SchedulerEntry<V> {
     }
 }
 
-export default abstract class BaseScheduler<K extends string, V> extends EventEmitter<{[keys: string]: any[]}> {
+export default abstract class BaseScheduler<K extends string, V> extends EventEmitter<{ [keys: string]: any[] }> {
     protected readonly client: Client
     protected queue: Map<K, SchedulerEntry<V>> = new Map()
     private tickets: Map<K, { res: (v: boolean) => void, rej: (v: any) => void }> = new Map()
     public running = false
-    
+
     private lastTimeBusy = 0
     private busy = false
     private loopInterval: NodeJS.Timeout
@@ -31,7 +31,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
     constructor(client: Client) {
         super()
         this.client = client
-        clearTimeout(this.loopInterval = setTimeout(() => {}, 1000))
+        clearTimeout(this.loopInterval = setTimeout(() => { }, 1000))
     }
 
     public start() {
@@ -62,7 +62,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
         if (!this.running) return false
         if (!this.queue) return this.unbusy()
         if (this.queue.size == 0) return this.unbusy()
-        
+
         if (Date.now() - this.lastTimeBusy < this.LOOP_FREQUENCY) {
             return this.try_run_loop()
         }
@@ -91,14 +91,14 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
         }
 
         // console.log('Leaving loop!')
-        
+
         return this.try_run_loop()
     }
 
     public add(k: K, el: V, priority?: number): Promise<boolean> {
         if (!this.client.connected || !this.running) return Promise.resolve(this.stop())
         this.queue.set(k, new SchedulerEntry(el, priority))
-        
+
         const promise = (res: (v: boolean) => void, rej: (v: any) => void) => {
             if (!this.client.connected || !this.running) return res(false)
             if (!this.has(k)) return res(true)
@@ -111,7 +111,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
             this.tickets.set(k, { res: res_wrapper, rej })
             this.once(k, (() => res_wrapper(true)) as any)
         }
-        
+
         if (!this.busy) {
             // console.debug('Scheduler now busy.')
             this.busy = true
