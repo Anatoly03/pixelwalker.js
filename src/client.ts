@@ -79,9 +79,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * Connect client to server
      */
-    public connect(world_id: string): Promise<never>;
-    public connect(world_id: string, room_type: typeof RoomTypes[0]): Promise<never>;
-    public async connect(world_id: string, room_type?: typeof RoomTypes[0]) {
+    public connect(world_id: string | undefined): Promise<Client>
+    public connect(world_id: string | undefined, room_type: typeof RoomTypes[0]): Promise<Client>
+    public async connect(world_id: string, room_type?: typeof RoomTypes[0]): Promise<Client> {
         if (world_id == undefined) throw new Error('`world_id` was not provided in `Client.connect()`')
         if (room_type && !RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
         if (!room_type) room_type = RoomTypes[0]
@@ -110,6 +110,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.include(InitModule)
         this.include(SystemMessageModule)
         this.include(WorldManagerModule)
+
+        return this
     }
 
     /**
@@ -178,8 +180,13 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * Include Event handler from another client instance. This function
      * gets the event calls from `client` and a links them to `this`
      */
-    public include<T>(callback: (c: Client) => Client & T): Client & T {
-        return callback(this) || this
+    public include<T>(callback: (c: Client) => Client & T): Client & T;
+    public include<T>(module: { module: (c: Client) => Client & T }): Client & T;
+    public include<T>(callback: ((c: Client) => Client & T) | { module: (c: Client) => Client & T }): Client & T {
+        if (typeof callback == 'function')
+            return callback(this) || this
+        else
+            return this.include(callback.module)
     }
 
     /**
