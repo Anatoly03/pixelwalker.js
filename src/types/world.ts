@@ -1,10 +1,5 @@
 
-import stream from "stream"
-import YAML from 'yaml'
 import Block, { BlockIdentifier, WorldPosition } from "./block.js"
-import { HeaderTypes, SpecialBlockData } from "../data/consts.js"
-import { BlockMappings, BlockMappingsReverse } from '../data/mappings.js'
-import { get2dArray, read7BitInt } from "../math.js"
 import Structure from "./structure.js"
 import Client from "../index.js"
 import { FIFO } from "./animation.js"

@@ -1,5 +1,4 @@
 
-import stream from "stream"
 import YAML from 'yaml'
 import Block, { WorldPosition } from "./block.js"
 import { HeaderTypes, SpecialBlockData } from "../data/consts.js"

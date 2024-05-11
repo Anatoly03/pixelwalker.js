@@ -57,6 +57,23 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
         return this.loopInterval = setTimeout(this.loop.bind(this), Math.max(this.LOOP_FREQUENCY - (performance.now() - this.lastTimeBusy), 0))
     }
 
+    /**
+     * Selector Algorithm to get entries.
+     */
+    private getEntries() {
+        // TODO create an object for priority to avoid sorting every time
+        // const entries: [K, SchedulerEntry<V>][] = []
+        // for (const [key, entry] of this.queue.entries()) {}
+        
+        const time = performance.now()
+        const entries = Array.from(this.queue.entries())
+            .filter(v => (time - v[1].timeSince) > this.RETRY_FREQUENCY || v[1].priority == 0) // Wait Time exceeds or first time placing block
+            .sort((a, b) => b[1].priority - a[1].priority) // Sort by priority
+            // .filter((_, i) => i < this.ELEMENTS_PER_TICK) // Only take first N elements
+        
+        return entries.slice(0, this.ELEMENTS_PER_TICK)
+    }
+
     private async loop() {
         if (!this.client.connected) return this.stop()
         if (!this.running) return false
@@ -71,12 +88,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
 
         // console.log(this.queue.size)
 
-        const time = performance.now()
-        const entries = Array.from(this.queue.entries())
-            // TODO create an object for priority to avoid sorting every time
-            .filter(v => (time - v[1].timeSince) > this.RETRY_FREQUENCY || v[1].priority == 0) // Wait Time exceeds or first time placing block
-            .sort((a, b) => b[1].priority - a[1].priority) // Sort by priority
-            .filter((_, i) => i < this.ELEMENTS_PER_TICK) // Only take first N elements
+        const entries = this.getEntries()
 
         // if (entries.length == 0) 
         //     return this.try_run_loop()
