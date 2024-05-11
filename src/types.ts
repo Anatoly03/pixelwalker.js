@@ -1,11 +1,5 @@
 import { length7BitInt, write7BitInt } from "./math.js"
 
-//
-//
-// Serialisation
-//
-//
-
 /**
  * @param {string} value 
  * @returns Buffer
