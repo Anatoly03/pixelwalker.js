@@ -26,7 +26,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
     public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
-    // public scheduler: Scheduler = new Scheduler(this)
+
     public block_scheduler: BlockScheduler
 
     private pocketbase: PocketBase | null
@@ -39,12 +39,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public readonly players: Map<number, Player> = new Map()
     public readonly globalPlayers: Map<string, PlayerBase> = new Map()
 
-    private inclusions: Client[] = []
-
-    private move_tick: number = 0
-
-
-    constructor(args: { token?: string, user?: string, pass?: string, flags?: {} }) {
+    constructor(args: { token: string });
+    constructor(args: { user: string, pass: string });
+    constructor(args: { token?: string, user?: string, pass?: string }) {
         super()
 
         this.pocketbase = null
@@ -64,13 +61,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
             throw new Error('Authentication with user and password not supported yet.')
         }
 
-        if (args.flags) {
-            // TODO ability to enable parts of the api
-            // - 'serialize' = serialize the world and keep track of changes
-            // - 'simulate' = do not simulate player movements and track pseudo events: coins collected
-            // - ...
-        }
-
         this.block_scheduler = new BlockScheduler(this)
 
         // On process interrupt, gracefully disconnect.
@@ -86,6 +76,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * Connect client to server
      */
+    public connect(world_id: string): Promise<never>;
+    public connect(world_id: string, room_type: typeof RoomTypes[0]): Promise<never>;
     public async connect(world_id: string, room_type?: typeof RoomTypes[0]) {
         if (world_id == undefined) throw new Error('`world_id` was not provided in `Client.connect()`')
         if (room_type && !RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
@@ -108,7 +100,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.connected = true
 
         this.block_scheduler.start()
-        // this.scheduler.start()
         
         this.include(BotCommandModule)
         this.include(ChatModule)
@@ -176,7 +167,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public disconnect() {
         this.connected = false
         this.block_scheduler.stop()
-        // this.scheduler.stop()
         this.pocketbase?.authStore.clear()
         this.socket?.close()
     }
@@ -207,15 +197,15 @@ export default class Client extends EventEmitter<LibraryEvents> {
         })
     }
 
+    // TODO
+    // public block(x: number, y: number, layer: 0 | 1, block: number | null | string, ...args: any[])
+    // public block(x: number, y: number, layer: 0 | 1, block: Block)
     public block(x: number, y: number, layer: 0 | 1, block: BlockIdentifier): Promise<boolean> {
-        // if (!this.connected) return Promise.reject("Client not connected")
         if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
         if (!(block instanceof Block)) return Promise.reject("Expected `Block` or block identifier, got unknown object.")
-        // if (!this.scheduler.running) { throw new Error('Scheduler is not defined.') }
         if (this.world?.[layer == 1 ? 'foreground' : 'background'][x][y]?.isSameAs(block)) return Promise.resolve(true)
 
         return this.block_scheduler.add(`${x}.${y}.${layer}`, block)
-        // return this.scheduler.block([x, y, layer], block)
     }
 
     public say(content: string) {
