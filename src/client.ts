@@ -12,7 +12,6 @@ import Block, { BlockIdentifier, WorldPosition } from './types/block.js'
 import Player, { PlayerBase, SelfPlayer } from './types/player.js'
 import { FIFO, RANDOM } from './types/animation.js'
 import { RoomTypes } from './data/room_types.js'
-import Scheduler from './types/scheduler.js'
 
 import BotCommandModule from './modules/bot-command.js'
 import ChatModule from './modules/chat.js'
@@ -20,13 +19,15 @@ import PlayerManagerModule from './modules/player-manager.js'
 import InitModule from './modules/start.js'
 import SystemMessageModule from './modules/system-command.js'
 import WorldManagerModule from './modules/world-manager.js'
+import BlockScheduler from './scheduler/scheduler-block.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
     public connected = false
 
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
     public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
-    public scheduler: Scheduler = new Scheduler(this)
+    // public scheduler: Scheduler = new Scheduler(this)
+    public block_scheduler: BlockScheduler
 
     private pocketbase: PocketBase | null
     private socket: WebSocket | null
@@ -70,6 +71,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
             // - ...
         }
 
+        this.block_scheduler = new BlockScheduler(this)
+
         // On process interrupt, gracefully disconnect.
         // DO NOT merge this into one function, otherwise it does not work.
         process.on('SIGINT', (signal) => this.disconnect())
@@ -104,7 +107,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         this.connected = true
 
-        this.scheduler.start()
+        this.block_scheduler.start()
+        // this.scheduler.start()
         
         this.include(BotCommandModule)
         this.include(ChatModule)
@@ -171,7 +175,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public disconnect() {
         this.connected = false
-        this.scheduler.stop()
+        this.block_scheduler.stop()
+        // this.scheduler.stop()
         this.pocketbase?.authStore.clear()
         this.socket?.close()
     }
@@ -206,10 +211,11 @@ export default class Client extends EventEmitter<LibraryEvents> {
         // if (!this.connected) return Promise.reject("Client not connected")
         if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
         if (!(block instanceof Block)) return Promise.reject("Expected `Block` or block identifier, got unknown object.")
-        if (!this.scheduler.running) { throw new Error('Scheduler is not defined.') }
+        // if (!this.scheduler.running) { throw new Error('Scheduler is not defined.') }
         if (this.world?.[layer == 1 ? 'foreground' : 'background'][x][y]?.isSameAs(block)) return Promise.resolve(true)
 
-        return this.scheduler.block([x, y, layer], block)
+        return this.block_scheduler.add(`${x}.${y}.${layer}`, block)
+        // return this.scheduler.block([x, y, layer], block)
     }
 
     public say(content: string) {
