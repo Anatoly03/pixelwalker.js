@@ -74,7 +74,7 @@ export default class Structure {
 
     public blockAt(x: number, y: number, l: 0 | 1) {
         const layer = l == 1 ? this.foreground : this.background
-        return layer[x][y]
+        return layer[x]?.[y]
     }
 
     public copy(x1: number, y1: number, x2: number, y2: number): Structure {
@@ -94,13 +94,15 @@ export default class Structure {
 
     /**
      * Paste World chunk into this world
+     * @param {args} options Options can be inherited by children classes who have more control over block placement control flow
      */
-    public paste(xt: number, yt: number, data: Structure) {
+    public paste(xt: number, yt: number, data: Structure, options?: never): Promise<any> {
         for (let x = 0; x < data.width; x++)
             for (let y = 0; y < data.height; y++) {
                 this.foreground[x + xt][y + yt] = data.foreground[x][y]
                 this.background[x + xt][y + yt] = data.background[x][y]
             }
+        return Promise.resolve(true)
     }
 
     //

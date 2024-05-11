@@ -181,12 +181,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return callback(this) || this
     }
 
-    //
-    //
-    // Communication
-    //
-    //
-
+    /**
+     * Send raw bytes to server
+     */
     public send(...args: Buffer[]): Promise<any | undefined> {
         return new Promise((res, rej) => {
             if (!this.socket) throw new Error('Socket not existing.')
@@ -226,48 +223,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.self?.move(x, y, xVel, yVel, xMod, yMod, horizontal, vertical, space_down, space_just_down)
     }
 
-    // TODO add types for animation header
-    public async fill(xt: number, yt: number, world: World, args?: { animation?: (b: any) => any, ms?: number, write_empty?: boolean }) {
-        if (!args) args = { write_empty: true }
-
-        const promises: Promise<boolean>[] = []
-        // const promises_debug: Block[] = []
-
-        this.world = await this.wait_for(() => this.world)
-        const to_be_placed: [WorldPosition, Block][] = []
-
-        for (let x = 0; x < world.width; x++)
-            for (let y = 0; y < world.height; y++) {
-                if (!world.foreground[x][y] || !world.foreground[x][y].isSameAs(this.world.foreground[xt + x][yt + y])) {
-                    if (!((world.blockAt(x, y, 1).name == 'empty') && !args.write_empty))
-                        to_be_placed.push([[xt + x, yt + y, 1], world.blockAt(x, y, 1)])
-                }
-                if (!world.foreground[x][y] || !world.background[x][y].isSameAs(this.world.background[xt + x][yt + y])) {
-                    if (!((world.blockAt(x, y, 0).name == 'empty') && !args.write_empty))
-                        to_be_placed.push([[xt + x, yt + y, 0], world.blockAt(x, y, 0)])
-                }
-            }
-
-        const generator = (args.animation || FIFO)(to_be_placed)
-        // const generator = RANDOM(to_be_placed)
-
-        while (to_be_placed.length > 0) {
-            const yielded = generator.next()
-            const [[x, y, layer], block]: any = yielded.value
-
-            const promise = this.block(x, y, layer, block)
-            promise.catch(v => {
-                throw new Error(v)
-            })
-            promises.push(promise)
-
-            if (args.ms) await this.wait(args.ms)
-        }
-
-        // for (let i = 0; i < promises.length; i++) {
-        //     console.log(promises_debug[i], promises[i])
-        // }
-
-        return Promise.all(promises)
+    public fill(xt: number, yt: number, fragment: Structure, args?: { animation?: (b: any) => any, ms?: number, write_empty?: boolean }) {
+        return this.world?.paste(xt, yt, fragment, args)
     }
 }
