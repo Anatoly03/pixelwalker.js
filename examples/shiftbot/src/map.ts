@@ -17,8 +17,73 @@ const MAPS_PATH = process.env.MAPS_PATH || 'maps'
 const map = new Structure(50, 37)
 const map_without_doors = new Structure(50, 37)
 
-function create_map() {
+function get_map(): Structure {
+    let map_path: string
 
+    if (QUEUE.length > 0)
+        map_path = QUEUE.shift()?.[0] as string
+    else {
+        const maps = fs.readdirSync(MAPS_PATH)
+        map_path = maps[Math.floor(maps.length * Math.random())]
+    }
+
+    return Structure.fromString(
+        fs.readFileSync(path.join(MAPS_PATH, map_path))
+            .toString('ascii'))
+}
+
+function encode_doors() {
+    // Bottom Door
+    for (let x = 1; x < map.width - 1; x++) {
+        if (map_without_doors.foreground[x][map.height - 3].name == 'key_door_green') {
+            map_without_doors.foreground[x][map.height - 5] = new Block('gravity_up')
+            map_without_doors.foreground[x][map.height - 4] = new Block('gravity_up')
+            map_without_doors.foreground[x][map.height - 3] = new Block('gravity_up')
+            map_without_doors.foreground[x][map.height - 2] = new Block('gravity_up')
+            map_without_doors.foreground[x + 1][map.height - 2] = new Block('hazard_stripes')
+        }
+    }
+
+    // Right door
+    for (let y = map.height - 1; y >= 1; y--) {
+        if (map_without_doors.foreground[map.width - 1][y].name == 'key_door_green') {
+            map_without_doors.foreground[map.width - 1][y] = new Block('gravity_left')
+            map_without_doors.foreground[map.width - 2][y] = new Block('gravity_left')
+            map_without_doors.foreground[map.width - 3][y] = new Block('gravity_left')
+            map_without_doors.foreground[map.width - 4][y] = new Block('gravity_left')
+            map_without_doors.foreground[0][y + 1] = new Block('hazard_stripes')
+        }
+    }
+
+    // Top Door
+    for (let x = map.width - 1; x >= 0; x--) {
+        if (map_without_doors.foreground[x][1].name == 'key_door_green') {
+            map_without_doors.foreground[x][0] = new Block('gravity_down')
+            map_without_doors.foreground[x][1] = new Block('gravity_down')
+            map_without_doors.foreground[x][2] = new Block('gravity_down')
+            map_without_doors.foreground[x][3] = new Block('gravity_down')
+            map_without_doors.foreground[x - 1][0] = new Block('hazard_stripes')
+        }
+    }
+
+    // Left Door
+    for (let y = 1; y < map.height - 1; y++) {
+        if (map_without_doors.foreground[1][y].name == 'key_door_green') {
+            map_without_doors.foreground[0][y] = new Block('gravity_right')
+            map_without_doors.foreground[1][y] = new Block('gravity_right')
+            map_without_doors.foreground[2][y] = new Block('gravity_right')
+            map_without_doors.foreground[3][y] = new Block('gravity_right')
+            map_without_doors.foreground[0][y + 1] = new Block('hazard_stripes')
+        }
+    }
+}
+
+function construct_map() {
+    const map_no_border = get_map()
+    map.paste(1, 1, map_no_border)
+    map_without_doors.paste(1, 1, map_no_border)
+    encode_doors()
+    return map_no_border.meta
 }
 
 function find_map(search_string: string): [string, string] | null {
@@ -42,6 +107,9 @@ export async function open_door() {
 }
 
 export async function create_win_zone() {
+    // Close Map Door
+    await client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, { animation: Animation.RANDOM, write_empty: true })
+    // Create Win Zone
     await client.block(TOP_LEFT.x + 26, TOP_LEFT.y + map.height - 2, 1, 'crown')
     await client.block(TOP_LEFT.x + 28, TOP_LEFT.y + map.height - 2, 1, 0)
     return client.block(TOP_LEFT.x + 29, TOP_LEFT.y + map.height - 2, 1, 'hazard_stripes')
@@ -51,22 +119,24 @@ export function close_door() {
     return client.block(TOP_LEFT.x + 22, TOP_LEFT.y + map.height - 2, 1, 'hazard_stripes')
 }
 
-export function build_map() {
-    const data = fs.readFileSync(path.join(MAPS_PATH, 'empty.yaml')).toString()
+export async function build_map() {
+    const data = fs.readFileSync(path.join(MAPS_PATH, 'filled.yaml')).toString()
     const structure = Structure.fromString(data)
     map.paste(0, 0, structure)
     map_without_doors.paste(0, 0, structure)
-    return client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, {animation: Animation.RANDOM, write_empty: true })
+    const meta = construct_map()
+    await client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map_without_doors, { animation: Animation.RANDOM, write_empty: true })
+    return meta
 }
 
 export function clear_map() {
     const data = fs.readFileSync(path.join(MAPS_PATH, 'empty.yaml')).toString()
     map.paste(0, 0, Structure.fromString(data))
     // map_without_doors.paste(0, 0, Structure.fromString(s))
-    return client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, {animation: Animation.RANDOM, write_empty: true })
+    return client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, { animation: Animation.RANDOM, write_empty: true })
 }
 
-export function module (client: Client) {
+export function module(client: Client) {
     client.on('cmd:queue', ([player, _, name]) => {
         if (!name)
             return player.pm('[BOT] Queue: ' + (QUEUE.length > 0 ? QUEUE.map(p => p[1]).join(', ') : '---'))
@@ -94,9 +164,10 @@ export function module (client: Client) {
         return close_door()
     })
 
-    client.on('cmd:*build', ([p, _, name]) => {
+    client.on('cmd:*build', async ([p, _, name]) => {
         if (!is_bot_admin(p)) return
-        // TODO Build map
+        const meta = await build_map()
+        client.say(`[BOT] "${meta.name}" by ${meta.creator}`)
     })
 
     client.on('cmd:*clear', ([p, _, name]) => {
