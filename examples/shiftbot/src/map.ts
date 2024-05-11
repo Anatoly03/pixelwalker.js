@@ -1,5 +1,4 @@
 
-
 import Client, { Animation, Block, Structure } from '../../../dist/index.js'
 import client from './shift.js'
 import fs from 'node:fs'
@@ -24,7 +23,9 @@ function get_map(): Structure {
         map_path = QUEUE.shift()?.[0] as string
     else {
         const maps = fs.readdirSync(MAPS_PATH)
+        console.log(maps)
         map_path = maps[Math.floor(maps.length * Math.random())]
+        console.log(map_path)
     }
 
     return Structure.fromString(
@@ -80,6 +81,7 @@ function encode_doors() {
 
 function construct_map() {
     const map_no_border = get_map()
+    console.log(map_no_border.meta) // TODO keep till bug gets fixed
     map.paste(1, 1, map_no_border)
     map_without_doors.paste(1, 1, map_no_border)
     encode_doors()
@@ -113,6 +115,14 @@ export async function create_win_zone() {
     await client.block(TOP_LEFT.x + 26, TOP_LEFT.y + map.height - 2, 1, 'crown')
     await client.block(TOP_LEFT.x + 28, TOP_LEFT.y + map.height - 2, 1, 0)
     return client.block(TOP_LEFT.x + 29, TOP_LEFT.y + map.height - 2, 1, 'hazard_stripes')
+}
+
+export function set_spawn() {
+    return client.block(TOP_LEFT.x + 28, TOP_LEFT.y + map.height - 2, 1, 'spawn_point')
+}
+
+export function remove_spawn() {
+    return client.block(TOP_LEFT.x + 28, TOP_LEFT.y + map.height - 2, 1, 0)
 }
 
 export function close_door() {

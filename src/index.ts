@@ -17,5 +17,6 @@ export const Modules = {
 }
 
 export const Util = {
-    GameRound: (await import ('./util/game-round.js')).GameRound
+    GameRound: (await import ('./util/game-round.js')).GameRound,
+    Breakpoint: (await import ('./util/breakpoint.js')).Breakpoint
 }

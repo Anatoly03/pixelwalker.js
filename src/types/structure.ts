@@ -98,6 +98,8 @@ export default class Structure {
     public paste(xt: number, yt: number, data: Structure, options?: never): Promise<any> {
         for (let x = 0; x < data.width; x++)
             for (let y = 0; y < data.height; y++) {
+                if (x + xt < 0 || y + yt < 0 || x + xt > this.width || y + yt > this.height)
+                    continue
                 this.foreground[x + xt][y + yt] = data.foreground[x][y]
                 this.background[x + xt][y + yt] = data.background[x][y]
             }
