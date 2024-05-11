@@ -73,7 +73,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
 
         const time = Date.now()
         const entries = Array.from(this.queue.entries())
-            .sort((a, b) => a[1].priority - b[1].priority) // Sort by priority
+            .sort((a, b) => b[1].priority - a[1].priority) // Sort by priority
             .filter((_, i) => i < this.ELEMENTS_PER_TICK) // Only take first N elements
             .filter(v => (time - v[1].timeSince) > this.RETRY_FREQUENCY || v[1].priority == 0) // Wait Time exceeds or first time placing block
 
