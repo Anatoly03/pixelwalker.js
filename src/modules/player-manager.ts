@@ -1,5 +1,5 @@
-import { Client, Player } from "..";
-import { PlayerBase } from "../types/player";
+import Client from "../client";
+import Player, { PlayerBase } from "../types/player.js";
 
 /**
  * This module generates a module function that will log certain events.
