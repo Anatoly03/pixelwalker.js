@@ -21,6 +21,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
     
     private lastTimeBusy = 0
     private busy = false
+    private loopInterval: NodeJS.Timeout
 
     public LOOP_FREQUENCY = 100
     public ELEMENTS_PER_TICK = 200
@@ -30,6 +31,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
     constructor(client: Client) {
         super()
         this.client = client
+        clearTimeout(this.loopInterval = setTimeout(() => {}, 1000))
     }
 
     public start() {
@@ -43,16 +45,29 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
     }
 
     private unbusy() {
+        // console.debug('Scheduler no longer busy!')
         return this.busy = false
     }
 
     protected abstract try_send(k: K, e: V): Promise<void>;
+
+    private async try_run_loop(): Promise<any> {
+        clearTimeout(this.loopInterval)
+        // console.log(`Trying to run: ${(Date.now() - this.lastTimeBusy) / 1000}s unbusy, looping in ${Math.max(this.LOOP_FREQUENCY - (Date.now() - this.lastTimeBusy), 0)}`)
+        return this.loopInterval = setTimeout(this.loop.bind(this), Math.max(this.LOOP_FREQUENCY - (Date.now() - this.lastTimeBusy), 0))
+    }
 
     private async loop() {
         if (!this.client.connected) return this.stop()
         if (!this.running) return false
         if (!this.queue) return this.unbusy()
         if (this.queue.size == 0) return this.unbusy()
+        
+        if (Date.now() - this.lastTimeBusy < this.LOOP_FREQUENCY) {
+            return this.try_run_loop()
+        }
+
+        // console.log('Entering loop...')
 
         // console.log(this.queue.size)
 
@@ -63,10 +78,6 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
             .filter(v => (time - v[1].timeSince) > this.RETRY_FREQUENCY || v[1].priority == 0) // Wait Time exceeds or first time placing block
 
         if (entries.length == 0) {
-            if (!this.busy) return
-            if (Date.now() - this.lastTimeBusy < this.LOOP_FREQUENCY)
-                setTimeout(this.loop.bind(this), this.LOOP_FREQUENCY)
-            return
         }
 
         this.lastTimeBusy = Date.now()
@@ -79,9 +90,9 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
             if (this.INBETWEEN_DELAY != 0) await this.client.wait(this.INBETWEEN_DELAY)
         }
 
-        setTimeout(this.loop.bind(this), this.LOOP_FREQUENCY)
-
-        return true
+        // console.log('Leaving loop!')
+        
+        return this.try_run_loop()
     }
 
     public add(k: K, el: V, priority?: number): Promise<boolean> {
@@ -91,15 +102,20 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
         const promise = (res: (v: boolean) => void, rej: (v: any) => void) => {
             if (!this.client.connected || !this.running) return res(false)
             if (!this.has(k)) return res(true)
-            // setTimeout(() => promise(res, rej), 5)
-            this.tickets.set(k, { res, rej })
-            this.once(k, (() => res(true)) as any)
+
+            const res_wrapper = (v: boolean) => {
+                if (this.queue.size == 0) this.unbusy()
+                res(v)
+            }
+
+            this.tickets.set(k, { res: res_wrapper, rej })
+            this.once(k, (() => res_wrapper(true)) as any)
         }
         
         if (!this.busy) {
             // console.debug('Scheduler now busy.')
             this.busy = true
-            this.loop()
+            this.try_run_loop()
         }
 
         return new Promise(promise)
@@ -110,11 +126,12 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
         return this.queue.has(k)
     }
 
-    public remove(k: K) {
-        const b = this.queue.delete(k)
+    public remove(k: K): boolean {
+        this.queue.delete(k)
         this.tickets.get(k)?.res(true)
         this.tickets.delete(k)
-        return b
+        if (this.queue.size == 0) return this.unbusy()
+        return this.busy
     }
 
 }
