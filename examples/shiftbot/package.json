@@ -1,0 +1,19 @@
+{
+  "name": "shiftbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "npx tsx src/shift.ts"
+  },
+  "keywords": [],
+  "author": "Pixelwalker.JS",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.9.5"
+  }
+}
