@@ -31,8 +31,12 @@ export default class Player extends PlayerBase {
     public face: number
     public x: number
     public y: number
+
     public god_mode: boolean
     public mod_mode: boolean
+    public can_edit: boolean
+    public can_god: boolean
+
     public has_crown: boolean
 
     public coins: number
@@ -51,6 +55,8 @@ export default class Player extends PlayerBase {
         god_mode?: boolean
         mod_mode?: boolean
         has_crown?: boolean
+        can_edit: boolean
+        can_god: boolean
         coins?: number
         blue_coins?: number
         deaths?: number
@@ -67,6 +73,8 @@ export default class Player extends PlayerBase {
         this.god_mode = args.god_mode || false
         this.mod_mode = args.mod_mode || false
         this.has_crown = args.has_crown || false
+        this.can_edit = args.can_edit
+        this.can_god = args.can_god
 
         this.coins = args.coins || 0
         this.blue_coins = args.blue_coins || 0

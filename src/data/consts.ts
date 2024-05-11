@@ -39,7 +39,7 @@ export interface LibraryEvents {
 export interface RawGameEvents {
     '*':                        [any[]],
     'init':                     [[number, string, string, number, boolean, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
-    'updateRights':             [[boolean, boolean]],
+    'updateRights':             [[number, boolean, boolean]],
     'worldMetadata':            [[string, number, string]],
     'worldCleared':             [[]],
     'worldReloaded':            [[Buffer]],

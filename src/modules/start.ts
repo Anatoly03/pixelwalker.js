@@ -17,7 +17,7 @@ export default function Module(client: Client): Client {
         client.world = new World({
             width, height, client, title, plays, owner
         })
-        
+
         client.world.init(buffer)
 
         client.self = new SelfPlayer({
@@ -29,6 +29,8 @@ export default function Module(client: Client): Client {
             isAdmin,
             x: x / 16,
             y: y / 16,
+            can_edit,
+            can_god
         })
 
         client.players.set(id, client.self)

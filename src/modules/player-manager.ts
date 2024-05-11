@@ -11,7 +11,7 @@ export default function Module(client: Client): Client {
      * On player join, create a player object with data
      * and emit `player:join` with said object.
      */
-    client.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, can_edit, can_godmode, x, y, coins, blue_coins, deaths, god_mode, mod_mode, has_crown]) => {
+    client.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, can_edit, can_god, x, y, coins, blue_coins, deaths, god_mode, mod_mode, has_crown]) => {
         const data = {
             client,
             id,
@@ -26,7 +26,9 @@ export default function Module(client: Client): Client {
             has_crown,
             coins,
             blue_coins,
-            deaths
+            deaths,
+            can_edit,
+            can_god
         }
         
         const player = new Player(data)
@@ -35,6 +37,15 @@ export default function Module(client: Client): Client {
         client.players.set(id, player)
         client.globalPlayers.set(cuid, player_base)
         client.emit('player:join', [player])
+    })
+
+    /**
+     * Update player rights.
+     */
+    client.raw.on('updateRights', async ([id, edit, god]) => {
+        const player = await client.wait_for(() => client.players.get(id))
+        player.can_edit = edit
+        player.can_god = god
     })
 
     /**
