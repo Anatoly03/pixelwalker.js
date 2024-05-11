@@ -77,8 +77,8 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
             .sort((a, b) => b[1].priority - a[1].priority) // Sort by priority
             .filter((_, i) => i < this.ELEMENTS_PER_TICK) // Only take first N elements
 
-        if (entries.length == 0) {
-        }
+        // if (entries.length == 0) 
+        //     return this.try_run_loop()
 
         this.lastTimeBusy = Date.now()
 
