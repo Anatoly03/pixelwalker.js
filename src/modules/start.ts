@@ -14,7 +14,10 @@ export default function Module(client: Client): Client {
     client.raw.once('init', async ([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
         await client.send(Magic(0x6B), Bit7(MessageType['init']))
 
-        client.world = new World(width, height)
+        client.world = new World({
+            width, height, client, title, plays, owner
+        })
+        
         client.world.init(buffer)
 
         client.self = new SelfPlayer({
