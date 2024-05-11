@@ -11,7 +11,7 @@ export const width = 50
 export const height = 37
 
 const TOP_LEFT = { x: parseInt(process.env.TLX || '0'), y: parseInt(process.env.TLY || '0') }
-const QUEUE: string[] = []
+const QUEUE: [string, string][] = []
 const MAPS_PATH = process.env.MAPS_PATH || 'maps'
 
 const map = new Structure(50, 37)
@@ -19,6 +19,19 @@ const map_without_doors = new Structure(50, 37)
 
 function create_map() {
 
+}
+
+function find_map(search_string: string): [string, string] | null {
+    let maps: [string, { name: string }][] = fs.readdirSync(MAPS_PATH)
+        .filter(p => p.startsWith('map'))
+        .map(name => [name, Structure.metaFromString(
+            fs.readFileSync(path.join(MAPS_PATH, name))
+                .toString('ascii'))])
+    const map = maps.find(p => p[1].name == search_string)
+    if (map) return [map[0], map[1].name]
+    maps = maps.filter(p => p[1].name.includes(search_string))
+    if (maps.length == 0) return null
+    return [maps[0][0], maps[0][1].name]
 }
 
 export async function open_door() {
@@ -38,17 +51,32 @@ export function close_door() {
     return client.block(TOP_LEFT.x + 22, TOP_LEFT.y + map.height - 2, 1, 'hazard_stripes')
 }
 
+export function build_map() {
+    const data = fs.readFileSync(path.join(MAPS_PATH, 'empty.yaml')).toString()
+    const structure = Structure.fromString(data)
+    map.paste(0, 0, structure)
+    map_without_doors.paste(0, 0, structure)
+    return client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, {animation: Animation.RANDOM, write_empty: true })
+}
+
 export function clear_map() {
-    let s = fs.readFileSync(path.join(MAPS_PATH, 'empty.yaml')).toString()
-    map.paste(0, 0, Structure.fromString(s))
+    const data = fs.readFileSync(path.join(MAPS_PATH, 'empty.yaml')).toString()
+    map.paste(0, 0, Structure.fromString(data))
     // map_without_doors.paste(0, 0, Structure.fromString(s))
     return client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, {animation: Animation.RANDOM, write_empty: true })
 }
 
 export function module (client: Client) {
-    client.on('cmd:queue', ([p, _, name]) => {
-        if (!is_bot_admin(p)) return
-        // TODO Add map to queue
+    client.on('cmd:queue', ([player, _, name]) => {
+        if (!name)
+            return player.pm('[BOT] Queue: ' + (QUEUE.length > 0 ? QUEUE.map(p => p[1]).join(', ') : '---'))
+        if (!is_bot_admin(player))
+            return
+        const result = find_map(name)
+        if (!result)
+            return player.pm('[BOT] Couldn\'t find that map.')
+        QUEUE.push(result)
+        return player.pm('[BOT] Added to Queue: ' + result[1])
     })
 
     client.on('cmd:*open', ([p, _, name]) => {

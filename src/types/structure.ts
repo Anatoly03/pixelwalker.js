@@ -254,7 +254,10 @@ export default class Structure {
         return world
     }
 
-
+    public static metaFromString(data: string): any {
+        const value = YAML.parse(data)
+        return value.meta || {}
+    }
 
     /**
      * Serialize a layer
