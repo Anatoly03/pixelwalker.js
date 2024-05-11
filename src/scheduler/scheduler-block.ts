@@ -9,7 +9,7 @@ type BlockCoordinate = `${number}.${number}.${0|1}`
 export default class BlockScheduler extends BaseScheduler<BlockCoordinate, Block> {
     override LOOP_FREQUENCY = 25
     override ELEMENTS_PER_TICK = 200
-    override INBETWEEN_DELAY = 1
+    override INBETWEEN_DELAY = 2
     override RETRY_FREQUENCY = 500
 
     constructor(client: Client) {
