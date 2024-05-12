@@ -104,11 +104,9 @@ function find_map(search_string: string): [string, string] | null {
     return [maps[0][0], maps[0][1].name]
 }
 
-export async function open_door() {
-    await client.block(TOP_LEFT.x + 22, TOP_LEFT.y + map.height - 2, 1, 'gravity_right')
-    await client.block(TOP_LEFT.x + 26, TOP_LEFT.y + map.height - 2, 1, 'gravity_right')
-    await client.block(TOP_LEFT.x + 28, TOP_LEFT.y + map.height - 2, 1, 'gravity_right')
-    return client.block(TOP_LEFT.x + 29, TOP_LEFT.y + map.height - 2, 1, 'gravity_right')
+export function open_door() {
+    return Promise.all([22, 26, 28, 29]
+        .map(x => client.block(TOP_LEFT.x + x, TOP_LEFT.y + map.height - 2, 1, 'gravity_right')))
 }
 
 export async function create_win_zone() {
