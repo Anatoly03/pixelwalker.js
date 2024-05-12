@@ -9,6 +9,7 @@ export function module(client: Client) {
     
     client.include(gameRound)
 
+    let GAME_HALT_FLAG = false
     let START_TIME = 0
     let ROUND = 0
     let PLAYER_QUEUE: Player[] = []
@@ -22,21 +23,20 @@ export function module(client: Client) {
         if (!isActive || isActiveWinner) return
 
         const TIME = (performance.now() - START_TIME) / 1000
-        console.log(`${PLAYER_QUEUE.length}. ${TIME.toFixed(1)}s\t${player.username}`)
 
+        if (PLAYER_QUEUE.length == 0) {
+            const TIME_LEFT = 30
+            client.say(`[BOT] ${player.username} finished! ${TIME_LEFT}s left!`)
+            END_ROUND.time(TIME_LEFT * 1000, true)
+        }
+
+        PLAYER_QUEUE.push(player)
+        
+        console.log(`${PLAYER_QUEUE.length}. ${TIME.toFixed(1)}s\t${player.username}`)
         player.pm(`[BOT] ${PLAYER_QUEUE.length}. ${TIME.toFixed(1)}s`)
 
         const ROUND_PLAYERS_COUNT = gameRound.players.length
         const ACCEPTED_PLAYERS = PLAYER_QUEUE.length
-
-        if (PLAYER_QUEUE.length == 0) {
-            const TIME_LEFT = 30
-            END_ROUND.time(TIME_LEFT * 1000, true)
-            client.say(`[BOT] ${player.username} finished!`)
-            gameRound.players.forEach(p => p.pm(`[BOT] Promotion Condition: ${TIME_LEFT}s left and first ${Math.ceil(ROUND_PLAYERS_COUNT / 2)} of ${ROUND_PLAYERS_COUNT}`))
-        }
-
-        PLAYER_QUEUE.push(player)
 
         if (ROUND_PLAYERS_COUNT < 3) {
             END_ROUND.accept(false)
@@ -48,8 +48,12 @@ export function module(client: Client) {
     }
 
     function disqualify(player: Player, code: 'left' | 'god' | 'kill') {
+        const wasActive = gameRound.players.findIndex(p => p.id == player.id) >= 0
+
         PLAYER_QUEUE = PLAYER_QUEUE.filter(p => p.id != player.id)
         gameRound.players = gameRound.players.filter(p => p.id != player.id)
+
+        if (!wasActive) return
 
         if (gameRound.players.length == 0) {
             client.say('[BOT] Game over!')
@@ -84,6 +88,8 @@ export function module(client: Client) {
             // TODO SIGNUP_LOCK
             // await SIGNUP_LOCK
             await Promise.all([remove_spawn(), ...SPAWNPOINTS?.map(p => client.block(p[0], p[1], p[2], 'spawn_point'))])
+
+            console.log('Active in Round: ' + gameRound.players.map(p => p.username).join(' '))
         } else {
             await client.wait(4000)
         }
@@ -107,6 +113,10 @@ export function module(client: Client) {
 
         if (!await END_ROUND.wait() || PLAYER_QUEUE.length < 2) {
             ROUND = 0
+            if (GAME_HALT_FLAG) {
+                GAME_HALT_FLAG = false
+                gameRound.stop()
+            }
         }
         
         await close_door()
@@ -117,6 +127,7 @@ export function module(client: Client) {
 
     client.on('cmd:start', ([player, _, name]) => {
         if (!is_bot_admin(player)) return
+        GAME_HALT_FLAG = false
         gameRound.start()
     })
 
@@ -125,9 +136,14 @@ export function module(client: Client) {
         END_ROUND.accept(PLAYER_QUEUE.length > 1)
     })
 
-    client.on('cmd:last', ([player, _, name]) => {
+    client.on('cmd:halt', ([player, _, name]) => {
         if (!is_bot_admin(player)) return
         gameRound.stop()
+    })
+
+    client.on('cmd:last', ([player, _, name]) => {
+        if (!is_bot_admin(player)) return
+        GAME_HALT_FLAG = true
     })
 
     /**
@@ -135,26 +151,26 @@ export function module(client: Client) {
      * admins randomly edit the map. The changes will be engraved
      * on the map as a display of abnormalities.
      */
-    client.on('player:block', async ([player, pos, block]) => {
-        if (!is_bot_admin(player)) return
-        if (player.id == client.self?.id) return
-        if (pos[2] == 0) return // We ignore background modifications
-        if (!gameRound.running) return
+    // client.on('player:block', async ([player, pos, block]) => {
+    //     if (!is_bot_admin(player)) return
+    //     if (player.id == client.self?.id) return
+    //     if (pos[2] == 0) return // We ignore background modifications
+    //     if (!gameRound.running) return
         
-        const world = await client.wait_for(() => client.world)
+    //     const world = await client.wait_for(() => client.world)
 
-        client.block(pos[0], pos[1], 0, 0)
+    //     client.block(pos[0], pos[1], 0, 0)
 
-        if (pos[0] > 0 && SolidBlocks.includes(world.foreground[pos[0] - 1][pos[1]].name))
-            client.block(pos[0] - 1, pos[1], 1, 'hazard_stripes')
-        if (pos[1] > 0 && SolidBlocks.includes(world.foreground[pos[0]][pos[1] - 1].name))
-            client.block(pos[0], pos[1] - 1, 1, 'hazard_stripes')
-        if (pos[0] < world.width - 1 && SolidBlocks.includes(world.foreground[pos[0] + 1][pos[1]].name))
-            client.block(pos[0] + 1, pos[1], 1, 'hazard_stripes')
-        if (pos[1] < world.height - 1 && SolidBlocks.includes(world.foreground[pos[0]][pos[1] + 1].name))
-            client.block(pos[0], pos[1] + 1, 1, 'hazard_stripes')
+    //     if (pos[0] > 0 && SolidBlocks.includes(world.foreground[pos[0] - 1][pos[1]].name))
+    //         client.block(pos[0] - 1, pos[1], 1, 'hazard_stripes')
+    //     if (pos[1] > 0 && SolidBlocks.includes(world.foreground[pos[0]][pos[1] - 1].name))
+    //         client.block(pos[0], pos[1] - 1, 1, 'hazard_stripes')
+    //     if (pos[0] < world.width - 1 && SolidBlocks.includes(world.foreground[pos[0] + 1][pos[1]].name))
+    //         client.block(pos[0] + 1, pos[1], 1, 'hazard_stripes')
+    //     if (pos[1] < world.height - 1 && SolidBlocks.includes(world.foreground[pos[0]][pos[1] + 1].name))
+    //         client.block(pos[0], pos[1] + 1, 1, 'hazard_stripes')
 
-    })
+    // })
 
     return client
 }

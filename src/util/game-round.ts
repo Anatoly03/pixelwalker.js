@@ -11,8 +11,9 @@ export class GameRound extends EventEmitter<GameRoundEvents> {
 // export class GameRound<V extends {[keys: string]: any[]}> extends EventEmitter<GameRoundEvents | V> {
     public players: Player[]
     
+    public running = false
+
     private client: Client
-    private GAME_RUNNING = false
     private loop: () => Promise<any> = () => Promise.resolve({})
 
     constructor(client: Client) {
@@ -22,8 +23,8 @@ export class GameRound extends EventEmitter<GameRoundEvents> {
     }
 
     public start() {
-        if (this.GAME_RUNNING) return
-        this.GAME_RUNNING = true
+        if (this.running) return
+        this.running = true
         this.emit('start', this.players)
         this.runLoop()
     }
@@ -34,12 +35,12 @@ export class GameRound extends EventEmitter<GameRoundEvents> {
 
     private async runLoop() {
         await this.loop()
-        if (!this.GAME_RUNNING) return
+        if (!this.running) return
         setTimeout(() => this.runLoop(), 0)
     }
 
     public stop() {
-        this.GAME_RUNNING = false
+        this.running = false
     }
 
     public async signup(callback: (p: Player) => boolean = (p) => !p.god_mode && !p.mod_mode) {
@@ -48,7 +49,7 @@ export class GameRound extends EventEmitter<GameRoundEvents> {
     }
 
     private eliminate(p: Player, reason: 'left' | 'god' | 'kill') {
-        if (!this.GAME_RUNNING) return
+        if (!this.running) return
         this.players = this.players.filter(q => q.id != p.id)
         this.emit('eliminate', p, reason)
     }
