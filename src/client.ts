@@ -42,7 +42,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public readonly players: Map<number, Player> = new Map()
     public readonly globalPlayers: Map<string, PlayerBase> = new Map()
 
-    constructor(args: { token: string | undefined });
+    constructor(args: { token?: string });
     constructor(args: { user: string, pass: string });
     constructor(args: { token?: string, user?: string, pass?: string }) {
         super()
