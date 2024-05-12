@@ -186,7 +186,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
         if (typeof callback == 'function')
             return callback(this) || this
         else
-            return this.include(callback.module)
+            return callback.module(this)
+            // return this.include(() =>callback.module(this))
     }
 
     /**
