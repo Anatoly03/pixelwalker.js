@@ -16,7 +16,8 @@ import * as Game from './game.js'
 import * as Ban from './bans.js'
 
 client
-    .on('player:join', ([p]) => p.god(true))
+    .on('player:join', ([p]) => p.god(true)) // Give everyone god mode
+    .once('start', ([self]) => self.set_god(true)) // Self should not be part of players in game.
     .include(Map)
     .include(Game)
     .include(Ban)
