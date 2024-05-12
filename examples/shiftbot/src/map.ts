@@ -18,16 +18,18 @@ const map = new Structure(50, 37)
 const map_without_doors = new Structure(50, 37)
 
 function get_map(): Structure {
-    let map_path: string
+    let maps = fs.readdirSync(MAPS_PATH).filter(p => !p.startsWith('filled') && !p.startsWith('empty')),
+        map_path: string
 
     if (QUEUE.length > 0)
         map_path = QUEUE.shift()?.[0] as string
     else {
-        const maps = fs.readdirSync(MAPS_PATH).filter(p => !p.startsWith('filled') && !p.startsWith('empty') && !RECENT_MAPS.includes(p))
+        maps = maps.filter(p => !RECENT_MAPS.includes(p))
         map_path = maps[Math.floor(maps.length * Math.random())]
-        RECENT_MAPS.push(map_path)
-        if (RECENT_MAPS.length >= maps.length / 2) RECENT_MAPS.shift()
     }
+
+    RECENT_MAPS.push(map_path)
+    if (RECENT_MAPS.length >= maps.length / 2) RECENT_MAPS.shift()
 
     return Structure.fromString(
         fs.readFileSync(path.join(MAPS_PATH, map_path))
