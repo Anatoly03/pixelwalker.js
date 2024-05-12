@@ -16,6 +16,11 @@ export function module(client: Client) {
     let SIGNUP_LOCK: ReturnType<typeof Util.Breakpoint>
 
     function accept_to_next_round([player, player_before]: [Player, Player | null]) {
+        const isActive = gameRound.players.findIndex(p => p.id == player.id) >= 0
+        const isActiveWinner = PLAYER_QUEUE.findIndex(p => p.id == player.id) >= 0
+
+        if (!isActive || isActiveWinner) return
+
         const TIME = (performance.now() - START_TIME) / 1000
         console.log(`${PLAYER_QUEUE.length}. ${TIME.toFixed(1)}s\t${player.username}`)
 
