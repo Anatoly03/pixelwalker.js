@@ -37,54 +37,51 @@ function get_map(): Structure {
 }
 
 function encode_doors() {
+    const DOOR_LINE = ['gravity_up', 'gravity_up', 'gravity_up', 'gravity_up', 'hazard_stripes']
+
     // Bottom Door
     for (let x = 1; x < map.width - 1; x++) {
-        if (map_without_doors.foreground[x][map.height - 3].name == 'key_door_green') {
-            map_without_doors.foreground[x][map.height - 5] = new Block('gravity_up')
-            map_without_doors.foreground[x][map.height - 4] = new Block('gravity_up')
-            map_without_doors.foreground[x][map.height - 3] = new Block('gravity_up')
-            map_without_doors.foreground[x][map.height - 2] = new Block('gravity_up')
-            map_without_doors.foreground[x + 1][map.height - 2] = new Block('hazard_stripes')
-        }
+        if (map_without_doors.foreground[x][map.height - 3].name != 'key_door_green') continue
+        map_without_doors.foreground[x][map.height - 5] = new Block('gravity_up')
+        map_without_doors.foreground[x][map.height - 4] = new Block('gravity_up')
+        map_without_doors.foreground[x][map.height - 3] = new Block('gravity_up')
+        map_without_doors.foreground[x][map.height - 2] = new Block('gravity_up')
+        map_without_doors.foreground[x + 1][map.height - 2] = new Block('hazard_stripes')
     }
 
     // Right door
     for (let y = map.height - 1; y >= 1; y--) {
-        if (map_without_doors.foreground[map.width - 1][y].name == 'key_door_green') {
-            map_without_doors.foreground[map.width - 1][y] = new Block('gravity_left')
-            map_without_doors.foreground[map.width - 2][y] = new Block('gravity_left')
-            map_without_doors.foreground[map.width - 3][y] = new Block('gravity_left')
-            map_without_doors.foreground[map.width - 4][y] = new Block('gravity_left')
-            map_without_doors.foreground[0][y + 1] = new Block('hazard_stripes')
-        }
+        if (map_without_doors.foreground[map.width - 1][y].name != 'key_door_green') continue
+        map_without_doors.foreground[map.width - 1][y] = new Block('gravity_left')
+        map_without_doors.foreground[map.width - 2][y] = new Block('gravity_left')
+        map_without_doors.foreground[map.width - 3][y] = new Block('gravity_left')
+        map_without_doors.foreground[map.width - 4][y] = new Block('gravity_left')
+        map_without_doors.foreground[0][y + 1] = new Block('hazard_stripes')
     }
 
     // Top Door
     for (let x = map.width - 1; x >= 0; x--) {
-        if (map_without_doors.foreground[x][1].name == 'key_door_green') {
-            map_without_doors.foreground[x][0] = new Block('gravity_down')
-            map_without_doors.foreground[x][1] = new Block('gravity_down')
-            map_without_doors.foreground[x][2] = new Block('gravity_down')
-            map_without_doors.foreground[x][3] = new Block('gravity_down')
-            map_without_doors.foreground[x - 1][0] = new Block('hazard_stripes')
-        }
+        if (map_without_doors.foreground[x][1].name != 'key_door_green') continue
+        map_without_doors.foreground[x][0] = new Block('gravity_down')
+        map_without_doors.foreground[x][1] = new Block('gravity_down')
+        map_without_doors.foreground[x][2] = new Block('gravity_down')
+        map_without_doors.foreground[x][3] = new Block('gravity_down')
+        map_without_doors.foreground[x - 1][0] = new Block('hazard_stripes')
     }
 
     // Left Door
     for (let y = 1; y < map.height - 1; y++) {
-        if (map_without_doors.foreground[1][y].name == 'key_door_green') {
-            map_without_doors.foreground[0][y] = new Block('gravity_right')
-            map_without_doors.foreground[1][y] = new Block('gravity_right')
-            map_without_doors.foreground[2][y] = new Block('gravity_right')
-            map_without_doors.foreground[3][y] = new Block('gravity_right')
-            map_without_doors.foreground[0][y + 1] = new Block('hazard_stripes')
-        }
+        if (map_without_doors.foreground[1][y].name != 'key_door_green') continue
+        map_without_doors.foreground[0][y] = new Block('gravity_right')
+        map_without_doors.foreground[1][y] = new Block('gravity_right')
+        map_without_doors.foreground[2][y] = new Block('gravity_right')
+        map_without_doors.foreground[3][y] = new Block('gravity_right')
+        map_without_doors.foreground[0][y + 1] = new Block('hazard_stripes')
     }
 }
 
 function construct_map() {
     const map_no_border = get_map()
-    console.log(map_no_border.meta) // TODO keep till bug gets fixed
     map.paste(1, 1, map_no_border)
     map_without_doors.paste(1, 1, map_no_border)
     encode_doors()
