@@ -18,6 +18,8 @@ export default class BlockScheduler extends BaseScheduler<BlockCoordinate, Block
         client.raw.on('placeBlock', ([_, x, y, layer, bid, ...data]) => {
             this.remove(`${x}.${y}.${layer}`)
         })
+
+        // this.setMaxListeners(300 * 300 * 2) // max world width * world height * layers
     }
 
     protected async try_send(pos: `${number}.${number}.0` | `${number}.${number}.1`, block: Block): Promise<void> {

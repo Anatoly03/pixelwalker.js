@@ -13,7 +13,8 @@ class SchedulerEntry<V> {
     }
 }
 
-export default abstract class BaseScheduler<K extends string, V> extends EventEmitter<{ [keys: string]: any[] }> {
+export default abstract class BaseScheduler<K extends string, V> {
+// export default abstract class BaseScheduler<K extends string, V> extends EventEmitter<{[_ in K]: any[]}> {
     protected readonly client: Client
     protected queue: Map<K, SchedulerEntry<V>> = new Map()
     private tickets: Map<K, { res: (v: boolean) => void, rej: (v: any) => void }> = new Map()
@@ -29,7 +30,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
     public RETRY_FREQUENCY = 400
 
     constructor(client: Client) {
-        super()
+        // super()
         this.client = client
         clearTimeout(this.loopInterval = setTimeout(() => { }, 1000))
     }
@@ -110,6 +111,11 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
 
     public add(k: K, el: V, priority?: number): Promise<boolean> {
         if (!this.client.connected || !this.running) return Promise.resolve(this.stop())
+
+        if (this.queue.get(k) != null) {
+            this.remove(k)
+        }
+
         this.queue.set(k, new SchedulerEntry(el, priority))
 
         const promise = (res: (v: boolean) => void, rej: (v: any) => void) => {
@@ -122,7 +128,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
             }
 
             this.tickets.set(k, { res: res_wrapper, rej })
-            this.once(k, (() => res_wrapper(true)) as any)
+            // this.once(k, (() => res_wrapper(true)) as any)
         }
 
         if (!this.busy) {
@@ -141,6 +147,7 @@ export default abstract class BaseScheduler<K extends string, V> extends EventEm
 
     public remove(k: K): boolean {
         this.queue.delete(k)
+        // this.emit(k, [])
         this.tickets.get(k)?.res(true)
         this.tickets.delete(k)
         if (this.queue.size == 0) return this.unbusy()
