@@ -1,7 +1,7 @@
 
 import Client, { Animation, Block, Structure } from '../../../dist/index.js'
 import client from './shift.js'
-import fs from 'node:fs'
+import fs, { writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { is_bot_admin } from './admin.js'
@@ -160,6 +160,31 @@ export function module(client: Client) {
         return player.pm('[BOT] Added to Queue: ' + result[1])
     })
 
+    client.on('cmd:save', async ([player, _, x, y]) => {
+        if (!is_bot_admin(player)) return
+        const world = await client.wait_for(() => client.world)
+
+        const PREFIX = 'map'
+        const SUFFIX = '.yaml'
+
+        const int = fs.readdirSync(MAPS_PATH)
+            .filter(p => p.startsWith(PREFIX))
+            .map(p => p.substring(PREFIX.length, p.length - SUFFIX.length))
+            .map(p => parseInt(p, 10))
+            .filter(Number.isSafeInteger)
+            .reduce((p, c) => Math.max(p, c), 0) + 1
+
+        const structure = world.copy(TOP_LEFT.x + 1, TOP_LEFT.y + 1, TOP_LEFT.x + map.width - 2, TOP_LEFT.y + map.height - 3)
+
+        structure.meta = {
+            creator: player.username,
+            name: 'World Name',
+            difficulty: 'easy'
+        }
+
+        writeFileSync(path.join(MAPS_PATH, PREFIX + int.toString().padStart(2, '0') + SUFFIX), structure.toString())
+    })
+
     client.on('cmd:*open', ([p, _, name]) => {
         if (!is_bot_admin(p)) return
         return open_door()
@@ -177,6 +202,8 @@ export function module(client: Client) {
 
     client.on('cmd:*build', async ([p, _, name]) => {
         if (!is_bot_admin(p)) return
+        const result = find_map(name)
+        if (result) QUEUE.unshift(result)
         const meta = await build_map()
         client.say(`[BOT] "${meta.name}" by ${meta.creator}`)
     })
