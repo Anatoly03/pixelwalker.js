@@ -11,6 +11,7 @@ export const height = 37
 
 const TOP_LEFT = { x: parseInt(process.env.TLX || '0'), y: parseInt(process.env.TLY || '0') }
 const QUEUE: [string, string][] = []
+const RECENT_MAPS: string[] = []
 const MAPS_PATH = process.env.MAPS_PATH || 'maps'
 
 const map = new Structure(50, 37)
@@ -22,10 +23,10 @@ function get_map(): Structure {
     if (QUEUE.length > 0)
         map_path = QUEUE.shift()?.[0] as string
     else {
-        const maps = fs.readdirSync(MAPS_PATH)
-        console.log(maps)
+        const maps = fs.readdirSync(MAPS_PATH).filter(p => !p.startsWith('filled') && !p.startsWith('empty') && !RECENT_MAPS.includes(p))
         map_path = maps[Math.floor(maps.length * Math.random())]
-        console.log(map_path)
+        RECENT_MAPS.push(map_path)
+        if (RECENT_MAPS.length >= maps.length / 2) RECENT_MAPS.shift()
     }
 
     return Structure.fromString(
@@ -178,6 +179,14 @@ export function module(client: Client) {
         if (!is_bot_admin(p)) return
         const meta = await build_map()
         client.say(`[BOT] "${meta.name}" by ${meta.creator}`)
+    })
+
+    client.on('cmd:*build-frame', async ([p, _, name]) => {
+        if (!is_bot_admin(p)) return
+        const data = fs.readFileSync(path.join(MAPS_PATH, 'filled.yaml')).toString()
+        const structure = Structure.fromString(data)
+        map.paste(0, 0, structure)
+        await client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, { animation: Animation.RANDOM, write_empty: true })
     })
 
     client.on('cmd:*clear', ([p, _, name]) => {
