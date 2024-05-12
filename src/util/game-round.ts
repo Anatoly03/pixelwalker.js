@@ -9,11 +9,11 @@ type GameRoundEvents = {
 
 export class GameRound extends EventEmitter<GameRoundEvents> {
 // export class GameRound<V extends {[keys: string]: any[]}> extends EventEmitter<GameRoundEvents | V> {
-    private client: Client
-    private players: Player[]
-    private loop: () => Promise<any> = () => Promise.resolve({})
+    public players: Player[]
     
+    private client: Client
     private GAME_RUNNING = false
+    private loop: () => Promise<any> = () => Promise.resolve({})
 
     constructor(client: Client) {
         super()
@@ -35,7 +35,7 @@ export class GameRound extends EventEmitter<GameRoundEvents> {
     private async runLoop() {
         await this.loop()
         if (!this.GAME_RUNNING) return
-        setTimeout(this.runLoop.bind(this), 0)
+        setTimeout(() => this.runLoop(), 0)
     }
 
     public stop() {
@@ -47,29 +47,24 @@ export class GameRound extends EventEmitter<GameRoundEvents> {
         this.players = Array.from(players.values()).filter(callback)
     }
 
-    public eliminate(p: Player, reason: 'left' | 'god' | 'kill') {
+    private eliminate(p: Player, reason: 'left' | 'god' | 'kill') {
+        if (!this.GAME_RUNNING) return
         this.players = this.players.filter(q => q.id != p.id)
         this.emit('eliminate', p, reason)
     }
 
-    public forEachPlayer(callback: (p: Player) => void) {
-        this.players.forEach(callback)
-    }
-
-    public setPlayers(players: Player[]) {
-        this.players = players
-    }
-
     public module(client: Client) {
-        this.client.on('player:god', ([p]) => {
+        client.on('player:god', ([p]) => {
+            // console.log(this)
+            // console.log(client.self)
             if (p.god_mode) this.eliminate(p, 'god')
         })
 
-        this.client.on('player:death', ([p]) => {
+        client.on('player:death', ([p]) => {
             this.eliminate(p, 'kill')
         })
     
-        this.client.on('player:leave', ([p]) => {
+        client.on('player:leave', ([p]) => {
             this.eliminate(p, 'left')
         })
 
