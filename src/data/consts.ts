@@ -1,5 +1,5 @@
 import Block, { WorldPosition } from "../types/block"
-import Player from "../types/player"
+import Player, { SelfPlayer } from "../types/player"
 
 export const API_ACCOUNT_LINK = 'api.pixelwalker.net'
 export const API_ROOM_LINK = 'game.pixelwalker.net'
@@ -19,7 +19,7 @@ export const enum HeaderTypes {
 export interface LibraryEvents {
     'error': [[Error]]
     'close': [[number, string]]
-    'start': [[Player]]
+    'start': [[SelfPlayer]]
     'player:join': [[Player]]
     'player:leave': [[Player]]
     'chat': [[Player, string]]
