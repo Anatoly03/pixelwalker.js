@@ -8,9 +8,10 @@ const map: string[] = JSON.parse(text)
 export const RoomTypes: string[] = map
 export default RoomTypes
 
-fs.writeFileSync(import.meta.dirname + '/room_types.d.ts', `
+if (import.meta.dirname)
+    fs.writeFileSync(import.meta.dirname + '/room_types.d.ts',
+`
 // This is auto generated in the project.
-
 export declare const RoomTypes: (${RoomTypes.map(v => `"${v}"`).join(' | ')})[]
 export default RoomTypes
 `)
