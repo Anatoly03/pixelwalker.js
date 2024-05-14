@@ -3,30 +3,37 @@ import { SpecialBlockData } from "../data/consts.js"
 import { BlockMappings, BlockMappingsReverse } from "../data/mappings.js"
 
 export type WorldPosition = [number, number, 0 | 1]
+export type BlockIdentifier = keyof typeof BlockMappings | Block | number | null
 
 export default class Block {
     public id: number
     public data: any[] = []
     
-    constructor(id: number | keyof typeof BlockMappings) {
-        if (typeof id == 'string') {
-            id = BlockMappings[id]
+    constructor(id?: BlockIdentifier) {
+        if (id == null || id == undefined) id = 0
+
+        switch (typeof id) {
+            case 'string': // as type `keyof typeof BlockMappings`
+                id = BlockMappings[id]
+            case 'number':
+                this.id = id
+                break
+            case 'object':
+                this.id = id.id || 0
+                this.data = id.data || []
         }
-        this.id = id
     }
 
-    public isSameAs(other: Block | keyof typeof BlockMappings | number | null) {
-        if (other == null) return false
-        if (typeof other == 'number') other = new Block(other)
-        if (typeof other == 'string') other = new Block(other)
-        if (this.id != other.id) return false
-        if (this.data.length != other.data.length) return false
+    public isSameAs(other?: BlockIdentifier) {
+        const block = new Block(other)
+        if (this.id != block.id) return false
+        if (this.data.length != block.data.length) return false
         for (let i = 0; i < this.data.length; i++)
-            if (this.data[i] != other.data[i]) return false
+            if (this.data[i] != block.data[i]) return false
         return true
     }
 
-    public isNotSameAs(other: Block | keyof typeof BlockMappings | number | null) {
+    public isNotSameAs(other?: BlockIdentifier) {
         return !this.isSameAs(other)
     }
 

@@ -1,28 +1,47 @@
-import Client from "../client.js";
+import Client from "../client.js"
+import { MessageType } from "../data/consts.js"
+import { Bit7, Magic, Boolean, Int32, Double, String } from "../types.js"
 
-export default class Player {
-    private readonly client: Client
-
-    public readonly id: number
+/**
+ * Player Base
+ */
+export class PlayerBase {
     public readonly cuid: string
     public readonly username: string
+    public readonly isAdmin: boolean
+    
+    constructor(args: {
+        cuid: string
+        username: string
+        isAdmin: boolean
+    }) {
+        this.cuid = args.cuid
+        this.username = args.username
+        this.isAdmin = args.isAdmin
+    }
+}
 
+/**
+ * Player in World
+ */
+export default class Player extends PlayerBase {
+    protected readonly client: Client
+
+    public readonly id: number
     public face: number
-    public isAdmin: boolean
     public x: number
     public y: number
+
     public god_mode: boolean
     public mod_mode: boolean
+    public can_edit: boolean
+    public can_god: boolean
+
     public has_crown: boolean
 
     public coins: number
     public blue_coins: number
     public deaths: number
-
-    public horizontal: -1 | 0 | 1 | undefined
-    public vertical: -1 | 0 | 1 | undefined
-    public space_down: boolean | undefined
-    public space_just_down: boolean | undefined
 
     constructor(args: {
         client: Client
@@ -36,24 +55,26 @@ export default class Player {
         god_mode?: boolean
         mod_mode?: boolean
         has_crown?: boolean
+        can_edit: boolean
+        can_god: boolean
         coins?: number
         blue_coins?: number
         deaths?: number
     }) {
+        super(args)
+
         this.client = args.client
 
         this.id = args.id
-        this.cuid = args.cuid
-        this.username = args.username
-
         this.face = args.face
-        this.isAdmin = args.isAdmin
         this.x = args.x
         this.y = args.y
 
         this.god_mode = args.god_mode || false
         this.mod_mode = args.mod_mode || false
         this.has_crown = args.has_crown || false
+        this.can_edit = args.can_edit
+        this.can_god = args.can_god
 
         this.coins = args.coins || 0
         this.blue_coins = args.blue_coins || 0
@@ -92,11 +113,51 @@ export default class Player {
         this.client.say(`/${value ? 'givecrown' : 'takecrown'} #${this.id}`)
     }
 
-    public async teleport(x: number, y: number) {
-        this.client.say(`/tp #${this.id} ${x} ${y}`)
+    public async teleport(x: number, y:number): Promise<void>;
+    public async teleport(p: Player): Promise<void>;
+    public async teleport(x: number | Player, y?: number) {
+        if (typeof x == 'number' && typeof y == 'number')
+            this.client.say(`/tp #${this.id} ${x} ${y}`)
+        else if (x instanceof Player)
+            this.client.say(`/tp #${this.id} #${x.id}`)
     }
 
     public async reset() {
-        this.client.say(`/resetplayer ${this.username}`)
+        this.client.say(`/resetplayer #${this.id}`)
+    }
+}
+
+/**
+ * Self Player
+ */
+export class SelfPlayer extends Player {
+    private move_tick = 0
+
+    public say(content: string) {
+        return this.client.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
+    }
+
+    public set_god(value: boolean) {
+        return this.client.send(Magic(0x6B), Bit7(MessageType['playerGodMode']), Boolean(value))
+    }
+
+    public set_mod(value: boolean) {
+        return this.client.send(Magic(0x6B), Bit7(MessageType['playerModMode']), Boolean(value))
+    }
+
+    public set_face(value: number) {
+        return this.client.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
+    }
+
+    public move(x: number, y: number, xVel: number, yVel: number, xMod: number, yMod: number, horizontal: -1 | 0 | 1, vertical: -1 | 0 | 1, space_down: boolean, space_just_down: boolean) {
+        return this.client.send(
+            Magic(0x6B), Bit7(MessageType['playerMoved']),
+            Double(x), Double(y),
+            Double(xVel), Double(yVel),
+            Double(xMod), Double(yMod),
+            Int32(horizontal), Int32(vertical),
+            Boolean(space_down), Boolean(space_just_down),
+            Int32(this.move_tick++)
+        )
     }
 }

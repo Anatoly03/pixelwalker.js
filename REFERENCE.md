@@ -33,21 +33,28 @@ client.connect('r450e0e380a815a', 'pixelwalker4')
 
 Disconnect client
 
-#### unstable `include(client: Client)`
+#### `include(callback: (client: Client) => void)`
 
-Include a module into the current client.
+Include a module into the current client. A module itself is a lambda function, that accepts `this` (the Client) as argument and provides modifications on the object itself
 
 ```js
 // index.js
 import Module from './path/to/mod.js'
-client.on('init', ([p]) => console.log('Main Called'))
+client.once('start', ([p]) => console.log('Main Called'))
 client.include(Module)
-
-// mod.js
-const client = new Client({})
-client.on('init', ([p]) => console.log('Module Called'))
-export default client
 ```
+```
+export default (client) => {
+    client.once('start', ([p]) => console.log('Module Called'))
+}
+```
+
+There are different predefined modules, that you can include with `import { Modules } from 'pixelwalker.js'`
+
+| Module | Description |
+|:-:|-|
+| `Module.Debug(events)` | Accepts an array `events` of raw event names as parameter and returns a module that will debug print the event calls into the console. |
+| `Module.PlayerKeyManager(callback)` | Accepts an lambda `callback` that sends an event manager as parameter. This local event manager will emit events in the format `[key]:[state]` where `[key]` is one of `space`, `up`, `left`, `down` or `right` and `[state]` is `down` (when the player pressed key) or `up` where the player releases the key. |
 
 #### `wait(ms: number): Promise`
 
@@ -113,6 +120,9 @@ Fill the structure `world` at given coordinates.
 | `player:coin:blue` | `Player`, `number` | A player touched a blue coin. Second number is old blue coin count. To get new blue coin count, use `Player.blue_coins` |
 | `player:death` | `Player`, `number` | A player died. Second number is old death count. To get new death count, use `Player.deaths` |
 | `player:block` | `Player`, `WorldPosition`, `Block` | A block was placed. |
+| `player:keyboard:*:*` | `Player` | Player pressed a key. First asterisk is a macro for one of the following `space`, `left`, `down`, `right`, `up` and the second dictates the state of the key. `down` for just pressed and `up` for released. |
+| `chat` | `Player`, `string` | Called on chat messages |
+| `chat:pm` | `Player`, `string` | Called on private chat messages |
 | `cmd:*` | `Player`, ...`args` | Retrieve specific commands from messages. Replace `*` with command to listen to. For `!ping`, the event is `cmd:ping`. Arguments are provided by the player in chat. You can access `client.cmdPrefix` to set a list of allowed command prefices. |
 | `world:clear` | | The World was cleared. |
 

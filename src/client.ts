@@ -3,40 +3,48 @@ import PocketBase from 'pocketbase'
 import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 
+import RoomTypes from './data/room_types.js'
+
 import { read7BitInt, deserialise } from './math.js'
-import { HeaderTypes, MessageType, SpecialBlockData, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
-import { Magic, Bit7, String, Int32, Boolean, Double, Byte } from './types.js'
-import { BlockMappings } from './data/mappings.js'
+import { MessageType, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents, SystemMessageEvents } from './data/consts.js'
+import { Magic } from './types.js'
+import Block, { BlockIdentifier } from './types/block.js'
+import Player, { PlayerBase, SelfPlayer } from './types/player.js'
+
 import World from './types/world.js'
-import Block, { WorldPosition } from './types/block.js'
-import Player from './types/player.js'
-import { FIFO, RANDOM } from './types/animation.js'
-import { RoomTypes } from './data/room_types.js'
-import init_events from './events.js'
-import Scheduler from './types/scheduler.js'
+import Structure from './types/structure.js'
+
+import BotCommandModule from './modules/bot-command.js'
+import ChatModule from './modules/chat.js'
+import PlayerManagerModule from './modules/player-manager.js'
+import InitModule from './modules/start.js'
+import SystemMessageModule from './modules/system-command.js'
+import WorldManagerModule from './modules/world-manager.js'
+
+import BlockScheduler from './scheduler/scheduler-block.js'
+import { BlockMappings } from './data/mappings.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
     public connected = false
 
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
-    public scheduler: Scheduler = new Scheduler(this)
+    public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
+
+    public block_scheduler: BlockScheduler
 
     private pocketbase: PocketBase | null
     private socket: WebSocket | null
-    private debug: boolean
 
-    public self: Player | null
+    public self: SelfPlayer | null
     public world: World | undefined
     public cmdPrefix: string[]
 
     public readonly players: Map<number, Player> = new Map()
+    public readonly globalPlayers: Map<string, PlayerBase> = new Map()
 
-    private inclusions: Client[] = []
-
-    private move_tick: number = 0
-
-
-    constructor(args: { token?: string, user?: string, pass?: string, flags?: {}, debug?: boolean }) {
+    constructor(args: { token?: string });
+    constructor(args: { user: string, pass: string });
+    constructor(args: { token?: string, user?: string, pass?: string }) {
         super()
 
         this.pocketbase = null
@@ -56,14 +64,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
             throw new Error('Authentication with user and password not supported yet.')
         }
 
-        if (args.flags) {
-            // TODO ability to enable parts of the api
-            // - 'serialize' = serialize the world and keep track of changes
-            // - 'simulate' = do not simulate player movements and track pseudo events: coins collected
-            // - ...
-        }
-
-        this.debug = args.debug || false
+        this.block_scheduler = new BlockScheduler(this)
 
         // On process interrupt, gracefully disconnect.
         // DO NOT merge this into one function, otherwise it does not work.
@@ -78,7 +79,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * Connect client to server
      */
-    public async connect(world_id: string, room_type?: typeof RoomTypes[0]) {
+    public connect(world_id: string | undefined): Promise<Client>
+    public connect(world_id: string | undefined, room_type: typeof RoomTypes[0]): Promise<Client>
+    public async connect(world_id: string, room_type?: typeof RoomTypes[0]): Promise<Client> {
         if (world_id == undefined) throw new Error('`world_id` was not provided in `Client.connect()`')
         if (room_type && !RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
         if (!room_type) room_type = RoomTypes[0]
@@ -99,10 +102,16 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         this.connected = true
 
-        this.ping_modules(client => client.socket = this.socket)
+        this.block_scheduler.start()
+        
+        this.include(BotCommandModule)
+        this.include(ChatModule)
+        this.include(PlayerManagerModule)
+        this.include(InitModule)
+        this.include(SystemMessageModule)
+        this.include(WorldManagerModule)
 
-        this.scheduler.start()
-        init_events(this)
+        return this
     }
 
     /**
@@ -118,8 +127,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
             let [event_id, offset] = read7BitInt(buffer, 1)
             const event_name = Object.entries(MessageType).find((k) => k[1] == event_id)?.[0] as keyof RawGameEvents
             const data = deserialise(buffer, offset)
-
-            if (this.debug && buffer[1] != MessageType['playerMoved']) console.debug('Receive', event_name, data)
 
             if (event_name == undefined) {
                 console.warn((`Unknown event type ${event_id}. API may be out of date. Deserialised: ${data}`))
@@ -163,9 +170,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * Disconnect client from server
      */
     public disconnect() {
-        if (this.debug) console.debug('Disconnect')
         this.connected = false
-        this.scheduler.stop()
+        this.block_scheduler.stop()
         this.pocketbase?.authStore.clear()
         this.socket?.close()
     }
@@ -174,42 +180,20 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * Include Event handler from another client instance. This function
      * gets the event calls from `client` and a links them to `this`
      */
-    public include(client: Client): Client {
-        this.inclusions.push(client)
-
-        client.scheduler = this.scheduler
-        client.send = (...args) => this.send(...args)
-        client.block = (...args) => this.block(...args)
-
-        for (const event_name of client.eventNames()) {
-            // https://stackoverflow.com/questions/49177088/nodejs-eventemitter-get-listeners-check-if-listener-is-of-type-on-or-once
-            let functions: (() => void)[] = (client as any)._events[event_name]
-            if (typeof functions == 'function') functions = [functions]
-
-            for (const listener of functions) {
-                if (listener.name.includes('onceWrapper'))
-                    this.once(event_name, listener.bind(this))
-                else
-                    this.on(event_name, listener.bind(this))
-            }
-        }
-
-        return this
+    public include<T>(callback: (c: Client) => Client & T): Client & T;
+    public include<T>(module: { module: (c: Client) => Client & T }): Client & T;
+    public include<T>(callback: ((c: Client) => Client & T) | { module: (c: Client) => Client & T }): Client & T {
+        if (typeof callback == 'function')
+            return callback(this) || this
+        else
+            return callback.module(this)
+            // return this.include(() =>callback.module(this))
     }
 
-    public ping_modules(callback: (c: Client) => void) {
-        this.inclusions.forEach(callback)
-    }
-
-    //
-    //
-    // Communication
-    //
-    //
-
+    /**
+     * Send raw bytes to server
+     */
     public send(...args: Buffer[]): Promise<any | undefined> {
-        // if (this.debug && Buffer.concat(args)[0] != 0x3f) console.debug('Sending', Buffer.concat(args))
-
         return new Promise((res, rej) => {
             if (!this.socket) throw new Error('Socket not existing.')
             if (this.socket.readyState != this.socket.OPEN) throw new Error('Socket not connected.')
@@ -221,81 +205,37 @@ export default class Client extends EventEmitter<LibraryEvents> {
         })
     }
 
-    public say(content: string) {
-        return this.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
+    // TODO
+    public block(x: number, y: number, layer: 0 | 1, block: number | null | keyof typeof BlockMappings, ...args: any[]): Promise<boolean>
+    public block(x: number, y: number, layer: 0 | 1, block: Block): Promise<boolean>
+    public block(x: number, y: number, layer: 0 | 1, block: BlockIdentifier, ...args: any[]): Promise<boolean> {
+        if (block == null) block = 0
+        if (typeof block == 'string' || typeof block == 'number') {
+            block = new Block(block)
+            block.data.push(...args)
+        } else if (!(block instanceof Block))
+            return Promise.reject("Expected `Block` or block identifier, got unknown object.")
+
+        return this.world?.put_block(x, y, layer, block) || Promise.reject('The `client.world` object was not loaded.')
     }
 
-    public block(x: number, y: number, layer: 0 | 1, block: number | keyof typeof BlockMappings | Block): Promise<boolean> {
-        if (!this.connected) return Promise.reject("Client not connected")
-        if (typeof block == 'string' || typeof block == 'number') block = new Block(block)
-        if (!(block instanceof Block)) return Promise.resolve(true)
-        if (!this.scheduler.running) { throw new Error('Scheduler is not defined.') }
-        if (this.world?.[layer == 1 ? 'foreground' : 'background'][x][y]?.isSameAs(block)) return Promise.resolve(true)
-
-        return this.scheduler.block([x, y, layer], block)
+    public say(content: string) {
+        return this.self?.say(content)
     }
 
     public god(value: boolean, mod_mode: boolean) {
-        return this.send(Magic(0x6B), Bit7(MessageType[mod_mode ? 'playerModMode' : 'playerGodMode']), Boolean(value))
+        return this.self?.[mod_mode ? 'set_mod' : 'set_god'](value)
     }
 
     public face(value: number) {
-        return this.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
+        return this.self?.set_face(value)
     }
 
     public move(x: number, y: number, xVel: number, yVel: number, xMod: number, yMod: number, horizontal: -1 | 0 | 1, vertical: -1 | 0 | 1, space_down: boolean, space_just_down: boolean) {
-        return this.send(
-            Magic(0x6B), Bit7(MessageType['playerMoved']),
-            Double(x), Double(y),
-            Double(xVel), Double(yVel),
-            Double(xMod), Double(yMod),
-            Int32(horizontal), Int32(vertical),
-            Boolean(space_down), Boolean(space_just_down),
-            Int32(this.move_tick++)
-        )
+        return this.self?.move(x, y, xVel, yVel, xMod, yMod, horizontal, vertical, space_down, space_just_down)
     }
 
-    // TODO add types for animation header
-    public async fill(xt: number, yt: number, world: World, args?: { animation?: (b: any) => any, write_empty?: boolean }) {
-        if (!args) args = { write_empty: true }
-
-        const promises: Promise<boolean>[] = []
-        // const promises_debug: Block[] = []
-
-        this.world = await this.wait_for(() => this.world)
-        const to_be_placed: [WorldPosition, Block][] = []
-
-        for (let x = 0; x < world.width; x++)
-            for (let y = 0; y < world.height; y++) {
-                if (!world.foreground[x][y] || !world.foreground[x][y].isSameAs(this.world.foreground[xt + x][yt + y])) {
-                    if (!((world.blockAt(x, y, 1).name == 'empty') && !args.write_empty))
-                        to_be_placed.push([[xt + x, yt + y, 1], world.blockAt(x, y, 1)])
-                }
-                if (!world.foreground[x][y] || !world.background[x][y].isSameAs(this.world.background[xt + x][yt + y])) {
-                    if (!((world.blockAt(x, y, 0).name == 'empty') && !args.write_empty))
-                        to_be_placed.push([[xt + x, yt + y, 0], world.blockAt(x, y, 0)])
-                }
-            }
-
-        // TODO const generator = (args.animation || FIFO)(to_be_placed)
-        const generator = RANDOM(to_be_placed)
-
-        while (to_be_placed.length > 0) {
-            const yielded = generator.next()
-            const [[x, y, layer], block]: any = yielded.value
-
-            const promise = this.block(x, y, layer, block)
-            promise.catch(v => {
-                throw new Error(v)
-            })
-            promises.push(promise)
-            // promises_debug.push(block)
-        }
-
-        // for (let i = 0; i < promises.length; i++) {
-        //     console.log(promises_debug[i], promises[i])
-        // }
-
-        return Promise.all(promises)
+    public fill(xt: number, yt: number, fragment: Structure, args?: { animation?: (b: any) => any, ms?: number, write_empty?: boolean }) {
+        return this.world?.paste(xt, yt, fragment, args)
     }
 }

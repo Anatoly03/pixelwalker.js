@@ -1,5 +1,5 @@
 import Block, { WorldPosition } from "../types/block"
-import Player from "../types/player"
+import Player, { SelfPlayer } from "../types/player"
 
 export const API_ACCOUNT_LINK = 'api.pixelwalker.net'
 export const API_ROOM_LINK = 'game.pixelwalker.net'
@@ -19,10 +19,11 @@ export const enum HeaderTypes {
 export interface LibraryEvents {
     'error': [[Error]]
     'close': [[number, string]]
-    'start': [[Player]]
+    'start': [[SelfPlayer]]
     'player:join': [[Player]]
     'player:leave': [[Player]]
     'chat': [[Player, string]]
+    'chat:pm': [[Player, string]]
     [key: `cmd:${string}`]: [[Player, ...string[]]]
     'player:face': [[Player, number, number]]
     'player:god': [[Player]]
@@ -36,9 +37,9 @@ export interface LibraryEvents {
 }
 
 export interface RawGameEvents {
-    '*':                        [any[]]
+    '*':                        [any[]],
     'init':                     [[number, string, string, number, boolean, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
-    'updateRights':             [[boolean, boolean]],
+    'updateRights':             [[number, boolean, boolean]],
     'worldMetadata':            [[string, number, string]],
     'worldCleared':             [[]],
     'worldReloaded':            [[Buffer]],
@@ -119,4 +120,68 @@ export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
     'global_switch_resetter':   [HeaderTypes.Byte],
     'global_switch_door':       [HeaderTypes.Int32],
     'global_switch_gate':       [HeaderTypes.Int32],
+}
+
+export type SystemMessageEvents = {
+    'help': [[string]],
+    'receivePm': [[string, string]],
+    'sendPm': [[string, string]],
+    'noPm': [[]],
+    'playerMute': [[string]],
+    'playerUnmute': [[string]],
+    'alreadyGodMode': [[string]],
+    'noMoreGodMode': [[string]],
+    'givenGodMode': [[string]],
+    'alreadyEdit': [[string]],
+    'noMoreEdit': [[string]],
+    'givenEdit': [[string]],
+    'playerTeleported': [[string, number]],
+    'multiplePlayersTeleported': [[number, number, number]],
+    'playerNotTeleported': [[]],
+    'noChangesToSave': [[]],
+    'savingWorld': [[]],
+    'worldSaved': [[]],
+    'reloadingWorld': [[]],
+    'worldReloaded': [[]],
+    'worldCleared': [[]],
+    'titleChanges': [[string]],
+    'titleNotChanged': [[]],
+    'worldVisibility': [['PUBLIC' | 'PRIVATE' | 'UNLISTED']],
+    'onKick': [[string]],
+    'onKickWithReason': [[string, string]],
+    'onSelfKicked': [[string]],
+    'playerNotFound': [[]],
+    'cantMuteYourself': [[]],
+}
+
+export const SystemMessageFormat = {
+    'help': ['* SYSTEM', 'Available commands:%s'],
+    'receivePm': ['* %p > YOU', '%s'],
+    'sendPm': [ '* YOU > %p', '%s' ],
+    'noPm': ['* SYSTEM', 'You must specify a player and a message.'],
+    'playerMute': ['* SYSTEM', '%p was muted.'],
+    'playerUnmute': ['* SYSTEM', '%p was unmuted.'],
+    'alreadyGodMode': ['* SYSTEM', '%p already has god mode rights.'],
+    'noMoreGodMode': [ '* SYSTEM', "%p's god mode rights were taken away."],
+    'givenGodMode': [ '* SYSTEM', '%p was given god mode rights.' ],
+    'alreadyEdit': [ '* SYSTEM', '%p already has editing rights.' ],
+    'noMoreEdit': [ '* SYSTEM', "%p's editing rights were taken away." ],
+    'givenEdit': [ '* SYSTEM', '%p was given editing rights.' ],
+    'playerTeleported': ['* SYSTEM', 'Teleported %p to %n, %n.'],
+    'multiplePlayersTeleported': ['* SYSTEM', 'Teleported %n players to %n, %n.'],
+    'playerNotTeleported': ['* SYSTEM', 'You need to specify a player to teleport and the coordinates.'],
+    'noChangesToSave': ['* SYSTEM', 'There are no unsaved changes to save.'],
+    'savingWorld': ['* SYSTEM', 'Saving world...'],
+    'worldSaved': ['* SYSTEM', 'World saved!'],
+    'reloadingWorld': ['* SYSTEM', 'Reloading world...'],
+    'worldReloaded': ['* SYSTEM', 'World reloaded!'],
+    'worldCleared': ['* SYSTEM', 'World cleared!'],
+    'titleChanges': ['* SYSTEM', 'Title changed to "%s".'],
+    'titleNotChanged': ['* SYSTEM', 'You must specify an alphanumeric title.'],
+    'worldVisibility': ['* SYSTEM', 'World visibility set to %s.'],
+    'onKick': [ '* SYSTEM', '%p was kicked.' ],
+    'onKickWithReason': [ '* SYSTEM', '%p was kicked: %s' ],
+    'onSelfKicked': [ 'You were kicked!', 'Reason: %s' ],
+    'playerNotFound': [ '* SYSTEM', 'Player not found.' ],
+    'cantMuteYourself': [ '* SYSTEM', "You can't mute yourself." ]
 }
