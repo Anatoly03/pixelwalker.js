@@ -3,6 +3,7 @@ import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
 
 import { is_bot_admin } from './admin.js'
 import { build_map, clear_map, close_door, create_win_zone, open_door, remove_spawn, set_spawn } from './map.js'
+import { getPlayerEntry } from './players.js'
 
 export function module(client: Client) {
     const gameRound = new Util.GameRound(client)
@@ -40,6 +41,7 @@ export function module(client: Client) {
 
         if (ROUND_PLAYERS_COUNT < 3) {
             END_ROUND.accept(false)
+            getPlayerEntry(player.cuid).gold++
             return client.say(`[BOT] ${player.username} won!`)
         }
         
@@ -62,6 +64,7 @@ export function module(client: Client) {
 
         if (gameRound.players.length == 1) {
             client.say(`[BOT] ${gameRound.players[0].username} won!`)
+            getPlayerEntry(player.cuid).gold++
             return END_ROUND.accept(false)
         }
 
@@ -93,6 +96,8 @@ export function module(client: Client) {
         } else {
             await client.wait(4000)
         }
+
+        gameRound.players.forEach(q => getPlayerEntry(q.cuid).rounds++)
     
         const meta = await build_map()
         console.log(`Round ${ROUND} - ${meta.name}`)
