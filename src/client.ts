@@ -32,11 +32,13 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     public block_scheduler: BlockScheduler
 
-    private pocketbase: PocketBase | null
+    private pocketbase: PocketBase
+    
     private socket: WebSocket | null
-
     public self: SelfPlayer | null
-    public world: World | undefined
+    public world: World | null
+    
+    public chatPrefix: string
     public cmdPrefix: string[]
 
     public readonly players: Map<number, Player> = new Map()
@@ -47,10 +49,11 @@ export default class Client extends EventEmitter<LibraryEvents> {
     constructor(args: { token?: string, user?: string, pass?: string }) {
         super()
 
-        this.pocketbase = null
         this.socket = null
         this.self = null
-        this.world = undefined
+        this.world = null
+
+        this.chatPrefix = ''
         this.cmdPrefix = ['.', '!']
 
         if (args.token) {
@@ -58,10 +61,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
             this.pocketbase.authStore.save(args.token, { verified: true })
             if (!this.pocketbase.authStore.isValid) throw new Error('Invalid Token')
-        }
-
-        if (args.user && args.pass) {
+        } else if (args.user && args.pass) {
             throw new Error('Authentication with user and password not supported yet.')
+        } else {
+            throw new Error('Invalid attempt to connect with pocketbase client.')
         }
 
         this.block_scheduler = new BlockScheduler(this)
@@ -69,11 +72,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
         // On process interrupt, gracefully disconnect.
         // DO NOT merge this into one function, otherwise it does not work.
         process.on('SIGINT', (signal) => this.disconnect())
-
         // Print unhandled promises after termination
-        process.on("unhandledRejection", (error) => {
-            console.error(error); // This prints error with stack included (as for normal errors)
-        });
+        process.on("unhandledRejection", (error) => console.error(error));
     }
 
     /**
@@ -220,7 +220,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     public say(content: string) {
-        return this.self?.say(content)
+        return this.self?.say(this.chatPrefix + content)
     }
 
     public god(value: boolean, mod_mode: boolean) {
