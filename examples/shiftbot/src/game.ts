@@ -151,31 +151,5 @@ export function module(client: Client) {
         GAME_HALT_FLAG = true
     })
 
-    /**
-     * This is the "Traps" modi of ex crew shift, where some
-     * admins randomly edit the map. The changes will be engraved
-     * on the map as a display of abnormalities.
-     */
-    // client.on('player:block', async ([player, pos, block]) => {
-    //     if (!is_bot_admin(player)) return
-    //     if (player.id == client.self?.id) return
-    //     if (pos[2] == 0) return // We ignore background modifications
-    //     if (!gameRound.running) return
-        
-    //     const world = await client.wait_for(() => client.world)
-
-    //     client.block(pos[0], pos[1], 0, 0)
-
-    //     if (pos[0] > 0 && SolidBlocks.includes(world.foreground[pos[0] - 1][pos[1]].name))
-    //         client.block(pos[0] - 1, pos[1], 1, 'hazard_stripes')
-    //     if (pos[1] > 0 && SolidBlocks.includes(world.foreground[pos[0]][pos[1] - 1].name))
-    //         client.block(pos[0], pos[1] - 1, 1, 'hazard_stripes')
-    //     if (pos[0] < world.width - 1 && SolidBlocks.includes(world.foreground[pos[0] + 1][pos[1]].name))
-    //         client.block(pos[0] + 1, pos[1], 1, 'hazard_stripes')
-    //     if (pos[1] < world.height - 1 && SolidBlocks.includes(world.foreground[pos[0]][pos[1] + 1].name))
-    //         client.block(pos[0], pos[1] + 1, 1, 'hazard_stripes')
-
-    // })
-
     return client
 }

@@ -138,9 +138,19 @@ export async function build_map() {
 }
 
 export function clear_map() {
-    const data = fs.readFileSync(path.join(MAPS_PATH, 'empty.yaml')).toString()
-    map.paste(0, 0, Structure.fromString(data))
-    // map_without_doors.paste(0, 0, Structure.fromString(s))
+    // Uncomment to clear all map
+    // const data = fs.readFileSync(path.join(MAPS_PATH, 'empty.yaml')).toString()
+    // map.paste(0, 0, Structure.fromString(data))
+
+    // This will keep the first arrow line in tact
+    const data_cleared = fs.readFileSync(path.join(MAPS_PATH, 'empty.yaml')).toString()
+    const data_filled = fs.readFileSync(path.join(MAPS_PATH, 'filled.yaml')).toString()
+    let cleared = Structure.fromString(data_cleared)
+    let filled = Structure.fromString(data_filled)
+    cleared = cleared.copy(0, 1, cleared.width - 1, cleared.height - 1)
+    map.paste(0, 0, filled)
+    map.paste(0, 1, cleared)
+
     return client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, { animation: Animation.RANDOM, write_empty: true })
 }
 
@@ -159,7 +169,7 @@ export function module(client: Client) {
 
     client.on('cmd:save', async ([player, _, x, y]) => {
         if (!is_bot_admin(player)) return
-        const world = await client.wait_for(() => client.world)
+        if (!client.world) throw new Error('Unreachable!')
 
         const PREFIX = 'map'
         const SUFFIX = '.yaml'
@@ -171,7 +181,7 @@ export function module(client: Client) {
             .filter(Number.isSafeInteger)
             .reduce((p, c) => Math.max(p, c), 0) + 1
 
-        const structure = world.copy(TOP_LEFT.x + 1, TOP_LEFT.y + 1, TOP_LEFT.x + map.width - 2, TOP_LEFT.y + map.height - 3)
+        const structure = client.world.copy(TOP_LEFT.x + 1, TOP_LEFT.y + 1, TOP_LEFT.x + map.width - 2, TOP_LEFT.y + map.height - 3)
 
         structure.meta = {
             creator: player.username,
