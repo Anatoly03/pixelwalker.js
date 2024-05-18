@@ -8,7 +8,8 @@ export default function Module(client: Client): Client {
      * When receiving a chat message, emit.
      */
     client.raw.on('chatMessage', async ([id, message]) => {
-        const player = await client.wait_for(() => client.players.get(id))
+        const player = client.players.get(id)
+        if (!player) throw new Error('Unreachable!')
         client.emit('chat', [player, message])
     })
 
@@ -16,7 +17,8 @@ export default function Module(client: Client): Client {
      * When receiving a private message, emit.
      */
     client.system.on('receivePm', async ([username, message]) => {
-        const players = await client.wait_for(() => Array.from(client.players.values()).filter(p => p.username == username))
+        const players = Array.from(client.players.values()).filter(p => p.username == username)
+        if (!players) throw new Error('Unreachable!')
         client.emit('chat:pm', [players[0], message])
     })
 

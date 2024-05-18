@@ -25,7 +25,7 @@ import BlockScheduler from './scheduler/scheduler-block.js'
 import { BlockMappings } from './data/mappings.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
-    public connected = false
+    private isConnected = false
 
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
     public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
@@ -100,7 +100,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.socket.on('error', (err) => { this.emit('error', [err]); this.disconnect() })
         this.socket.on('close', (code, buffer) => { this.emit('close', [code, buffer.toString('ascii')]); this.disconnect() })
 
-        this.connected = true
+        this.isConnected = true
 
         this.block_scheduler.start()
         
@@ -150,27 +150,17 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /**
-     * Busy-Wait in the local thread until the return value defined by
-     * callback is non-undefined. This function forces to wait current
-     * control flow till certain information is received.
+     * Connection state of the client, value from readonly `isConnected`.
      */
-    public wait_for<WaitType>(condition: (() => WaitType | undefined)): Promise<WaitType> {
-        const promise = (res: (v: WaitType) => void, rej: (v: any) => void) => {
-            let x: WaitType | undefined = condition()
-            if (!this.connected) rej("Client not connected!")
-            if (x) return res(x)
-            // else binder.bind(res)
-            setTimeout(() => promise(res, rej), 5)
-        }
-
-        return new Promise((res, rej) => promise(res, rej))
+    public get connected(): boolean {
+        return this.isConnected == true
     }
 
     /**
      * Disconnect client from server
      */
     public disconnect() {
-        this.connected = false
+        this.isConnected = false
         this.block_scheduler.stop()
         this.pocketbase?.authStore.clear()
         this.socket?.close()

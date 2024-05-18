@@ -43,7 +43,8 @@ export default function Module(client: Client): Client {
      * Update player rights.
      */
     client.raw.on('updateRights', async ([id, edit, god]) => {
-        const player = await client.wait_for(() => client.players.get(id))
+        const player = client.players.get(id)
+        if (!player) throw new Error('Unreachable!')
         player.can_edit = edit
         player.can_god = god
     })
@@ -53,7 +54,8 @@ export default function Module(client: Client): Client {
      * and destroy it.
      */
     client.raw.on('playerLeft', async ([id]) => {
-        const player = await client.wait_for(() => client.players.get(id))
+        const player = client.players.get(id)
+        if (!player) throw new Error('Unreachable!')
         client.emit('player:leave', [player])
         client.players.delete(id)
     })
@@ -63,7 +65,8 @@ export default function Module(client: Client): Client {
      * TODO Player movement
      */
     client.raw.on('playerMoved', async ([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]) => {
-        const player = await client.wait_for(() => client.players.get(id))
+        const player = client.players.get(id)
+        if (!player) throw new Error('Unreachable!')
 
         player.x = x / 16
         player.y = y / 16
@@ -76,7 +79,8 @@ export default function Module(client: Client): Client {
      * Teleport player and reset movement
      */
     client.raw.on('playerTeleported', async ([id, x, y]) => {
-        const player = await client.wait_for(() => client.players.get(id))
+        const player = client.players.get(id)
+        if (!player) throw new Error('Unreachable!')
 
         player.x = x / 16
         player.y = y / 16
@@ -88,7 +92,8 @@ export default function Module(client: Client): Client {
      * When player changes face, update.
      */
     client.raw.on('playerFace', async ([id, face]) => {
-        const player = await client.wait_for(() => client.players.get(id))
+        const player = client.players.get(id)
+        if (!player) throw new Error('Unreachable!')
         const old_face = player.face
         player.face = face
         client.emit('player:face', [player, face, old_face])
@@ -98,7 +103,8 @@ export default function Module(client: Client): Client {
      * TODO When player changes god mode, update.
      */
     client.raw.on('playerGodMode', async ([id, god_mode]) => {
-        const player = await client.wait_for(() => client.players.get(id))
+        const player = client.players.get(id)
+        if (!player) throw new Error('Unreachable!')
         const old_mode = player.god_mode
         player.god_mode = god_mode
         client.emit('player:god', [player])
@@ -108,8 +114,9 @@ export default function Module(client: Client): Client {
      * TODO When player changes mod mode, update.
      */
     client.raw.on('playerModMode', async ([id, mod_mode]) => {
-        const player = await client.wait_for(() => client.players.get(id))
-        const old_mode = player.god_mode
+        const player = client.players.get(id)
+        if (!player) throw new Error('Unreachable!')
+        const old_mode = player.mod_mode
         player.mod_mode = mod_mode
         client.emit('player:mod', [player])
     })
@@ -118,8 +125,10 @@ export default function Module(client: Client): Client {
      * TODO
      */
     client.raw.on('crownTouched', async ([id]) => {
-        const players = await client.wait_for(() => client.players)
+        const { players } = client
+        if (!players) throw new Error('Unreachable!')
         const player: Player = players.get(id) as Player
+        if (!player) throw new Error('Unreachable!')
         const old_crown = Array.from(players.values()).find(p => p.has_crown)
         players.forEach((p) => p.has_crown = p.id == id)
         client.emit('player:crown', [player, old_crown || null])
@@ -129,7 +138,8 @@ export default function Module(client: Client): Client {
      * TODO
      */
     client.raw.on('playerStatsChanged', async ([id, gold_coins, blue_coins, death_count]) => {
-        const player = await client.wait_for(() => client.players.get(id))
+        const player = client.players.get(id)
+        if (!player) throw new Error('Unreachable!')
 
         const old_coins = player.coins
         const old_blue_coins = player.blue_coins
