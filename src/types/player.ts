@@ -42,6 +42,7 @@ export default class Player extends PlayerBase {
     public coins: number
     public blue_coins: number
     public deaths: number
+    public checkpoint: [number, number] | null
 
     constructor(args: {
         client: Client
@@ -79,6 +80,7 @@ export default class Player extends PlayerBase {
         this.coins = args.coins || 0
         this.blue_coins = args.blue_coins || 0
         this.deaths = args.deaths || 0
+        this.checkpoint = null
     }
 
     public equals(other: Player): boolean {

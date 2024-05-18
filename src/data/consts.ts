@@ -29,6 +29,7 @@ export interface LibraryEvents {
     'player:god': [[Player]]
     'player:mod': [[Player]]
     'player:crown': [[Player, Player | null]]
+    'player:checkpoint': [[Player, [number, number], [number, number] | null]]
     'player:coin': [[Player, number]]
     'player:coin:blue': [[Player, number]]
     'player:death': [[Player, number]]
@@ -53,17 +54,20 @@ export interface RawGameEvents {
     'playerFace':               [[number, number]],
     'playerGodMode':            [[number, boolean]],
     'playerModMode':            [[number, boolean]],
-    'playerCheckpoint':         [[number, number]],
+    // 'playerCheckpoint':         [[number, number]],
     'playerRespawn':            [[number, number, number]],
     'playerReset':              [[number, number, number]],
-    'crownTouched':             [[number]],
-    'keyPressed':               [[number]],
-    'playerStatsChanged':       [[number, number, number, number]],
-    'playerWin':                [[number]], // CURRENTLY NOT IMPLEMENTED IN THE GAME
+    'playerTouchBlock':         [[number, number, number, number]],
+    // 'crownTouched':             [[number]],
+    'playerCounter':            [[number, number, number, number]],
+    // 'keyPressed':               [[number]],
+    // 'playerStatsChanged':       [[number, number, number, number]],
+    // 'playerWin':                [[number]], // CURRENTLY NOT IMPLEMENTED IN THE GAME
     'localSwitchChange':        [[number, number, number]],
     'localSwitchReset':         [[number, number]],
     'globalSwitchChange':       [[number, number, number]],
     'globalSwitchReset':        [[number, number]],
+    'chatPrivateMessage':       [[number, string]],
 }
 
 export const MessageType = {

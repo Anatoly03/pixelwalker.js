@@ -1,5 +1,6 @@
-import Client from "../client";
-import Player, { PlayerBase } from "../types/player.js";
+import Client from "../client"
+import { BlockMappingsReverse } from "../data/mappings.js"
+import Player, { PlayerBase } from "../types/player.js"
 
 /**
  * This module generates a module function that will log certain events.
@@ -117,18 +118,28 @@ export default function Module(client: Client): Client {
     /**
      * TODO
      */
-    client.raw.on('crownTouched', async ([id]) => {
-        const players = await client.wait_for(() => client.players)
-        const player: Player = players.get(id) as Player
-        const old_crown = Array.from(players.values()).find(p => p.has_crown)
-        players.forEach((p) => p.has_crown = p.id == id)
-        client.emit('player:crown', [player, old_crown || null])
+    client.raw.on('playerTouchBlock', async ([id, x, y, bid]) => {
+        if (!client.players) return
+        const player: Player = client.players.get(id) as Player
+
+        console.log(bid, BlockMappingsReverse[bid])
+
+        switch (BlockMappingsReverse[bid]) {
+            case 'crown':
+                const old_crown = Array.from(client.players.values()).find(p => p.has_crown)
+                client.players.forEach((p) => p.has_crown = p.id == id)
+                return client.emit('player:crown', [player, old_crown || null])
+            case 'checkpoint':
+                const old_checkpoint = player.checkpoint
+                player.checkpoint = [x, y]
+                return client.emit('player:checkpoint', [player, player.checkpoint, old_checkpoint])
+        }
     })
 
     /**
      * TODO
      */
-    client.raw.on('playerStatsChanged', async ([id, gold_coins, blue_coins, death_count]) => {
+    client.raw.on('playerCounter', async ([id, gold_coins, blue_coins, death_count]) => {
         const player = await client.wait_for(() => client.players.get(id))
 
         const old_coins = player.coins
