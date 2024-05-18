@@ -115,6 +115,7 @@ Fill the structure `world` at given coordinates.
 | `player:face` | `Player`, `number`, `number` | Player changed the face. First number is new face, second number is old face. |
 | `player:god` | `Player`, `boolean` | Player changed god mode |
 | `player:mod` | `Player`, `boolean` | Player changed mod mode |
+| `player:win` | `Player` | A player touched the trophy. |
 | `player:crown` | `Player`, `Player` | A player touched the crown. First player is who touched, second player is who had the crown before. |
 | `player:coin` | `Player`, `number` | A player touched a gold coin. Second number is old coin count. To get new coin count, use `Player.coins` |
 | `player:coin:blue` | `Player`, `number` | A player touched a blue coin. Second number is old blue coin count. To get new blue coin count, use `Player.blue_coins` |
@@ -125,6 +126,7 @@ Fill the structure `world` at given coordinates.
 | `chat:pm` | `Player`, `string` | Called on private chat messages |
 | `cmd:*` | `Player`, ...`args` | Retrieve specific commands from messages. Replace `*` with command to listen to. For `!ping`, the event is `cmd:ping`. Arguments are provided by the player in chat. You can access `client.cmdPrefix` to set a list of allowed command prefices. |
 | `world:clear` | | The World was cleared. |
+| `world:key` | `Player`, `red` or `green` or `blue` | A key was touched. |
 
 ## `Player`
 
@@ -240,9 +242,10 @@ TODO describe properly
 | `placeBlock` |  | |
 | `crownTouched` |  | |
 | `keyPressed` |  | |
-| `playerStatsChanged` | | |
-| `playerWin` | | |
+| `playerTouchBlock` | | |
+| `playerCounter` | | |
 | `localSwitchChange` | | |
 | `localSwitchReset` | | |
 | `globalSwitchChange` | | |
 | `globalSwitchReset` | | |
+| `chatPrivateMessage` | | |

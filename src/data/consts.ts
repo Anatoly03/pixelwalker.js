@@ -29,11 +29,14 @@ export interface LibraryEvents {
     'player:god': [[Player]]
     'player:mod': [[Player]]
     'player:crown': [[Player, Player | null]]
+    'player:win': [[Player]]
+    'player:checkpoint': [[Player, [number, number], [number, number] | null]]
     'player:coin': [[Player, number]]
     'player:coin:blue': [[Player, number]]
     'player:death': [[Player, number]]
     'player:block': [[Player, WorldPosition, Block]]
     'world:clear': [[]]
+    'world:key': [[Player, string]]
 }
 
 export interface RawGameEvents {
@@ -46,24 +49,27 @@ export interface RawGameEvents {
     'placeBlock':               [[number, number, number, 0 | 1, number, ...any]],
     'chatMessage':              [[number, string]],
     'systemMessage':            [[string, string, boolean]],
-    'playerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, boolean, boolean, boolean, Buffer]],
+    'playerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, boolean, boolean, boolean, boolean, Buffer]],
     'playerLeft':               [[number]],
     'playerMoved':              [[number, number, number, number, number, number, number, -1 | 0 | 1, -1 | 0 | 1, boolean, boolean, number]],
     'playerTeleported':         [[number, number, number]],
     'playerFace':               [[number, number]],
     'playerGodMode':            [[number, boolean]],
     'playerModMode':            [[number, boolean]],
-    'playerCheckpoint':         [[number, number]],
+    // 'playerCheckpoint':         [[number, number]],
     'playerRespawn':            [[number, number, number]],
     'playerReset':              [[number, number, number]],
-    'crownTouched':             [[number]],
-    'keyPressed':               [[number]],
-    'playerStatsChanged':       [[number, number, number, number]],
-    'playerWin':                [[number]], // CURRENTLY NOT IMPLEMENTED IN THE GAME
+    'playerTouchBlock':         [[number, number, number, number]],
+    // 'crownTouched':             [[number]],
+    'playerCounter':            [[number, number, number, number]],
+    // 'keyPressed':               [[number]],
+    // 'playerStatsChanged':       [[number, number, number, number]],
+    // 'playerWin':                [[number]], // CURRENTLY NOT IMPLEMENTED IN THE GAME
     'localSwitchChange':        [[number, number, number]],
     'localSwitchReset':         [[number, number]],
     'globalSwitchChange':       [[number, number, number]],
     'globalSwitchReset':        [[number, number]],
+    'chatPrivateMessage':       [[number, string]],
 }
 
 export const MessageType = {
@@ -82,17 +88,20 @@ export const MessageType = {
     'playerFace':               12,
     'playerGodMode':            13,
     'playerModMode':            14,
-    'playerCheckpoint':         15,
-    'playerRespawn':            16,
-    'playerReset':              17,
-    'crownTouched':             18,
-    'keyPressed':               19,
-    'playerStatsChanged':       20,
-    'playerWin':                21,
-    'localSwitchChange':        22,
-    'localSwitchReset':         23,
-    'globalSwitchChange':       24,
-    'globalSwitchReset':        25,
+    // 'playerCheckpoint':         15,
+    'playerRespawn':            15,
+    'playerReset':              16,
+    'playerTouchBlock':         17,
+    // 'crownTouched':             18,
+    'playerCounter':            18,
+    // 'keyPressed':               19,
+    // 'playerStatsChanged':       20,
+    // 'playerWin':                21,
+    'localSwitchChange':        19,
+    'localSwitchReset':         20,
+    'globalSwitchChange':       21,
+    'globalSwitchReset':        22,
+    'chatPrivateMessage':       23
 }
 
 export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
