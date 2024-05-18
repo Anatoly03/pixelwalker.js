@@ -39,6 +39,7 @@ export default class Player extends PlayerBase {
 
     public has_crown: boolean
 
+    public win: boolean
     public coins: number
     public blue_coins: number
     public deaths: number
@@ -58,9 +59,10 @@ export default class Player extends PlayerBase {
         has_crown?: boolean
         can_edit: boolean
         can_god: boolean
-        coins?: number
-        blue_coins?: number
-        deaths?: number
+        win: boolean
+        coins: number
+        blue_coins: number
+        deaths: number
     }) {
         super(args)
 
@@ -77,9 +79,10 @@ export default class Player extends PlayerBase {
         this.can_edit = args.can_edit
         this.can_god = args.can_god
 
-        this.coins = args.coins || 0
-        this.blue_coins = args.blue_coins || 0
-        this.deaths = args.deaths || 0
+        this.win = args.win
+        this.coins = args.coins
+        this.blue_coins = args.blue_coins
+        this.deaths = args.deaths
         this.checkpoint = null
     }
 

@@ -12,7 +12,7 @@ export default function Module(client: Client): Client {
      * On player join, create a player object with data
      * and emit `player:join` with said object.
      */
-    client.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, can_edit, can_god, x, y, coins, blue_coins, deaths, god_mode, mod_mode, has_crown]) => {
+    client.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, can_edit, can_god, x, y, coins, blue_coins, deaths, god_mode, mod_mode, has_crown, win, switches]) => {
         const data = {
             client,
             id,
@@ -25,11 +25,13 @@ export default function Module(client: Client): Client {
             god_mode,
             mod_mode,
             has_crown,
+            win,
             coins,
             blue_coins,
             deaths,
             can_edit,
-            can_god
+            can_god,
+            switches
         }
         
         const player = new Player(data)
@@ -121,10 +123,14 @@ export default function Module(client: Client): Client {
     client.raw.on('playerTouchBlock', async ([id, x, y, bid]) => {
         if (!client.players) return
         const player: Player = client.players.get(id) as Player
+        const block_name = BlockMappingsReverse[bid]
 
-        console.log(bid, BlockMappingsReverse[bid])
+        console.log(block_name)
+        
+        if (block_name.startsWith('key_'))
+            return client.emit('world:key', [player, block_name.substring(4)])
 
-        switch (BlockMappingsReverse[bid]) {
+        switch (block_name) {
             case 'crown':
                 const old_crown = Array.from(client.players.values()).find(p => p.has_crown)
                 client.players.forEach((p) => p.has_crown = p.id == id)
@@ -133,7 +139,11 @@ export default function Module(client: Client): Client {
                 const old_checkpoint = player.checkpoint
                 player.checkpoint = [x, y]
                 return client.emit('player:checkpoint', [player, player.checkpoint, old_checkpoint])
+            case 'trophy':
+                return client.emit('player:win', [player])
         }
+
+        console.debug()
     })
 
     /**
