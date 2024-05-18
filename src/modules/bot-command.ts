@@ -9,7 +9,7 @@ export default function Module(client: Client): Client {
      * When receiving a chat message, if it is a command,
      * emit command.
      */
-    client.raw.on('chatMessage', async ([id, message]) => {
+    async function handle_command(id: number, message: string) {
         if (!message) return
         const player = client.players.get(id)
         if (!player) return
@@ -27,9 +27,10 @@ export default function Module(client: Client): Client {
         const cmd = args[1].toLowerCase()
 
         client.emit(`cmd:${cmd}`, args)
-    })
+    }
 
-    // TODO private message commands
+    client.raw.on('chatMessage', ([id, message]) => handle_command(id, message))
+    client.raw.on('chatPrivateMessage', ([id, message]) => handle_command(id, message))
 
     return client
 }
