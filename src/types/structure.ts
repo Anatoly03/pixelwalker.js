@@ -84,6 +84,8 @@ export default class Structure {
 
         for (let x = x1; x <= x2; x++)
             for (let y = y1; y <= y2; y++) {
+                if (x < 0 || y < 0 || x >= this.width || y >= this.height)
+                    continue
                 world.background[x - x1][y - y1] = this.background[x][y]
                 world.foreground[x - x1][y - y1] = this.foreground[x][y]
             }
@@ -98,7 +100,7 @@ export default class Structure {
     public paste(xt: number, yt: number, data: Structure, options?: never): Promise<any> {
         for (let x = 0; x < data.width; x++)
             for (let y = 0; y < data.height; y++) {
-                if (x + xt < 0 || y + yt < 0 || x + xt > this.width || y + yt > this.height)
+                if (x + xt < 0 || y + yt < 0 || x + xt >= this.width || y + yt >= this.height)
                     continue
                 this.foreground[x + xt][y + yt] = data.foreground[x][y]
                 this.background[x + xt][y + yt] = data.background[x][y]
