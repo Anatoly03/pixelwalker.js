@@ -159,6 +159,7 @@ export default function Module(client: Client): Client {
      */
     client.raw.on('playerCounter', async ([id, gold_coins, blue_coins, death_count]) => {
         const player = client.players.get(id)
+        if (!player) return
 
         const old_coins = player.coins
         const old_blue_coins = player.blue_coins
