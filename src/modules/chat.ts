@@ -1,4 +1,5 @@
 import Client from "../client.js"
+import Player from "../types/player.js"
 
 /**
  * This module generates a module function that will log certain events.
@@ -17,7 +18,7 @@ export default function Module(client: Client): Client {
      * When receiving a private message, emit.
      */
     client.raw.on('chatPrivateMessage', async ([id, message]) => {
-        const player = await client.wait_for(() => client.players.get(id))
+        const player = client.players.get(id) as Player
         client.emit('chat:pm', [player, message])
     })
 

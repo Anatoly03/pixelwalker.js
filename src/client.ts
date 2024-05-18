@@ -96,7 +96,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
             throw new Error('Socket failed to connect.')
         }
 
-        this.socket.on('message', (event) => this.receive_message(Buffer.from(event as any)))
+        this.socket.on('message', (event) => this.receive_message(Buffer.from(event as WithImplicitCoercion<ArrayBuffer>)))
         this.socket.on('error', (err) => { this.emit('error', [err]); this.disconnect() })
         this.socket.on('close', (code, buffer) => { this.emit('close', [code, buffer.toString('ascii')]); this.disconnect() })
 
