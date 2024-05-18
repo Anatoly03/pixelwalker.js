@@ -39,9 +39,11 @@ export default class Player extends PlayerBase {
 
     public has_crown: boolean
 
+    public win: boolean
     public coins: number
     public blue_coins: number
     public deaths: number
+    public checkpoint: [number, number] | null
 
     constructor(args: {
         client: Client
@@ -57,9 +59,10 @@ export default class Player extends PlayerBase {
         has_crown?: boolean
         can_edit: boolean
         can_god: boolean
-        coins?: number
-        blue_coins?: number
-        deaths?: number
+        win: boolean
+        coins: number
+        blue_coins: number
+        deaths: number
     }) {
         super(args)
 
@@ -76,9 +79,11 @@ export default class Player extends PlayerBase {
         this.can_edit = args.can_edit
         this.can_god = args.can_god
 
-        this.coins = args.coins || 0
-        this.blue_coins = args.blue_coins || 0
-        this.deaths = args.deaths || 0
+        this.win = args.win
+        this.coins = args.coins
+        this.blue_coins = args.blue_coins
+        this.deaths = args.deaths
+        this.checkpoint = null
     }
 
     public equals(other: Player): boolean {
@@ -132,6 +137,29 @@ export default class Player extends PlayerBase {
  */
 export class SelfPlayer extends Player {
     private move_tick = 0
+
+    constructor(args: {
+        client: Client
+        id: number
+        cuid: string
+        username: string
+        face: number
+        isAdmin: boolean
+        x: number
+        y: number
+        god_mode?: boolean
+        mod_mode?: boolean
+        has_crown?: boolean
+        can_edit: boolean
+        can_god: boolean
+    }) {
+        super({...args, ...{
+            win: false,
+            coins: 0,
+            blue_coins: 0,
+            deaths: 0
+        }})
+    }
 
     public say(content: string) {
         return this.client.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))

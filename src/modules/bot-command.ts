@@ -12,7 +12,7 @@ export default function Module(client: Client): Client {
      * When receiving a chat message, if it is a command,
      * emit command.
      */
-    client.raw.on('chatMessage', async ([id, message]) => {
+    async function handle_command(id: number, message: string) {
         if (!message) return
         const player = await client.wait_for(() => client.players.get(id))
         const prefix = client.cmdPrefix.find(v => message.toLowerCase().startsWith(v))
@@ -29,9 +29,10 @@ export default function Module(client: Client): Client {
         const cmd = args[1].toLowerCase()
 
         client.emit(`cmd:${cmd}`, args)
-    })
+    }
 
-    // TODO private message commands
+    client.raw.on('chatMessage', ([id, message]) => handle_command(id, message))
+    client.raw.on('chatPrivateMessage', ([id, message]) => handle_command(id, message))
 
     return client
 }
