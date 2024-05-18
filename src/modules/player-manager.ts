@@ -141,9 +141,10 @@ export default function Module(client: Client): Client {
                 return client.emit('player:checkpoint', [player, player.checkpoint, old_checkpoint])
             case 'trophy':
                 return client.emit('player:win', [player])
+            case 'god_mode_activator':
+            case 'reset_point':
+                return // TODO Event
         }
-
-        console.debug()
     })
 
     /**

@@ -138,6 +138,29 @@ export default class Player extends PlayerBase {
 export class SelfPlayer extends Player {
     private move_tick = 0
 
+    constructor(args: {
+        client: Client
+        id: number
+        cuid: string
+        username: string
+        face: number
+        isAdmin: boolean
+        x: number
+        y: number
+        god_mode?: boolean
+        mod_mode?: boolean
+        has_crown?: boolean
+        can_edit: boolean
+        can_god: boolean
+    }) {
+        super({...args, ...{
+            win: false,
+            coins: 0,
+            blue_coins: 0,
+            deaths: 0
+        }})
+    }
+
     public say(content: string) {
         return this.client.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
     }
