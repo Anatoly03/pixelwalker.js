@@ -24,8 +24,10 @@ export function module(client: Client) {
         if (!isActive || isActiveWinner) return
 
         const TIME = (performance.now() - START_TIME) / 1000
+        const TOO_FEW_PLAYERS_CONDITIONS = gameRound.players.length < 3
+        const PLAYER_LIMIT_CONDITION = gameRound.players.length / 2 < PLAYER_QUEUE.length
 
-        if (PLAYER_QUEUE.length == 0) {
+        if (PLAYER_QUEUE.length == 0 && !TOO_FEW_PLAYERS_CONDITIONS) {
             const TIME_LEFT = 30
             client.say(`[BOT] ${player.username} finished! ${TIME_LEFT}s left!`)
             END_ROUND.time(TIME_LEFT * 1000, true)
@@ -36,16 +38,13 @@ export function module(client: Client) {
         console.log(`${PLAYER_QUEUE.length}. ${TIME.toFixed(1)}s\t${player.username}`)
         player.pm(`[BOT] ${PLAYER_QUEUE.length}. ${TIME.toFixed(1)}s`)
 
-        const ROUND_PLAYERS_COUNT = gameRound.players.length
-        const ACCEPTED_PLAYERS = PLAYER_QUEUE.length
-
-        if (ROUND_PLAYERS_COUNT < 3) {
+        if (TOO_FEW_PLAYERS_CONDITIONS) {
             END_ROUND.accept(false)
             getPlayerEntry(player.cuid).gold++
             return client.say(`[BOT] ${player.username} won!`)
         }
         
-        if (ROUND_PLAYERS_COUNT / 2 < ACCEPTED_PLAYERS)
+        if (PLAYER_LIMIT_CONDITION)
             return END_ROUND.accept(true)
     }
 

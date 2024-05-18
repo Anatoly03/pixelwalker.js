@@ -9,7 +9,7 @@ export default function Module(client: Client): Client {
      */
     client.raw.on('chatMessage', async ([id, message]) => {
         const player = client.players.get(id)
-        if (!player) throw new Error('Unreachable!')
+        if (!player) return
         client.emit('chat', [player, message])
     })
 
@@ -18,7 +18,7 @@ export default function Module(client: Client): Client {
      */
     client.system.on('receivePm', async ([username, message]) => {
         const players = Array.from(client.players.values()).filter(p => p.username == username)
-        if (!players) throw new Error('Unreachable!')
+        if (!players) return
         client.emit('chat:pm', [players[0], message])
     })
 

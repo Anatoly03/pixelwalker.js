@@ -1,6 +1,7 @@
 import { Client, Player } from "../../../dist"
 import fs from 'node:fs'
 import YAML from 'yaml'
+import { is_bot_admin } from "./admin"
 
 const PATH = 'players.yaml'
 
@@ -50,6 +51,10 @@ export function module(client: Client) {
             time: 0
         }
         save()
+    })
+
+    client.on('cmd:help', ([p]) => {
+        p.pm('[BOT] !help !wins !rounds !time !queue' + (is_bot_admin(p) ? ' ' : ''))
     })
 
     client.on('cmd:wins', ([p]) => {

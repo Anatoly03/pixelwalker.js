@@ -169,7 +169,7 @@ export function module(client: Client) {
 
     client.on('cmd:save', async ([player, _, x, y]) => {
         if (!is_bot_admin(player)) return
-        if (!client.world) throw new Error('Unreachable!')
+        if (!client.world) return
 
         const PREFIX = 'map'
         const SUFFIX = '.yaml'

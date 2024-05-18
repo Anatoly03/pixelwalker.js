@@ -12,7 +12,7 @@ export default function Module(client: Client): Client {
     client.raw.on('chatMessage', async ([id, message]) => {
         if (!message) return
         const player = client.players.get(id)
-        if (!player) throw new Error('Unreachable!')
+        if (!player) return
         const prefix = client.cmdPrefix.find(v => message.toLowerCase().startsWith(v))
         if (!prefix) return
 
