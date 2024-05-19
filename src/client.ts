@@ -45,10 +45,11 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public readonly globalPlayers: Map<string, PlayerBase> = new Map()
 
     constructor(args: { token?: string });
-    constructor(args: { user: string, pass: string });
+    constructor(args: { user?: string, pass?: string });
     constructor(args: { token?: string, user?: string, pass?: string }) {
         super()
 
+        this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
         this.socket = null
         this.self = null
         this.world = null
@@ -57,12 +58,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.cmdPrefix = ['.', '!']
 
         if (args.token) {
-            this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
             this.pocketbase.authStore.save(args.token, { verified: true })
             if (!this.pocketbase.authStore.isValid) throw new Error('Invalid Token')
         } else if (args.user && args.pass) {
-            throw new Error('Authentication with user and password not supported yet.')
+            if (typeof args.user != 'string' || typeof args.pass != 'string') throw new Error('Username and password should be of type string')
+            this.pocketbase.collection('users').authWithPassword(args.user, args.pass)
         } else {
             throw new Error('Invalid attempt to connect with pocketbase client.')
         }
