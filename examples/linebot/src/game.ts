@@ -1,13 +1,15 @@
 
 import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
-import { create_empty_arena, advance_one_piece, plan_to_queue, set_max_size, reset_queue, JOINT, LEFT_JOINT, TOP_LEFT, WIDTH, HORIZONTAL_BORDER, PLATFORM_SIZE, set_speed, SPEED } from './map.js'
+import { create_empty_arena, advance_one_piece, plan_to_queue, set_max_size, reset_everything, JOINT, LEFT_JOINT, TOP_LEFT, WIDTH, HORIZONTAL_BORDER, PLATFORM_SIZE, set_speed, SPEED } from './map.js'
 import { is_bot_admin } from './admin.js'
 
 export let GAME_RUNNING = false
 export let GAME_IS_STARTING = true
 export let GAME_HALT_FLAG = false
 let START_TIME = 0
+
 let TILES = 0
+let LINES = 0
 
 export function module(client: Client) {
     const gameRound = new Util.GameRound(client)
@@ -49,8 +51,7 @@ export function module(client: Client) {
                 return gameRound.stop()
             }
 
-            reset_queue()
-
+            reset_everything()
             GAME_IS_STARTING = false
             const walkable_positions = await create_empty_arena(30)
 
@@ -77,35 +78,37 @@ export function module(client: Client) {
             SIGNUP_LOCK = undefined
             console.log('Active in Round: ' + gameRound.players.map(p => p.username).join(' '))
 
-            for (let i = 0; i < 10; i++) plan_to_queue()
-
             set_max_size(45)
             set_speed(300)
             TILES = 0
+            LINES = 0
 
             START_TIME = performance.now()
             GAME_RUNNING = true
+
+            plan_to_queue()
         }
 
-        plan_to_queue()
-        await advance_one_piece()
-        TILES += 1
+        if (await advance_one_piece()) {
+            plan_to_queue()
+            TILES += 1
+        }
 
-        // TODO adjust
+        LINES += 1
 
-        if (TILES % 3 == 0) {
+        // TODO Adjust for great gameplay.
+
+        if (LINES % 50 == 0 && PLATFORM_SIZE > 20) {
             set_max_size(PLATFORM_SIZE - 1)
         }
 
-        // if (TILES % 4 == 0 && SPEED >= 100) {
-        //     set_speed(SPEED - 10)
-        // }
+        if (LINES % 5 == 0 && SPEED >= 100) {
+            set_speed(SPEED - 1)
+        }
 
-        // if (TILES % 7 == 0 && SPEED < 100) {
-        //     set_speed(SPEED - 5)
-        // }
-
-        set_speed(SPEED - 2)
+        if (TILES % 5 == 0 && SPEED >= 100) {
+            set_speed(SPEED - 5)
+        }
 
         console.log(PLATFORM_SIZE, ' size', SPEED, ' ms per line')
     })

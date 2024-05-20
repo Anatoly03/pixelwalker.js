@@ -93,8 +93,9 @@ export async function create_empty_arena(PLATFORM_LENGTH?: number) {
 //     return Promise.all(POSITIONS.map(async (x) => {await client.block(TOP_LEFT.x + x, TOP_LEFT.y + y, 1, FRAME); return [TOP_LEFT.x + x, TOP_LEFT.y + y - 1]}))
 // }
 
-export function reset_queue() {
-    while (QUEUE.length > 0) QUEUE.shift()
+export function reset_everything() {
+    CURRENT_TILE = undefined
+    PIECE_X = undefined
 }
 
 export function plan_to_queue() {
@@ -104,23 +105,31 @@ export function plan_to_queue() {
         const maps = fs.readdirSync(TILES_PATH)
         const random_piece = maps[Math.floor(Math.random() * maps.length)]
         const value = fs.readFileSync(path.join(TILES_PATH, random_piece)).toString()
-        let piece = Structure.fromString(value)
-        if (calculated_y_joint - piece.meta.left_y + piece.height > map.height - VERTICAL_BORDER) continue
-        if (calculated_y_joint - piece.meta.left_y < VERTICAL_BORDER) continue
-        QUEUE.push([random_piece, piece])
-        return
+        const piece = Structure.fromString(value)
+        const piece_direction = piece.meta.right_y - piece.meta.left_y
+
+        if (i > 990) {
+            console.warn(`Problems finding proper piece: JOINT Y = ${JOINT.y}, MAP HEIGHT = ${map.height}, CALCULATED DELTA JOINT Y = ${calculated_y_joint}, PIECE LEFT = ${piece.meta.left_y}, PIECE HEIGHT = ${piece.height}, QUEUE LENGTH = ${QUEUE.length}`)
+        }
+
+        if (calculated_y_joint - piece.meta.left_y + piece.height > map.height - VERTICAL_BORDER && piece_direction > 0) continue
+        if (calculated_y_joint - piece.meta.left_y < VERTICAL_BORDER && piece_direction < 0) continue
+
+        return QUEUE.push([random_piece, piece])
     }
 
     console.error(`After 1.000 iterations could not find proper piece: Y_JOINT = ${calculated_y_joint}`)
+    return -1
 }
 
 /** Advance one "line" of a piece */
-export async function advance_one_piece() { 
+export async function advance_one_piece(): Promise<boolean> { 
     if (!CURRENT_TILE) {
         let _: any;
         [_, CURRENT_TILE] = QUEUE.shift() || [undefined, undefined]
         if (CURRENT_TILE == undefined)
-            return console.error('`advance_one_piece` was called on empty queue')
+            console.error('`advance_one_piece` was called on empty queue')
+            return true
     }
 
     let piece = CURRENT_TILE,
@@ -191,10 +200,14 @@ export async function advance_one_piece() {
         }
 
         JOINT.y += - piece.meta.left_y + piece.meta.right_y
+
+        return true
     }
 
     // if (speed > 100) speed -= 2
     // if (speed > 50) speed -= 2
+
+    return false
 }
 
 export function set_speed(x: number) {
