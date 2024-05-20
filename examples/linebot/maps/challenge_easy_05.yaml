@@ -1,0 +1,15 @@
+file-version: 0
+meta:
+  left_y: 1
+  right_y: 1
+width: 12
+height: 2
+palette:
+  - empty
+  - basic_gray
+  - gravity_dot
+  - water
+layers:
+  foreground: "0 1 2 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 2 3 0 1 "
+  background: "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+  data: []

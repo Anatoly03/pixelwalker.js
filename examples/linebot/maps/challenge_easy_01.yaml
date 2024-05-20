@@ -1,0 +1,14 @@
+file-version: 0
+meta:
+  left_y: 2
+  right_y: 2
+width: 5
+height: 3
+palette:
+  - empty
+  - basic_gray
+  - gravity_left
+layers:
+  foreground: "0 0 1 0 0 1 2 2 1 2 2 1 0 0 1 "
+  background: "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+  data: []

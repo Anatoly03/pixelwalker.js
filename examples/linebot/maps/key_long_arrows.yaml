@@ -1,0 +1,17 @@
+file-version: 0
+meta:
+  left_y: 1
+  right_y: 1
+width: 13
+height: 2
+palette:
+  - empty
+  - basic_gray
+  - key_door_red
+  - gravity_up
+  - key_red
+  - normal_gray_bg
+layers:
+  foreground: "0 1 0 2 0 3 4 3 0 3 0 3 0 3 0 3 0 3 4 3 0 3 0 2 0 1 "
+  background: "0 0 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 0 0 0 "
+  data: []
