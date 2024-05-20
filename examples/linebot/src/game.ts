@@ -1,20 +1,24 @@
 
 import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
-import { create_empty_arena, advance_one_piece, plan_to_queue, set_max_size, reset_queue, JOINT, LEFT_JOINT, TOP_LEFT, WIDTH, HORIZONTAL_BORDER } from './map.js'
+import { create_empty_arena, advance_one_piece, plan_to_queue, set_max_size, reset_queue, JOINT, LEFT_JOINT, TOP_LEFT, WIDTH, HORIZONTAL_BORDER, PLATFORM_SIZE, set_speed, SPEED } from './map.js'
 import { is_bot_admin } from './admin.js'
 
 export function module(client: Client) {
     const gameRound = new Util.GameRound(client)
 
     client.include(gameRound)
-
+    
+    let GAME_RUNNING = false
     let GAME_IS_STARTING = true
     let GAME_HALT_FLAG = false
     let START_TIME = 0
+    let TILES = 0
 
     let SIGNUP_LOCK: ReturnType<typeof Util.Breakpoint> | undefined
 
     function disqualify(player: Player, code: 'left' | 'god' | 'kill') {
+        if (!GAME_RUNNING) return
+
         const SURVIVAL_TIME = Math.floor((performance.now() - START_TIME) / 100) / 10
         console.log(`${gameRound.players.length + 1}. ${player.username} (${SURVIVAL_TIME})`)
         player.pm(`[BOT ]${gameRound.players.length + 1}. ${SURVIVAL_TIME}s`)
@@ -22,11 +26,13 @@ export function module(client: Client) {
         if (gameRound.players.length == 0) {
             client.say('[BOT] Game over!')
             GAME_IS_STARTING = true
+            GAME_RUNNING = false
         }
 
         if (gameRound.players.length == 1) {
             client.say(`[BOT] ${gameRound.players[0].username} won!`)
             GAME_IS_STARTING = true
+            GAME_RUNNING = false
         }
 
         gameRound.players = gameRound.players.filter(p => p.id != player.id)
@@ -36,6 +42,8 @@ export function module(client: Client) {
     
     gameRound.setLoop(async () => {
         if (GAME_IS_STARTING) {
+            GAME_RUNNING = false
+            
             if (GAME_HALT_FLAG) {
                 GAME_HALT_FLAG = false
                 return gameRound.stop()
@@ -46,7 +54,7 @@ export function module(client: Client) {
             GAME_IS_STARTING = false
             const walkable_positions = await create_empty_arena(30)
 
-            await client.wait(2000)
+            await client.wait(3000)
 
             // Try to sign up players
             await gameRound.signup()
@@ -64,7 +72,7 @@ export function module(client: Client) {
                     return p.teleport(x, y)
                 })
 
-            await client.wait(1500)
+            await client.wait(500)
 
             SIGNUP_LOCK = undefined
             console.log('Active in Round: ' + gameRound.players.map(p => p.username).join(' '))
@@ -72,11 +80,34 @@ export function module(client: Client) {
             for (let i = 0; i < 10; i++) plan_to_queue()
 
             set_max_size(45)
+            set_speed(300)
+            TILES = 0
+
             START_TIME = performance.now()
+            GAME_RUNNING = true
         }
 
         plan_to_queue()
         await advance_one_piece()
+        TILES += 1
+
+        // TODO adjust
+
+        if (TILES % 3 == 0) {
+            set_max_size(PLATFORM_SIZE - 1)
+        }
+
+        // if (TILES % 4 == 0 && SPEED >= 100) {
+        //     set_speed(SPEED - 10)
+        // }
+
+        // if (TILES % 7 == 0 && SPEED < 100) {
+        //     set_speed(SPEED - 5)
+        // }
+
+        set_speed(SPEED - 2)
+
+        console.log(PLATFORM_SIZE, ' size', SPEED, ' ms per line')
     })
 
     client.on('player:join', ([p]) => SIGNUP_LOCK?.accept())

@@ -23,7 +23,7 @@ const TILES_PATH = process.env.MAPS_PATH || 'maps'
 
 export let PLATFORM_SIZE = 40
 export let SIZE = 0
-export let SPEED = 200
+export let SPEED = 300
 
 export function create_empty_arena(): Promise<any>;
 export function create_empty_arena(platform_length: number): Promise<number[][]>
@@ -151,11 +151,10 @@ export async function advance_one_piece() {
 
             LEFT_JOINT.x++
             SIZE --
-
-            await Promise.all(promises)
         }
 
         await client.wait(SPEED)
+        await Promise.all(promises)
     }
 
     JOINT.x += piece.width
