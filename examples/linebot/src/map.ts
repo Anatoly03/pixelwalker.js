@@ -25,7 +25,7 @@ export let PLATFORM_SIZE = 40
 export let SIZE = 0
 export let SPEED = 200
 
-function create_empty_arena() {
+export function create_empty_arena() {
     map.clear(true)
     empty_map.clear(true)
 
@@ -56,7 +56,7 @@ function create_empty_arena() {
     return client.fill(TOP_LEFT.x, TOP_LEFT.y, map)
 }
 
-function build_platform(LENGTH: number) {
+export function build_platform(LENGTH: number) {
     const y = Math.floor(map.height / 2)
 
     const POSITIONS = [...Array(LENGTH).keys()]
@@ -68,10 +68,14 @@ function build_platform(LENGTH: number) {
     SIZE = LENGTH
     PLATFORM_SIZE = LENGTH
 
-    return Promise.all(POSITIONS.map(x => client.block(TOP_LEFT.x + x, TOP_LEFT.y + y, 1, FRAME)))
+    return Promise.all(POSITIONS.map(async (x) => {await client.block(TOP_LEFT.x + x, TOP_LEFT.y + y, 1, FRAME); return [TOP_LEFT.x + x, TOP_LEFT.y + y - 1]}))
 }
 
-function plan_to_queue() {
+export function reset_queue() {
+    while (QUEUE.length > 0) QUEUE.shift()
+}
+
+export function plan_to_queue() {
     const calculated_y_joint = QUEUE.map(([_, piece]) => piece.meta.right_y - piece.meta.left_y).reduce((p, c) => p += c, JOINT.y)
 
     for (let i = 0; i < 1000; i++) {
@@ -88,7 +92,7 @@ function plan_to_queue() {
     console.error(`After 1.000 iterations could not find proper piece: Y_JOINT = ${calculated_y_joint}`)
 }
 
-async function advance_one_piece() {
+export async function advance_one_piece() {
     const [_, piece] = QUEUE.shift() || [undefined, undefined]
     if (!piece) return console.error('`advance_one_piece` was called on empty queue')
 
@@ -103,7 +107,11 @@ async function advance_one_piece() {
             await client.fill(JOINT.x + x + TOP_LEFT.x - map.width + HORIZONTAL_BORDER * 2, TOP_LEFT.y + JOINT.y - piece.meta.left_y, line, { write_empty: false })
         }
 
-        if (SIZE++ > PLATFORM_SIZE) {
+        SIZE += 1
+
+        // TODO set to while
+
+        if (SIZE > PLATFORM_SIZE) {
             let replace = empty_map.copy(LEFT_JOINT.x, 0, LEFT_JOINT.x, empty_map.height)
 
             if (LEFT_JOINT.x < TOP_LEFT.x + map.width - 1)
@@ -123,6 +131,7 @@ async function advance_one_piece() {
             // }
 
             LEFT_JOINT.x++
+            SIZE --
         }
 
         await client.wait(SPEED)
