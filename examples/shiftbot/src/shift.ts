@@ -1,6 +1,6 @@
 
 import 'dotenv/config'
-import Client from '../../../dist/index.js'
+import Client, { Modules } from '../../../dist/index.js'
 
 process.on('SIGINT', () => {
     process.on('SIGINT', () => {
@@ -13,14 +13,15 @@ export default client
 
 import * as Map from './map.js'
 import * as Game from './game.js'
-import * as Ban from './bans.js'
 import * as Players from './players.js'
+import { is_bot_admin } from './admin.js'
 
 client
     .on('player:join', ([p]) => p.god(true)) // Give everyone god mode
     .once('start', ([self]) => self.set_god(true)) // Self should not be part of players in game.
+    .on('player:join', ([player]) => console.log(`@ ${player.username} → ${player.cuid}`))
     .include(Map)
     .include(Game)
     .include(Players)
-    .include(Ban)
+    .include(Modules.BanModule('bans.yaml', is_bot_admin))
     .connect(process.env.WORLD_ID)

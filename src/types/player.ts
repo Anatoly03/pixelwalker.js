@@ -100,7 +100,7 @@ export default class Player extends PlayerBase {
     }
 
     public async kick(reason: string) {
-        this.client.say(`/kick #${this.id} ${reason}`)
+        this.client.say(`/kick #${this.id}` + (reason ? (' ' + reason) : ''))
         // this.client.say(`/kick ${this.username} ${reason}`)
     }
 

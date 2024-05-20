@@ -13,7 +13,8 @@ export { RoomTypes } from './data/room_types.js'
 
 export const Modules = {
     Debug: (await import ('./modules/debug.js')).default,
-    PlayerKeyManager: (await import ('./modules/player-keys-manager.js')).default
+    PlayerKeyManager: (await import ('./modules/player-keys-manager.js')).default,
+    BanModule: (await import('./modules/bans.js')).default,
 }
 
 export const Util = {
