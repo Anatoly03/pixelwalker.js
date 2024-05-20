@@ -12,8 +12,11 @@ const TOP_LEFT = { x: parseInt(process.env.TLX || '0'), y: parseInt(process.env.
 const HORIZONTAL_BORDER = 30
 const VERTICAL_BORDER = 10
 
+let FRAME = new Block('beveled_magenta')
+
 const QUEUE: [string, string][] = []
 const MAPS_PATH = process.env.MAPS_PATH || 'maps'
+const JOINT = { x: 0, y: 0 }
 
 let CrowdControlFlip = false // Crowd Control Flip
 
@@ -42,9 +45,25 @@ function create_empty_arena() {
     return client.fill(TOP_LEFT.x, TOP_LEFT.y, map)
 }
 
+function build_platform(LENGTH: number) {
+    const y = Math.floor(map.height / 2)
+
+    const POSITIONS = [...Array(LENGTH).keys()]
+        .map(x => x + Math.floor((map.width - LENGTH) / 2))
+
+    JOINT.x = POSITIONS[POSITIONS.length - 1]
+    JOINT.y = y
+
+    return POSITIONS.map(x => client.block(TOP_LEFT.x + x, TOP_LEFT.y + y, 1, FRAME))
+}
+
 export function module(client: Client) {
     client.on('cmd:*empty-arena', ([player]) => {
         return create_empty_arena()
+    })
+
+    client.on('cmd:*build-line', ([player]) => {
+        return build_platform(30)
     })
 
     return client
