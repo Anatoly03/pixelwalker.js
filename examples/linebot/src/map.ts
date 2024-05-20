@@ -188,6 +188,10 @@ export function module(client: Client) {
         return create_empty_arena()
     })
 
+    client.on('cmd:*build', ([player]) => {
+        return create_empty_arena(30)
+    })
+
     // client.on('cmd:*build', ([player]) => {
     //     return build_platform(30)
     // })
