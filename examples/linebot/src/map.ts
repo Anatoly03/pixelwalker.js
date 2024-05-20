@@ -20,8 +20,10 @@ const QUEUE: [string, Structure][] = []
 const TILES_PATH = process.env.MAPS_PATH || 'maps'
 const JOINT = { x: 0, y: 0 }
 const LEFT_JOINT = { x: 0, y: 0 }
-let PLATFORM_SIZE = 40
-let SIZE = 0
+
+export let PLATFORM_SIZE = 40
+export let SIZE = 0
+export let SPEED = 200
 
 function create_empty_arena() {
     map.clear(true)
@@ -123,8 +125,7 @@ async function advance_one_piece() {
             LEFT_JOINT.x++
         }
 
-        await client.wait(200)
-        // await client.wait(speed)
+        await client.wait(SPEED)
     }
 
     JOINT.x += piece.width
