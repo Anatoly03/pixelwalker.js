@@ -116,11 +116,13 @@ function find_map(search_string: string): [string, string] | null {
 }
 
 export function open_door() {
+    // TODO CrowdControlFlip
     return Promise.all([22, 26, 28, 29]
         .map(x => client.block(TOP_LEFT.x + x, TOP_LEFT.y + map.height - 2, 1, CrowdControlFlip ? 'gravity_left' : 'gravity_right')))
 }
 
 export async function create_win_zone() {
+    // TODO CrowdControlFlip
     // Close Map Door
     await client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, { animation: Animation.RANDOM, write_empty: true })
     // Create Win Zone
@@ -130,14 +132,17 @@ export async function create_win_zone() {
 }
 
 export function set_spawn() {
+    // TODO CrowdControlFlip
     return client.block(TOP_LEFT.x + 28, TOP_LEFT.y + map.height - 2, 1, 'spawn_point')
 }
 
 export function remove_spawn() {
+    // TODO CrowdControlFlip
     return client.block(TOP_LEFT.x + 28, TOP_LEFT.y + map.height - 2, 1, 0)
 }
 
 export function close_door() {
+    // TODO CrowdControlFlip
     return client.block(TOP_LEFT.x + 22, TOP_LEFT.y + map.height - 2, 1, 'hazard_stripes')
 }
 
