@@ -20,6 +20,8 @@ export const JOINT = { x: 0, y: 0 }
 export const LEFT_JOINT = { x: 0, y: 0 }
 const QUEUE: [string, Structure][] = []
 const TILES_PATH = process.env.MAPS_PATH || 'maps'
+let CURRENT_TILE: Structure | undefined
+let PIECE_X: number | undefined
 
 export let PLATFORM_SIZE = 40
 export let SIZE = 0
@@ -112,64 +114,84 @@ export function plan_to_queue() {
     console.error(`After 1.000 iterations could not find proper piece: Y_JOINT = ${calculated_y_joint}`)
 }
 
-export async function advance_one_piece() {
-    const [_, piece] = QUEUE.shift() || [undefined, undefined]
-    if (!piece) return console.error('`advance_one_piece` was called on empty queue')
+/** Advance one "line" of a piece */
+export async function advance_one_piece() { 
+    if (!CURRENT_TILE) {
+        let _: any;
+        [_, CURRENT_TILE] = QUEUE.shift() || [undefined, undefined]
+        if (CURRENT_TILE == undefined)
+            return console.error('`advance_one_piece` was called on empty queue')
+    }
 
-    for (let x = 0; x < piece.width; x++) {
-        const promises: Promise<any>[] = []
-        const line = piece.copy(x, 0, x, piece.height - 1)
-        line.replace_all(new Block('basic_gray'), FRAME)
+    let piece = CURRENT_TILE,
+        line: Structure,
+        promises: Promise<any>[] = []
 
-        if (JOINT.x + x < TOP_LEFT.x + map.width - 1)
-            promises.push(client.fill(JOINT.x + x, TOP_LEFT.y + JOINT.y - piece.meta.left_y, line, { write_empty: false }) || Promise.reject('`client.fill` returned undefined'))
+    if (PIECE_X == undefined) {
+        PIECE_X = 0
+    }
 
-        if (JOINT.x + x > TOP_LEFT.x + map.width - HORIZONTAL_BORDER * 2) {
-            promises.push(client.fill(JOINT.x + x + TOP_LEFT.x - map.width + HORIZONTAL_BORDER * 2, TOP_LEFT.y + JOINT.y - piece.meta.left_y, line, { write_empty: false }) || Promise.reject('`client.fill` returned undefined'))
+    line = piece.copy(PIECE_X, 0, PIECE_X, piece.height - 1)
+
+    // for (let x = 0; x < piece.width; x++) {
+    // const line = piece.copy(x, 0, x, piece.height - 1)
+    line.replace_all(new Block('basic_gray'), FRAME)
+
+    if (JOINT.x + PIECE_X < TOP_LEFT.x + map.width - 1)
+        promises.push(client.fill(JOINT.x + PIECE_X, TOP_LEFT.y + JOINT.y - piece.meta.left_y, line, { write_empty: false }) || Promise.reject('`client.fill` returned undefined'))
+
+    if (JOINT.x + PIECE_X > TOP_LEFT.x + map.width - HORIZONTAL_BORDER * 2) {
+        promises.push(client.fill(JOINT.x + PIECE_X + TOP_LEFT.x - map.width + HORIZONTAL_BORDER * 2, TOP_LEFT.y + JOINT.y - piece.meta.left_y, line, { write_empty: false }) || Promise.reject('`client.fill` returned undefined'))
+    }
+
+    PIECE_X += 1
+    SIZE += 1
+
+    while (SIZE > PLATFORM_SIZE) {
+        let replace = empty_map.copy(LEFT_JOINT.x, 0, LEFT_JOINT.x, empty_map.height)
+
+        if (LEFT_JOINT.x < TOP_LEFT.x + map.width - 1)
+            promises.push(client.fill(LEFT_JOINT.x, TOP_LEFT.y, replace) || Promise.reject('`client.fill` returned undefined'))
+
+        if (LEFT_JOINT.x > TOP_LEFT.x + map.width - HORIZONTAL_BORDER * 2) {
+            const offset_x = LEFT_JOINT.x - map.width + HORIZONTAL_BORDER * 2
+            replace = empty_map.copy(offset_x, 0, offset_x, empty_map.height)
+            promises.push(client.fill(offset_x, TOP_LEFT.y, replace) || Promise.reject('`client.fill` returned undefined'))
         }
 
-        SIZE += 1
+        // else if (left_x < corner.x + offset * 2) {
+        //     const offset_x = left_x - corner.x + map.width - offset
+        //     replace = create_line(offset_x)
+        //     if (offset_x < corner.x + map.width - 1)
+        //         client.fill(offset_x - 1, corner.y + 1, replace)
+        // }
 
-        while (SIZE > PLATFORM_SIZE) {
-            let replace = empty_map.copy(LEFT_JOINT.x, 0, LEFT_JOINT.x, empty_map.height)
+        LEFT_JOINT.x++
+        SIZE --
+    }
 
-            if (LEFT_JOINT.x < TOP_LEFT.x + map.width - 1)
-                promises.push(client.fill(LEFT_JOINT.x, TOP_LEFT.y, replace) || Promise.reject('`client.fill` returned undefined'))
+    await client.wait(SPEED)
+    await Promise.all(promises)
+    // }
 
-            if (LEFT_JOINT.x > TOP_LEFT.x + map.width - HORIZONTAL_BORDER * 2) {
-                const offset_x = LEFT_JOINT.x - map.width + HORIZONTAL_BORDER * 2
-                replace = empty_map.copy(offset_x, 0, offset_x, empty_map.height)
-                promises.push(client.fill(offset_x, TOP_LEFT.y, replace) || Promise.reject('`client.fill` returned undefined'))
-            }
+    if (PIECE_X >= piece.width) {
+        PIECE_X = undefined
+        CURRENT_TILE = undefined
 
-            // else if (left_x < corner.x + offset * 2) {
-            //     const offset_x = left_x - corner.x + map.width - offset
-            //     replace = create_line(offset_x)
-            //     if (offset_x < corner.x + map.width - 1)
-            //         client.fill(offset_x - 1, corner.y + 1, replace)
-            // }
+        JOINT.x += piece.width
 
-            LEFT_JOINT.x++
-            SIZE --
+        if (JOINT.x > TOP_LEFT.x + map.width) {
+            JOINT.x -= map.width - 2 * HORIZONTAL_BORDER
+            // joint.y ++
+            // joint.x = corner.x + offset + platform_size
         }
 
-        await client.wait(SPEED)
-        await Promise.all(promises)
+        if (LEFT_JOINT.x > TOP_LEFT.x + map.width - 2) {
+            LEFT_JOINT.x = TOP_LEFT.x + HORIZONTAL_BORDER * 2
+        }
+
+        JOINT.y += - piece.meta.left_y + piece.meta.right_y
     }
-
-    JOINT.x += piece.width
-
-    if (JOINT.x > TOP_LEFT.x + map.width) {
-        JOINT.x -= map.width - 2 * HORIZONTAL_BORDER
-        // joint.y ++
-        // joint.x = corner.x + offset + platform_size
-    }
-
-    if (LEFT_JOINT.x > TOP_LEFT.x + map.width - 2) {
-        LEFT_JOINT.x = TOP_LEFT.x + HORIZONTAL_BORDER * 2
-    }
-
-    JOINT.y += - piece.meta.left_y + piece.meta.right_y
 
     // if (speed > 100) speed -= 2
     // if (speed > 50) speed -= 2

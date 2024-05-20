@@ -3,16 +3,16 @@ import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
 import { create_empty_arena, advance_one_piece, plan_to_queue, set_max_size, reset_queue, JOINT, LEFT_JOINT, TOP_LEFT, WIDTH, HORIZONTAL_BORDER, PLATFORM_SIZE, set_speed, SPEED } from './map.js'
 import { is_bot_admin } from './admin.js'
 
+export let GAME_RUNNING = false
+export let GAME_IS_STARTING = true
+export let GAME_HALT_FLAG = false
+let START_TIME = 0
+let TILES = 0
+
 export function module(client: Client) {
     const gameRound = new Util.GameRound(client)
 
     client.include(gameRound)
-    
-    let GAME_RUNNING = false
-    let GAME_IS_STARTING = true
-    let GAME_HALT_FLAG = false
-    let START_TIME = 0
-    let TILES = 0
 
     let SIGNUP_LOCK: ReturnType<typeof Util.Breakpoint> | undefined
 
