@@ -17,6 +17,8 @@ const MAPS_PATH = process.env.MAPS_PATH || 'maps'
 const map = new Structure(50, 37)
 const map_without_doors = new Structure(50, 37)
 
+let CrowdControlFlip = false // Crowd Control Flip
+
 function get_map(): Structure {
     let maps = fs.readdirSync(MAPS_PATH).filter(p => !p.startsWith('filled') && !p.startsWith('empty')),
         map_path: string
@@ -38,46 +40,58 @@ function get_map(): Structure {
 
 function encode_doors() {
     const DOOR_LINE = ['gravity_up', 'gravity_up', 'gravity_up', 'gravity_up', 'hazard_stripes']
+    const OFFSET = CrowdControlFlip ? -1 : 1
+
+    let HORIZONTAL = [...Array(map.width - 2).keys()].map(i => i + 1)
+    let VERTICAL = [...Array(map.height - 2).keys()].map(i => i + 1)
+
+    if (CrowdControlFlip) {
+        HORIZONTAL = HORIZONTAL.reverse()
+        VERTICAL = VERTICAL.reverse()
+    }
 
     // Bottom Door
-    for (let x = 1; x < map.width - 1; x++) {
-        if (map_without_doors.foreground[x][map.height - 3].name != 'key_door_green') continue
+    HORIZONTAL.forEach(x => {
+        if (map_without_doors.foreground[x][map.height - 3].name != 'key_door_green') return
         map_without_doors.foreground[x][map.height - 5] = new Block('gravity_up')
         map_without_doors.foreground[x][map.height - 4] = new Block('gravity_up')
         map_without_doors.foreground[x][map.height - 3] = new Block('gravity_up')
         map_without_doors.foreground[x][map.height - 2] = new Block('gravity_up')
-        map_without_doors.foreground[x + 1][map.height - 2] = new Block('hazard_stripes')
-    }
-
-    // Right door
-    for (let y = map.height - 1; y >= 1; y--) {
-        if (map_without_doors.foreground[map.width - 1][y].name != 'key_door_green') continue
-        map_without_doors.foreground[map.width - 1][y] = new Block('gravity_left')
-        map_without_doors.foreground[map.width - 2][y] = new Block('gravity_left')
-        map_without_doors.foreground[map.width - 3][y] = new Block('gravity_left')
-        map_without_doors.foreground[map.width - 4][y] = new Block('gravity_left')
-        map_without_doors.foreground[0][y + 1] = new Block('hazard_stripes')
-    }
-
-    // Top Door
-    for (let x = map.width - 1; x >= 0; x--) {
-        if (map_without_doors.foreground[x][1].name != 'key_door_green') continue
-        map_without_doors.foreground[x][0] = new Block('gravity_down')
-        map_without_doors.foreground[x][1] = new Block('gravity_down')
-        map_without_doors.foreground[x][2] = new Block('gravity_down')
-        map_without_doors.foreground[x][3] = new Block('gravity_down')
-        map_without_doors.foreground[x - 1][0] = new Block('hazard_stripes')
-    }
+        map_without_doors.foreground[x + OFFSET][map.height - 2] = new Block('hazard_stripes')
+    })
 
     // Left Door
-    for (let y = 1; y < map.height - 1; y++) {
-        if (map_without_doors.foreground[1][y].name != 'key_door_green') continue
+    VERTICAL.forEach(y => {
+        if (map_without_doors.foreground[1][y].name != 'key_door_green') return
         map_without_doors.foreground[0][y] = new Block('gravity_right')
         map_without_doors.foreground[1][y] = new Block('gravity_right')
         map_without_doors.foreground[2][y] = new Block('gravity_right')
         map_without_doors.foreground[3][y] = new Block('gravity_right')
-        map_without_doors.foreground[0][y + 1] = new Block('hazard_stripes')
-    }
+        map_without_doors.foreground[0][y + OFFSET] = new Block('hazard_stripes')
+    })
+
+    HORIZONTAL = HORIZONTAL.reverse()
+    VERTICAL = VERTICAL.reverse()
+
+    // Right door
+    VERTICAL.forEach(y => {
+        if (map_without_doors.foreground[map.width - 1][y].name != 'key_door_green') return
+        map_without_doors.foreground[map.width - 1][y] = new Block('gravity_left')
+        map_without_doors.foreground[map.width - 2][y] = new Block('gravity_left')
+        map_without_doors.foreground[map.width - 3][y] = new Block('gravity_left')
+        map_without_doors.foreground[map.width - 4][y] = new Block('gravity_left')
+        map_without_doors.foreground[0][y + OFFSET] = new Block('hazard_stripes')
+    })
+
+    // Top Door
+    HORIZONTAL.forEach(x => {
+        if (map_without_doors.foreground[x][1].name != 'key_door_green') return
+        map_without_doors.foreground[x][0] = new Block('gravity_down')
+        map_without_doors.foreground[x][1] = new Block('gravity_down')
+        map_without_doors.foreground[x][2] = new Block('gravity_down')
+        map_without_doors.foreground[x][3] = new Block('gravity_down')
+        map_without_doors.foreground[x - OFFSET][0] = new Block('hazard_stripes')
+    })
 }
 
 function construct_map() {
@@ -103,7 +117,7 @@ function find_map(search_string: string): [string, string] | null {
 
 export function open_door() {
     return Promise.all([22, 26, 28, 29]
-        .map(x => client.block(TOP_LEFT.x + x, TOP_LEFT.y + map.height - 2, 1, 'gravity_right')))
+        .map(x => client.block(TOP_LEFT.x + x, TOP_LEFT.y + map.height - 2, 1, CrowdControlFlip ? 'gravity_left' : 'gravity_right')))
 }
 
 export async function create_win_zone() {
@@ -128,7 +142,7 @@ export function close_door() {
 }
 
 export async function build_map() {
-    const data = fs.readFileSync(path.join(MAPS_PATH, 'filled.yaml')).toString()
+    const data = fs.readFileSync(path.join(MAPS_PATH, CrowdControlFlip ? 'filled-reverse.yaml' : 'filled.yaml')).toString()
     const structure = Structure.fromString(data)
     map.paste(0, 0, structure)
     map_without_doors.paste(0, 0, structure)
@@ -144,7 +158,7 @@ export function clear_map() {
 
     // This will keep the first arrow line in tact
     const data_cleared = fs.readFileSync(path.join(MAPS_PATH, 'empty.yaml')).toString()
-    const data_filled = fs.readFileSync(path.join(MAPS_PATH, 'filled.yaml')).toString()
+    const data_filled = fs.readFileSync(path.join(MAPS_PATH, CrowdControlFlip ? 'filled-reverse.yaml' : 'filled.yaml')).toString()
     let cleared = Structure.fromString(data_cleared)
     let filled = Structure.fromString(data_filled)
     cleared = cleared.copy(0, 1, cleared.width - 1, cleared.height - 1)
@@ -152,6 +166,12 @@ export function clear_map() {
     map.paste(0, 1, cleared)
 
     return client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, { animation: Animation.RANDOM, write_empty: true })
+}
+
+export async function flip_direction() {
+    CrowdControlFlip = !CrowdControlFlip
+    return Promise.all([...Array(6).keys()].map(i => i + 23)
+        .map(x => client.block(TOP_LEFT.x + x, TOP_LEFT.y + map.height - 2, 1, CrowdControlFlip ? 'gravity_left' : 'gravity_right')))
 }
 
 export function module(client: Client) {
@@ -192,6 +212,25 @@ export function module(client: Client) {
         writeFileSync(path.join(MAPS_PATH, PREFIX + int.toString().padStart(2, '0') + SUFFIX), structure.toString())
     })
 
+    client.on('cmd:*save-frame', async ([player, _, x, y]) => {
+        if (!is_bot_admin(player)) return
+        if (!client.world) return
+
+        const PREFIX = 'frame'
+        const SUFFIX = '.yaml'
+
+        const int = fs.readdirSync(MAPS_PATH)
+            .filter(p => p.startsWith(PREFIX))
+            .map(p => p.substring(PREFIX.length, p.length - SUFFIX.length))
+            .map(p => parseInt(p, 10))
+            .filter(Number.isSafeInteger)
+            .reduce((p, c) => Math.max(p, c), 0) + 1
+
+        const structure = client.world.copy(TOP_LEFT.x, TOP_LEFT.y, TOP_LEFT.x + map.width - 1, TOP_LEFT.y + map.height - 1)
+
+        writeFileSync(path.join(MAPS_PATH, PREFIX + int.toString().padStart(2, '0') + SUFFIX), structure.toString())
+    })
+
     client.on('cmd:*open', ([p, _, name]) => {
         if (!is_bot_admin(p)) return
         return open_door()
@@ -217,10 +256,15 @@ export function module(client: Client) {
 
     client.on('cmd:*build-frame', async ([p, _, name]) => {
         if (!is_bot_admin(p)) return
-        const data = fs.readFileSync(path.join(MAPS_PATH, 'filled.yaml')).toString()
+        const data = fs.readFileSync(path.join(MAPS_PATH, CrowdControlFlip ? 'filled-reverse.yaml' : 'filled.yaml')).toString()
         const structure = Structure.fromString(data)
         map.paste(0, 0, structure)
         await client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, { animation: Animation.RANDOM, write_empty: true })
+    })
+
+    client.on('cmd:*flip', ([p, _, name]) => {
+        if (!is_bot_admin(p)) return
+        return flip_direction()
     })
 
     client.on('cmd:*clear', ([p, _, name]) => {
