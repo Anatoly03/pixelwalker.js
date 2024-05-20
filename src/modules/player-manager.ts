@@ -131,8 +131,6 @@ export default function Module(client: Client): Client {
         if (!client.players) return
         const player: Player = client.players.get(id) as Player
         const block_name = BlockMappingsReverse[bid]
-
-        console.log(block_name)
         
         if (block_name.startsWith('key_'))
             return client.emit('world:key', [player, block_name.substring(4)])
