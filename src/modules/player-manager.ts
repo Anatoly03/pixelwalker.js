@@ -75,7 +75,7 @@ export default function Module(client: Client): Client {
         player.y = y / 16
 
         // TODO
-        // client.emit('player:move', [player])
+        client.emit('player:move', [player])
     })
 
     /**
