@@ -40,6 +40,7 @@ export default (PATH: string = 'bans.yaml', PERMISSION_CALLBACK: ((p: Player) =>
                 const BANLIST_NEW = [...YAML.parse(fs.readFileSync(PATH).toString('ascii')), { username: to_ban_player.username, cuid: to_ban_player.cuid, reason }]
                 fs.writeFileSync(PATH, YAML.stringify(BANLIST_NEW))
                 player.pm('[BOT] Banned: ' + to_ban_player.username)
+                // TODO find active player, if exists, kick
                 return
             }
 
