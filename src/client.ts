@@ -205,14 +205,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
         if (cb2 == undefined)
             return this.command(cmd, () => true, cb1 as ((args: [Player, ...string[]]) => Promise<string | void>))
 
-        this.on(`cmd:${cmd}`, async (args: [Player, ...string[]]) => {
+        return this.on(`cmd:${cmd}`, async (args: [Player, ...string[]]) => {
             if (!(cb1 as ((p: Player) => boolean))(args[0])) return
             const output = await cb2(args)
             if (typeof output == 'string')
                 args[0].pm(output)
         })
-
-        return this
     }
 
     // TODO
