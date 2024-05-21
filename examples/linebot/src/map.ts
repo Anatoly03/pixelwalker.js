@@ -1,5 +1,6 @@
 
 import Client, { Animation, Block, Structure } from '../../../dist/index.js'
+import { is_bot_admin } from './admin.js'
 import client from './line.js'
 import fs, { writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -12,7 +13,8 @@ const map = new Structure(WIDTH, HEIGHT)
 
 export const TOP_LEFT = { x: parseInt(process.env.TLX || '0'), y: parseInt(process.env.TLY || '0') }
 export const HORIZONTAL_BORDER = 30
-export const VERTICAL_BORDER = 10
+export const VERTICAL_BORDER = 13
+export const ABSOLUTE_VERTICAL_BORDER = 7
 
 let FRAME = new Block('beveled_magenta')
 
@@ -112,8 +114,13 @@ export function plan_to_queue() {
             console.warn(`Problems finding proper piece: JOINT Y = ${JOINT.y}, MAP HEIGHT = ${map.height}, CALCULATED DELTA JOINT Y = ${calculated_y_joint}, PIECE LEFT = ${piece.meta.left_y}, PIECE HEIGHT = ${piece.height}, QUEUE LENGTH = ${QUEUE.length}`)
         }
 
-        if (calculated_y_joint - piece.meta.left_y + piece.height > map.height - VERTICAL_BORDER && piece_direction > 0) continue
-        if (calculated_y_joint - piece.meta.left_y < VERTICAL_BORDER && piece_direction < 0) continue
+        // Absolute no go
+        if (calculated_y_joint - piece.meta.left_y + piece.height >= map.height - ABSOLUTE_VERTICAL_BORDER) continue
+        if (calculated_y_joint - piece.meta.left_y <= 1 + ABSOLUTE_VERTICAL_BORDER) continue
+
+        // Unwanted
+        if (calculated_y_joint - piece.meta.left_y + piece.height > map.height - VERTICAL_BORDER && piece_direction >= 0) continue
+        if (calculated_y_joint - piece.meta.left_y < VERTICAL_BORDER && piece_direction <= 0) continue
 
         return QUEUE.push([random_piece, piece])
     }
@@ -227,6 +234,21 @@ export function module(client: Client) {
         return create_empty_arena(30)
     })
 
+    client.on('cmd:queue', ([player, _, name]) => {
+        if (!name)
+            return //
+        if (!is_bot_admin(player))
+            return
+        if (!fs.existsSync(path.join(TILES_PATH, name)))
+            return
+
+        const value = fs.readFileSync(path.join(TILES_PATH, name)).toString()
+        const piece = Structure.fromString(value)
+        QUEUE.push([name, piece])
+
+        return player.pm('[BOT] Added to Queue.')
+    })
+    
     // client.on('cmd:*build', ([player]) => {
     //     return build_platform(30)
     // })

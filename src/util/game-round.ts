@@ -49,7 +49,8 @@ export class GameRound extends EventEmitter<GameRoundEvents> {
     }
 
     private eliminate(p: Player, reason: 'left' | 'god' | 'kill') {
-        if (!this.running) return
+        if (!this.running) return // Game not running, ignore.
+        if (this.players.findIndex(v => v.id == p.id) == -1) return // Not active player, can't eliminate
         this.players = this.players.filter(q => q.id != p.id)
         this.emit('eliminate', p, reason)
     }
