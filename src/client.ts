@@ -196,6 +196,25 @@ export default class Client extends EventEmitter<LibraryEvents> {
         })
     }
 
+    /** Set a wrapped event listener for a command with a permission check and a callback. */
+    public command(cmd: string, permission_check: (player: Player) => boolean, callback: (args: [Player, ...string[]]) => Promise<void | string>): Client;
+    /** Set a wrapped event listener for a command and a callback. Permission check is automatically true. If a string is returned, it is privately delivered to the user. */
+    public command(cmd: string, callback: (args: [Player, ...string[]]) => Promise<string | void>): Client;
+    /** Command Management Wrapper */
+    public command(cmd: string, cb1: ((p: Player) => boolean) | ((args: [Player, ...string[]]) => Promise<string | void>), cb2?: (args: [Player, ...string[]]) => Promise<string | void>) {
+        if (cb2 == undefined)
+            return this.command(cmd, () => true, cb1 as ((args: [Player, ...string[]]) => Promise<string | void>))
+
+        this.on(`cmd:${cmd}`, async (args: [Player, ...string[]]) => {
+            if (!(cb1 as ((p: Player) => boolean))(args[0])) return
+            const output = await cb2(args)
+            if (typeof output == 'string')
+                args[0].pm(output)
+        })
+
+        return this
+    }
+
     // TODO
     public block(x: number, y: number, layer: 0 | 1, block: number | null | keyof typeof BlockMappings, ...args: any[]): Promise<boolean>
     public block(x: number, y: number, layer: 0 | 1, block: Block): Promise<boolean>
