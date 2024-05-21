@@ -197,13 +197,13 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /** Set a wrapped event listener for a command with a permission check and a callback. */
-    public command(cmd: string, permission_check: (player: Player) => boolean, callback: (args: [Player, ...string[]]) => Promise<void | string>): Client;
+    public command(cmd: string, permission_check: (player: Player) => boolean, callback: (args: [Player, ...string[]]) => (Promise<any> | any)): Client;
     /** Set a wrapped event listener for a command and a callback. Permission check is automatically true. If a string is returned, it is privately delivered to the user. */
-    public command(cmd: string, callback: (args: [Player, ...string[]]) => Promise<string | void>): Client;
+    public command(cmd: string, callback: (args: [Player, ...string[]]) => (Promise<any> | any)): Client;
     /** Command Management Wrapper */
-    public command(cmd: string, cb1: ((p: Player) => boolean) | ((args: [Player, ...string[]]) => Promise<string | void>), cb2?: (args: [Player, ...string[]]) => Promise<string | void>) {
+    public command(cmd: string, cb1: ((p: Player) => boolean) | ((args: [Player, ...string[]]) => (Promise<any> | any)), cb2?: (args: [Player, ...string[]]) => (Promise<any> | any)) {
         if (cb2 == undefined)
-            return this.command(cmd, () => true, cb1 as ((args: [Player, ...string[]]) => Promise<string | void>))
+            return this.command(cmd, () => true, cb1 as ((args: [Player, ...string[]]) => (Promise<any> | any)))
 
         return this.on(`cmd:${cmd}`, async (args: [Player, ...string[]]) => {
             if (!(cb1 as ((p: Player) => boolean))(args[0])) return

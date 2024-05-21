@@ -192,8 +192,7 @@ export function module(client: Client) {
         return player.pm('[BOT] Added to Queue: ' + result[1])
     })
 
-    client.on('cmd:save', async ([player, _, x, y]) => {
-        if (!is_bot_admin(player)) return
+    client.command('save', is_bot_admin, async ([player, _, x, y]) => {
         if (!client.world) return
 
         const PREFIX = 'map'
@@ -214,11 +213,12 @@ export function module(client: Client) {
             difficulty: 'easy'
         }
 
-        writeFileSync(path.join(MAPS_PATH, PREFIX + int.toString().padStart(2, '0') + SUFFIX), structure.toString())
+        const FILE_NAME = PREFIX + int.toString().padStart(2, '0') + SUFFIX
+        writeFileSync(path.join(MAPS_PATH, FILE_NAME), structure.toString())
+        return '[BOT] Saved as ' + FILE_NAME
     })
 
-    client.on('cmd:*save-frame', async ([player, _, x, y]) => {
-        if (!is_bot_admin(player)) return
+    client.command('*save-frame', is_bot_admin, async ([player, _, x, y]) => {
         if (!client.world) return
 
         const PREFIX = 'frame'
@@ -236,13 +236,11 @@ export function module(client: Client) {
         writeFileSync(path.join(MAPS_PATH, PREFIX + int.toString().padStart(2, '0') + SUFFIX), structure.toString())
     })
 
-    client.on('cmd:*open', ([p, _, name]) => {
-        if (!is_bot_admin(p)) return
+    client.command('*open', is_bot_admin, ([p, _, name]) => {
         return open_door()
     })
 
-    client.on('cmd:*create-platform', ([p, _, name]) => {
-        if (!is_bot_admin(p)) return
+    client.command('*create-platform', is_bot_admin, ([p, _, name]) => {
         return create_win_zone()
     })
 

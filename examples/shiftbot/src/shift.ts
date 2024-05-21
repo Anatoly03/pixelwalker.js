@@ -1,6 +1,6 @@
 
 import 'dotenv/config'
-import Client, { Modules } from '../../../dist/index.js'
+import Client, { Modules, Player } from '../../../dist/index.js'
 
 process.on('SIGINT', () => {
     process.on('SIGINT', () => {
@@ -15,6 +15,19 @@ import * as Map from './map.js'
 import * as Game from './game.js'
 import * as Players from './players.js'
 import { is_bot_admin } from './admin.js'
+
+// client.command('test', (p: Player) => { console.log('Player Check: ' + p.username); return true }, async (args) => {
+//     console.log(args.slice(1))
+// })
+
+// client.command('test2', (p: Player) => { console.log('Player Check: ' + p.username); return false }, async (args) => {
+//     console.log(args.slice(1))
+// })
+
+// client.command('test3', async (args) => {
+//     console.log(args.slice(1))
+//     return 'Hello, You!'
+// })
 
 client
     .on('player:join', ([p]) => p.god(true)) // Give everyone god mode
