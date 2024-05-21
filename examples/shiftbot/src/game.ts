@@ -2,7 +2,7 @@
 import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
 
 import { is_bot_admin } from './admin.js'
-import { build_map, clear_map, close_door, create_win_zone, open_door, remove_spawn, set_spawn } from './map.js'
+import { TOP_LEFT, build_map, clear_map, close_door, create_win_zone, height, open_door, remove_spawn, set_spawn, width } from './map.js'
 import { getPlayerEntry } from './players.js'
 
 export function module(client: Client) {
@@ -13,6 +13,7 @@ export function module(client: Client) {
     let GAME_HALT_FLAG = false
     let START_TIME = 0
     let ROUND = 0
+    let POSITION_CHECKED: Player[] = []
     let PLAYER_QUEUE: Player[] = []
     let END_ROUND: ReturnType<typeof Util.Breakpoint<boolean, string>>
     let SIGNUP_LOCK: ReturnType<typeof Util.Breakpoint>
@@ -22,6 +23,11 @@ export function module(client: Client) {
         const isActiveWinner = PLAYER_QUEUE.findIndex(p => p.id == player.id) >= 0
 
         if (!isActive || isActiveWinner) return
+
+        if (POSITION_CHECKED.findIndex(v => player.id == v.id) == -1) {
+            // We deal with someone who touched the crown despite "never" being in the game frame.
+            return disqualify(player, 'invalid')
+        }
 
         const TIME = (performance.now() - START_TIME) / 1000
         const TOO_FEW_PLAYERS_CONDITIONS = gameRound.players.length < 3
@@ -48,13 +54,18 @@ export function module(client: Client) {
             return END_ROUND.accept(true)
     }
 
-    function disqualify(player: Player, code: 'left' | 'god' | 'kill') {
+    function disqualify(player: Player, code: 'left' | 'god' | 'kill' | 'invalid') {
         const wasActive = gameRound.players.findIndex(p => p.id == player.id) >= 0
 
         PLAYER_QUEUE = PLAYER_QUEUE.filter(p => p.id != player.id)
         gameRound.players = gameRound.players.filter(p => p.id != player.id)
 
         if (!wasActive) return
+
+        if (code == 'invalid') {
+            console.warn(`[!] ${player.username} disqualified due to never being in the game.`)
+            player.pm('[BOT] Disqualified: You were never in the playing field. Did you tab out while the game was running?')
+        }
 
         if (gameRound.players.length == 0) {
             client.say('[BOT] Game over!')
@@ -103,6 +114,7 @@ export function module(client: Client) {
         client.say(`[BOT] "${meta.name}" by ${meta.creator}`)
     
         await client.wait(2000)
+        POSITION_CHECKED = []
     
         await open_door()
         START_TIME = performance.now()
@@ -127,7 +139,14 @@ export function module(client: Client) {
         client.off('player:crown', accept_to_next_round)
 
         gameRound.players = PLAYER_QUEUE
-    })    
+    })   
+    
+    client.on('player:move', ([p]) => {
+        if (p.god_mode || p.mod_mode) return
+        if (POSITION_CHECKED.findIndex(v => v.id == p.id) >= 0) return
+        if (p.x < TOP_LEFT.x + 3 || p.y < TOP_LEFT.y + 3 || p.x > TOP_LEFT.x + width - 3 || p.y > TOP_LEFT.y + height - 4) return
+        POSITION_CHECKED.push(p)
+    })
 
     client.on('cmd:start', ([player, _, name]) => {
         if (!is_bot_admin(player)) return

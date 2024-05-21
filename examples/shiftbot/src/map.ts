@@ -9,7 +9,7 @@ import { is_bot_admin } from './admin.js'
 export const width = 50
 export const height = 37
 
-const TOP_LEFT = { x: parseInt(process.env.TLX || '0'), y: parseInt(process.env.TLY || '0') }
+export const TOP_LEFT = { x: parseInt(process.env.TLX || '0'), y: parseInt(process.env.TLY || '0') }
 const QUEUE: [string, string][] = []
 const RECENT_MAPS: string[] = []
 const MAPS_PATH = process.env.MAPS_PATH || 'maps'
