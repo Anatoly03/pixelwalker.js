@@ -159,7 +159,7 @@ export function module(client: Client) {
 
     client.on('cmd:save', async ([player, _, x, y]) => {
         if (!is_bot_admin(player)) return
-        const world = await client.wait_for(() => client.world)
+        if (!client.world) return
 
         const PREFIX = 'map'
         const SUFFIX = '.yaml'
@@ -171,7 +171,7 @@ export function module(client: Client) {
             .filter(Number.isSafeInteger)
             .reduce((p, c) => Math.max(p, c), 0) + 1
 
-        const structure = world.copy(TOP_LEFT.x + 1, TOP_LEFT.y + 1, TOP_LEFT.x + map.width - 2, TOP_LEFT.y + map.height - 3)
+        const structure = client.world.copy(TOP_LEFT.x + 1, TOP_LEFT.y + 1, TOP_LEFT.x + map.width - 2, TOP_LEFT.y + map.height - 3)
 
         structure.meta = {
             creator: player.username,
