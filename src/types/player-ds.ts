@@ -96,7 +96,7 @@ class GamePlayerArray extends Array<Player> {
      * Returns a string representation of the player array.
      */
     toString(): string {
-        return '[' + this.map(player => player.username.toLowerCase()).join(', ') + ']'
+        return '[' + this.map(player => player.username).join(', ') + ']'
     }
 
     toLocaleString(): string {
@@ -108,6 +108,10 @@ abstract class DataStructure<K, V extends PlayerBase, A extends Array<V> = Array
     protected data: Map<K, V> = new Map()
 
     protected abstract createArray(...a: V[]): A
+
+    public toArray(): V[] {
+        return Array.from(this.data.values())
+    }
 
     public byCuid(cuid: string) {
         for (const p of this.data.values())
@@ -193,6 +197,13 @@ export class PlayerMap extends DataStructure<number, Player, GamePlayerArray> {
         for (const p of this.data.values())
             if (p.has_crown)
                 return p
+    }
+
+    /**
+     * Returns a string representation of the players.
+     */
+    toString(): string {
+        return '[' + this.map(player => player.username).join(', ') + ']'
     }
 }
 
