@@ -99,8 +99,8 @@ export default class Player extends PlayerBase {
         this.client.say(`${this.username}: ${content}`)
     }
 
-    public async kick(reason: string) {
-        this.client.say(`/kick #${this.id} ${reason}`)
+    public async kick(reason?: string) {
+        this.client.say(`/kick #${this.id}${reason ? ` ${reason}` : ''}`)
         // this.client.say(`/kick ${this.username} ${reason}`)
     }
 
