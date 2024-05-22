@@ -4,7 +4,7 @@ import { Magic, Bit7 } from "../types.js"
 import Player, { PlayerBase, SelfPlayer } from "../types/player.js"
 import World from "../types/world.js"
 
-export default function StartModule(rawPlayerMap: Map<number, Player>) {
+export default function StartModule(rawPlayers: Player[]) {
     return (client: Client) => {
         /**
          * On init, set everything up
@@ -31,7 +31,7 @@ export default function StartModule(rawPlayerMap: Map<number, Player>) {
                 can_god
             })
 
-            rawPlayerMap.set(id, client.self)
+            rawPlayers.push(client.self)
             client.emit('start', [client.self])
         })
         

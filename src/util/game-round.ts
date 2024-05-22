@@ -44,7 +44,7 @@ export class GameRound extends EventEmitter<GameRoundEvents> {
     }
 
     public async signup(callback: (p: Player) => boolean = (p) => !p.god_mode && !p.mod_mode) {
-        this.players = this.client.players.filter(callback)
+        this.players = this.client.players.toArray().filter(callback)
     }
 
     private eliminate(p: Player, reason: 'left' | 'god' | 'kill') {

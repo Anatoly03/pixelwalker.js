@@ -3,7 +3,7 @@ import { BlockMappingsReverse } from "../data/mappings.js"
 import { PlayerMap } from "../types/player-ds"
 import Player, { PlayerBase } from "../types/player.js"
 
-export function GamePlayerModule(players: PlayerMap, rawPlayerMap: Map<number, Player>) {
+export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
     return (client: Client) => {
         /**
          * On player join, create a player object with data
@@ -32,7 +32,7 @@ export function GamePlayerModule(players: PlayerMap, rawPlayerMap: Map<number, P
             }
             
             const player = new Player(data)
-            rawPlayerMap.set(id, player)
+            rawPlayers.push(player)
             client.emit('player:join', [player])
         })
 
@@ -50,9 +50,10 @@ export function GamePlayerModule(players: PlayerMap, rawPlayerMap: Map<number, P
          * and destroy it.
          */
         client.raw.on('playerLeft', async ([id]) => {
-            const player = players.byId<true>(id)
+            const playerIndex = rawPlayers.findIndex(p => p.id == id)
+            if (playerIndex == -1) return
+            const [player] = rawPlayers.splice(playerIndex, 1)
             client.emit('player:leave', [player])
-            rawPlayerMap.delete(id)
         })
 
 
@@ -162,15 +163,24 @@ export function GamePlayerModule(players: PlayerMap, rawPlayerMap: Map<number, P
     }
 }
 
-export function BasePlayerModule(rawPlayerMap: Map<string, PlayerBase>) {
+export function BasePlayerModule(rawPlayers: PlayerBase[]) {
     return (client: Client) => {
         /**
          * When a player joins, register the player into the constant players.
          */
         client.raw.on('playerJoined', async ([_id, cuid, username, _f, isAdmin]) => {
-            rawPlayerMap.set(cuid, new PlayerBase({
+            const exists = rawPlayers.find(p => p.cuid == cuid)
+            const new_object = new PlayerBase({
                 isAdmin, cuid, username
-            }))
+            })
+
+            if (exists != undefined) {
+                if (exists.cuid != cuid || exists.username != username || exists.isAdmin != isAdmin)
+                    console.warn(`[WARN] During the runtime of the bot, the user ${exists.username} changed their metadata: Was: ${exists}, Is Now: ${new_object}`)
+                return
+            }
+
+            rawPlayers.push(new_object)
         })
 
         return client
