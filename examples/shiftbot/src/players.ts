@@ -11,7 +11,8 @@ type PlayerEntry = {
     time: number
 }
 
-let SAVED_PLAYERS: {[keys: string]: PlayerEntry} = load()
+let SAVED_PLAYERS: {[keys: string]: PlayerEntry} = {}
+load()
 
 function save() {
     fs.writeFileSync(PATH, YAML.stringify(SAVED_PLAYERS))
