@@ -1,5 +1,6 @@
 import Client from "../client.js"
 import Player, { PlayerBase } from "./player.js"
+import util from 'util'
 
 import StartModule from "../modules/start.js"
 import { GamePlayerModule, BasePlayerModule } from "../modules/player-manager.js"
@@ -8,11 +9,9 @@ type ReturnGuarantee<G extends boolean, R> = G extends true ? R : (R | undefined
 
 class PlayerArray<P extends PlayerBase> {
     protected data: Array<P>
-    // private selectors: any[] // TODO Game selectors @p[]?
 
     constructor(reference: P[]) {
         this.data = reference
-        // this.selectors = []
     }
 
     get length() {
@@ -34,17 +33,23 @@ class PlayerArray<P extends PlayerBase> {
         return this
     }
 
-    get join() {
-        return this.data.join
+    public join(separator: string = ', '): string {
+        let r: string = ''
+
+        for (const p of this.data.values())
+            r += (r == '' ? '' : separator) + p.username
+
+        return r
     }
 
-    get every() {
-        return this.data.every
+    public every(callback: (p: P) => boolean) {
+        for (const p of this.data.values())
+            if (!callback(p))
+                return false
+        return true
     }
 
-    public filter(predicate: (value: P, index: number, array: P[]) => boolean): this {
-        return new (this.constructor as new(array: P[]) => this)(this.data.filter(predicate))
-    }
+    // public abstract filter(predicate: (value: P, index: number, array: P[]) => boolean): never
 
     public find(callback: (p: P) => boolean): P | undefined {
         for (const p of this.data.values())
@@ -52,28 +57,31 @@ class PlayerArray<P extends PlayerBase> {
                 return p
     }
 
-    get includes() {
-        return this.data.includes
+    public includes(searchElement: P) {
+        return this.data.includes(searchElement)
     }
 
-    get reduce() {
-        return this.data.reduce
+    public reduce<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number, array: P[]) => Z, initialValue: Z): Z {
+        return this.data.reduce<Z>(callback, initialValue)
     }
 
-    get reduceRight() {
-        return this.data.reduceRight
+    public reduceRight<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number, array: P[]) => Z, initialValue: Z): Z {
+        return this.data.reduceRight<Z>(callback, initialValue)
     }
 
     // reverse?
 
-    get some() {
-        return this.data.some
+    public some(callback: (p: P) => boolean) {
+        for (const p of this.data.values())
+            if (callback(p))
+                return true
+        return false
     }
 
     // sort?
 
-    get values() {
-        return this.data.values
+    public values() {
+        return this.data.values()
     }
 
     [Symbol.iterator]() {
@@ -107,27 +115,47 @@ class PlayerArray<P extends PlayerBase> {
     /**
      * Returns a string representation of the player array.
      */
-    toString(): string {
+    public toString(): string {
         return '[' + this.map(player => player.username).join(', ') + ']'
+    }
+
+    // https://stackoverflow.com/a/40699119/16002144
+    public [util.inspect.custom](): string {
+        return this.toString()
+    }
+
+    get [Symbol.toStringTag]() {
+        return 'PlayerArray'
     }
 
     /**
      * Returns a copy of the array data.
      */
-    toArray(): P[] {
+    public toArray(): P[] {
         return new Array(...this.data)
     }
 }
 
 export class PlayerMap extends PlayerArray<Player> {
-    private client: Client
+    private client?: Client
+    // private selectors: any[] // TODO Game selectors @p[]?
 
-    constructor(client: Client) {
+    constructor(client?: Client) {
         const array: Player[] = []
         super(array)
-        this.client = client
-            .include(StartModule(array))
-            .include(GamePlayerModule(this, array))
+        // this.selectors = []
+
+        if (client) {
+            this.client = client
+                .include(StartModule(array))
+                .include(GamePlayerModule(this, array))
+        }
+    }
+    
+    public filter(predicate: (value: Player, index: number, array: Player[]) => boolean): PlayerMap {
+        const copy = new PlayerMap()
+        copy.data = this.data.filter(predicate)
+        return copy
     }
 
     public byUsername(username: string): Player | undefined;
@@ -232,12 +260,29 @@ export class PlayerMap extends PlayerArray<Player> {
         this.forEach(player => player.reset())
         return this
     }
+
+    public toString(): string {
+        return '[' + this.map(player => `${player.username}[${player.id}]`).join(', ') + ']'
+    }
 }
 
 export class StoredPlayerMap extends PlayerArray<PlayerBase> {
-    constructor(client: Client) {
+    constructor(client?: Client) {
         const array: PlayerBase[] = []
         super(array)
-        client.include(BasePlayerModule(array))
+
+        if (client) {
+            client.include(BasePlayerModule(array))
+        }
+    }
+
+    public filter(predicate: (value: PlayerBase, index: number, array: PlayerBase[]) => boolean): StoredPlayerMap {
+        const copy = new StoredPlayerMap()
+        copy.data = this.data.filter(predicate)
+        return copy
+    }
+
+    public toString(): string {
+        return '[' + this.map(player => `${player.username}[${player.cuid}]`).join(', ') + ']'
     }
 }
