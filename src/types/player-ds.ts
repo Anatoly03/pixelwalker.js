@@ -91,6 +91,17 @@ class GamePlayerArray extends Array<Player> {
         this.forEach(player => player.reset())
         return this
     }
+
+    /**
+     * Returns a string representation of the player array.
+     */
+    toString(): string {
+        return '[' + this.map(player => player.username.toLowerCase()).join(', ') + ']'
+    }
+
+    toLocaleString(): string {
+        return this.toString()
+    }
 }
 
 abstract class DataStructure<K, V extends PlayerBase, A extends Array<V> = Array<V>> {
