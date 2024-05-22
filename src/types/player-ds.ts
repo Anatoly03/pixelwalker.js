@@ -27,7 +27,7 @@ class PlayerArray<P extends PlayerBase> {
         return r
     }
 
-    public forEach(callback: (p: P) => void): this {
+    public forEach(callback: (p: P) => void) {
         for (const p of this.data.values())
             callback(p)
         return this
