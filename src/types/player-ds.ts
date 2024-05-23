@@ -49,7 +49,11 @@ class PlayerArray<P extends PlayerBase> {
         return true
     }
 
-    // public abstract filter(predicate: (value: P, index: number, array: P[]) => boolean): never
+    public filter(predicate: (value: P, index: number, array: P[]) => boolean): any {
+        const copy = new PlayerArray(this.toArray())
+        copy.data = this.data.filter(predicate)
+        return copy
+    }
 
     public find(callback: (p: P) => boolean): P | undefined {
         for (const p of this.data.values())
