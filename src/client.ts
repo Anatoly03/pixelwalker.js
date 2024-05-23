@@ -28,6 +28,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     private isConnected = false
 
     private pocketbase: PocketBase
+    private socket: WebSocket
 
     private readonly command: EventEmitter<{[keys: string]: [[Player, ...string[]]]}> = new EventEmitter()
     private command_permissions: [string, (p: Player) => boolean][] = []
@@ -37,7 +38,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     public block_scheduler: BlockScheduler
     
-    private socket: WebSocket | null
     public self: SelfPlayer | null
     public world: World | null
     
@@ -53,7 +53,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         super()
 
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
-        this.socket = null
+        this.socket = new WebSocket(null)
         this.self = null
         this.world = null
 
@@ -232,6 +232,14 @@ export default class Client extends EventEmitter<LibraryEvents> {
             return list.length > 0 ? list : undefined
         })
         return this
+    }
+
+    setChatPrefix(prefix: string) {
+        this.chatPrefix = prefix
+    }
+
+    registerCommandPrefix(allowed: string[]) {
+        this.cmdPrefix = allowed
     }
 
     // TODO
