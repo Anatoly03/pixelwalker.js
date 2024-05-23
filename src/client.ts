@@ -28,7 +28,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     private isConnected = false
 
     private pocketbase: PocketBase
-    private socket: WebSocket
+    private socket: WebSocket | null
 
     private readonly command: EventEmitter<{[keys: string]: [[Player, ...string[]]]}> = new EventEmitter()
     private command_permissions: [string, (p: Player) => boolean][] = []
@@ -53,7 +53,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         super()
 
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
-        this.socket = new WebSocket(null)
+        this.socket = null
 
         if (args.token) {
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
@@ -254,8 +254,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.world?.put_block(x, y, layer, block) || Promise.reject('The `client.world` object was not loaded.')
     }
 
-    public say(content: string) {
-        return this.self?.say(this.chatPrefix + content)
+    public say(content: string): void;
+    public say(preamble: string, content: string): void;
+    public say(preamble: string, content?: string) {
+        if (content == undefined)
+            return this.say(this.chatPrefix || '', preamble)
+        return this.self?.say(preamble + ' ' + this.chatPrefix || '', content)
     }
 
     public god(value: boolean, mod_mode: boolean) {
