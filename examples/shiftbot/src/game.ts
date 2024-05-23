@@ -148,20 +148,20 @@ export function module(client: Client) {
         POSITION_CHECKED.push(p)
     })
 
-    client.command('start', is_bot_admin, () => {
+    client.onCommand('start', is_bot_admin, () => {
         GAME_HALT_FLAG = false
         gameRound.start()
     })
 
-    client.command('continue', is_bot_admin, () => {
+    client.onCommand('continue', is_bot_admin, () => {
         END_ROUND.accept(PLAYER_QUEUE.length > 1)
     })
 
-    client.command('halt', is_bot_admin, () => {
+    client.onCommand('halt', is_bot_admin, () => {
         gameRound.stop()
     })
 
-    client.command('last', is_bot_admin, () => {
+    client.onCommand('last', is_bot_admin, () => {
         GAME_HALT_FLAG = true
     })
 

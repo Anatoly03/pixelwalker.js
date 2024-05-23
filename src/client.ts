@@ -27,12 +27,13 @@ import { BlockMappings } from './data/mappings.js'
 export default class Client extends EventEmitter<LibraryEvents> {
     private isConnected = false
 
+    private pocketbase: PocketBase
+
+    public readonly command: EventEmitter<{[keys: string]: [[Player, ...string[]]]}> = new EventEmitter()
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
     public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
 
     public block_scheduler: BlockScheduler
-
-    private pocketbase: PocketBase
     
     private socket: WebSocket | null
     public self: SelfPlayer | null
@@ -105,7 +106,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         this.block_scheduler.start()
         
-        this.include(BotCommandModule)
+        this.include(BotCommandModule(this.command))
         this.include(ChatModule)
         this.include(PlayerManagerModule)
         this.include(InitModule)
@@ -197,15 +198,15 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /** Set a wrapped event listener for a command with a permission check and a callback. */
-    public command(cmd: string, permission_check: (player: Player) => boolean, callback: (args: [Player, ...string[]]) => (Promise<any> | any)): Client;
+    public onCommand(cmd: string, permission_check: (player: Player) => boolean, callback: (args: [Player, ...string[]]) => (Promise<any> | any)): Client;
     /** Set a wrapped event listener for a command and a callback. Permission check is automatically true. If a string is returned, it is privately delivered to the user. */
-    public command(cmd: string, callback: (args: [Player, ...string[]]) => (Promise<any> | any)): Client;
+    public onCommand(cmd: string, callback: (args: [Player, ...string[]]) => (Promise<any> | any)): Client;
     /** Command Management Wrapper */
-    public command(cmd: string, cb1: ((p: Player) => boolean) | ((args: [Player, ...string[]]) => (Promise<any> | any)), cb2?: (args: [Player, ...string[]]) => (Promise<any> | any)) {
+    public onCommand(cmd: string, cb1: ((p: Player) => boolean) | ((args: [Player, ...string[]]) => (Promise<any> | any)), cb2?: (args: [Player, ...string[]]) => (Promise<any> | any)) {
         if (cb2 == undefined)
-            return this.command(cmd, () => true, cb1 as ((args: [Player, ...string[]]) => (Promise<any> | any)))
+            return this.onCommand(cmd, () => true, cb1 as ((args: [Player, ...string[]]) => (Promise<any> | any)))
 
-        return this.on(`cmd:${cmd}`, async (args: [Player, ...string[]]) => {
+        return this.command.on(cmd, async (args: [Player, ...string[]]) => {
             if (!(cb1 as ((p: Player) => boolean))(args[0])) return
             const output = await cb2(args)
             if (typeof output == 'string')
