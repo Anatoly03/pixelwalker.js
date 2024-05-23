@@ -172,6 +172,7 @@ export class SelfPlayer extends Player {
         if (preamble.length > MESSAGE_SIZE)
             throw new Error('Chat preamble is larger than message size. Bad.')
 
+        // TODO regex?
         if (content.length > CONTENT_ALLOWED_SIZE) {
             const separator = content.substring(0, CONTENT_ALLOWED_SIZE).lastIndexOf(' ') || CONTENT_ALLOWED_SIZE
             this.say(preamble, content.substring(0, separator))
