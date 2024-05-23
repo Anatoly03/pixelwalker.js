@@ -37,4 +37,5 @@ client
     .include(Game)
     .include(Players)
     .include(Modules.BanModule('bans.yaml', is_bot_admin))
+    .registerHelpCommand('help')
     .connect(process.env.WORLD_ID)

@@ -29,7 +29,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     private pocketbase: PocketBase
 
-    public readonly command: EventEmitter<{[keys: string]: [[Player, ...string[]]]}> = new EventEmitter()
+    private readonly command: EventEmitter<{[keys: string]: [[Player, ...string[]]]}> = new EventEmitter()
+    private command_permissions: [string, (p: Player) => boolean][] = []
+
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
     public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
 
@@ -198,21 +200,35 @@ export default class Client extends EventEmitter<LibraryEvents> {
         })
     }
 
-    /** Set a wrapped event listener for a command with a permission check and a callback. */
+    /** Set a wrapped event listener for a command with a permission check and a callback. If callback returns string, privately message. */
     public onCommand(cmd: string, permission_check: (player: Player) => boolean, callback: (args: [Player, ...string[]]) => (Promise<any> | any)): Client;
-    /** Set a wrapped event listener for a command and a callback. Permission check is automatically true. If a string is returned, it is privately delivered to the user. */
+    /** Set a wrapped event listener for a command and a callback. Permission check is automatically true. If a string is returned, it is privately delivered to the user. If callback returns string, privately message. */
     public onCommand(cmd: string, callback: (args: [Player, ...string[]]) => (Promise<any> | any)): Client;
     /** Command Management Wrapper */
-    public onCommand(cmd: string, cb1: ((p: Player) => boolean) | ((args: [Player, ...string[]]) => (Promise<any> | any)), cb2?: (args: [Player, ...string[]]) => (Promise<any> | any)) {
+    public onCommand(cmd: string, cb1: ((p: Player) => boolean) | ((args: [Player, ...string[]]) => (Promise<any> | any)), cb2?: (args: [Player, ...string[]]) => (Promise<any> | any)): Client {
         if (cb2 == undefined)
             return this.onCommand(cmd, () => true, cb1 as ((args: [Player, ...string[]]) => (Promise<any> | any)))
 
-        return this.command.on(cmd, async (args: [Player, ...string[]]) => {
+        this.command.on(cmd, async (args: [Player, ...string[]]) => {
             if (!(cb1 as ((p: Player) => boolean))(args[0])) return
             const output = await cb2(args)
             if (typeof output == 'string')
                 args[0].pm(output)
         })
+
+        return this
+    }
+
+    /** Set an event listener for a help command, that will navigate through all registered commands and display the ones you can use. */
+    registerHelpCommand(cmd: string) {
+        this.onCommand(cmd, () => true, ([player]) => {
+            const list = this.command_permissions
+                .filter(([pl, cb]) => cb(player))
+                .map(([p]) => this.cmdPrefix[0] + p)
+                .join(' ')
+            return list
+        })
+        return this
     }
 
     // TODO
