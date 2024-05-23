@@ -58,7 +58,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.world = null
 
         this.chatPrefix = ''
-        this.cmdPrefix = ['.', '!']
+        this.cmdPrefix = ['!', '.']
 
         if (args.token) {
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
@@ -209,6 +209,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
         if (cb2 == undefined)
             return this.onCommand(cmd, () => true, cb1 as ((args: [Player, ...string[]]) => (Promise<any> | any)))
 
+        this.command_permissions.push([cmd, cb1 as (player: Player) => boolean])
+
         this.command.on(cmd, async (args: [Player, ...string[]]) => {
             if (!(cb1 as ((p: Player) => boolean))(args[0])) return
             const output = await cb2(args)
@@ -225,8 +227,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
             const list = this.command_permissions
                 .filter(([pl, cb]) => cb(player))
                 .map(([p]) => this.cmdPrefix[0] + p)
+                .filter((v, i, a) => a.indexOf(v) === i) // Remove duplicates: https://stackoverflow.com/a/14438954/16002144
                 .join(' ')
-            return list
+            return list.length > 0 ? list : undefined
         })
         return this
     }
