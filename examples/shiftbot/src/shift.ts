@@ -1,6 +1,6 @@
 
 import 'dotenv/config'
-import Client from '../../../dist/index.js'
+import Client, { Player } from '../../../dist/index.js'
 
 process.on('SIGINT', () => {
     process.on('SIGINT', () => {
@@ -24,12 +24,3 @@ client
     .include(Players)
     .include(Ban)
     .connect(process.env.WORLD_ID)
-
-// client.on('start', async () => {
-//     await client.wait(200)
-
-//     client.players
-//         .filter(p => p.username == 'ANATOLY')
-//         .forEach(console.log)
-//         .kick()
-// })
