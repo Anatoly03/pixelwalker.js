@@ -141,6 +141,13 @@ class PlayerArray<P extends PlayerBase> {
     }
 
     /**
+     * Retrieve 
+     */
+    public none(): any {
+        return new PlayerArray([])
+    }
+
+    /**
      * Get player by public uid
      */
     public byCuid(cuid: string) {
@@ -310,6 +317,10 @@ export class PlayerMap extends PlayerArray<Player> {
     public toString(): string {
         return '[' + this.map(player => `${player.username}[${player.id}]`).join(', ') + ']'
     }
+
+    public none(): any {
+        return new PlayerMap()
+    }
 }
 
 export class StoredPlayerMap extends PlayerArray<PlayerBase> {
@@ -330,5 +341,9 @@ export class StoredPlayerMap extends PlayerArray<PlayerBase> {
 
     public toString(): string {
         return '[' + this.map(player => `${player.username}[${player.cuid}]`).join(', ') + ']'
+    }
+
+    public none(): any {
+        return new StoredPlayerMap()
     }
 }
