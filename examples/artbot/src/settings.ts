@@ -11,12 +11,13 @@ let SETTINGS = {}
 export const RULE = {
     EVERYONE_EDIT: 'everyone-edit',
     EVERYONE_GOD: 'everyone-god',
+    EVERYONE_CHECKPOINT: 'everyone-checkpoint'
 }
 
 if (!fs.existsSync(SETTINGS_PATH))
     fs.writeFileSync(SETTINGS_PATH, YAML.stringify(SETTINGS))
 
-export function Rule(key: string) {
+export function Rule(key: string): boolean | string | number | undefined {
     SETTINGS = YAML.parse(fs.readFileSync(SETTINGS_PATH).toString('ascii'))
     return SETTINGS[key]
 }
@@ -36,6 +37,8 @@ export function module (client: Client) {
         SETTINGS = YAML.parse(fs.readFileSync(SETTINGS_PATH).toString('ascii'))
         SETTINGS[r] = value
         fs.writeFileSync(SETTINGS_PATH, YAML.stringify(SETTINGS))
+
+        return `Set rule '${r}' to: ${v}`
     })
 
     client.onCommand('rule', IS_ADMIN, ([p, _, r, v]) => {

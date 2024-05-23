@@ -61,7 +61,8 @@ export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
          * TODO Player movement
          */
         client.raw.on('playerMoved', async ([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]) => {
-            const player = players.byId<true>(id)
+            const player = players.byId(id)
+            if (!player) return
 
             player.x = x / 16
             player.y = y / 16
@@ -158,6 +159,20 @@ export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
             if (old_death_count < death_count) client.emit('player:death', [player, old_death_count])
         })
 
+        client.raw.on('playerReset', ([id, x, y]) => {
+            const player = players.byId<true>(id)
+            player.x = x / 16
+            player.y = y / 16
+            // TODO
+            client.emit('player:reset', [player])
+        })
+
+        client.raw.on('playerRespawn', ([id, x, y]) => {
+            const player = players.byId<true>(id)
+            player.x = x / 16
+            player.y = y / 16
+            client.emit('player:respawn', [player])
+        })
 
         return client
     }
