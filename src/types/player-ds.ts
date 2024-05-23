@@ -85,8 +85,28 @@ class PlayerArray<P extends PlayerBase> {
         return false
     }
 
-    public sort(compareFn: ((a: P, b: P) => number) = (player => parseInt(player.username, 36))) {
+    /**
+     * Sort players with comparator lambda.
+     */
+    public sort(compareFn: ((a: P, b: P) => number) = ((player1, player2) => parseInt(player1.username, 36) - parseInt(player2.username, 36))) {
         this.data.sort(compareFn)
+        return this
+    }
+
+    /**
+     * Sort by attribute or mapping of players
+     */
+    public sortBy<Z extends string | number | boolean>(callback: (p: P) => Z) {
+        this.data.sort((p1, p2) => {
+            const m1 = callback(p1),
+                m2 = callback(p2)
+
+            if (Number.isInteger(m1))
+                return m1 as number - (m2 as number)
+            else if (m1 == true || m1 == false)
+                return (m1 ? 2 : 1) - (m2 ? 2 : 1)
+            return (m1 as string).localeCompare(m2 as string)
+        })
         return this
     }
 
