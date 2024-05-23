@@ -160,6 +160,7 @@ export class SelfPlayer extends Player {
     public say(content: string) {
         const MESSAGE_SIZE = 120
 
+        // TODO FIX FOR COMMANDS
         if (content.length > MESSAGE_SIZE) {
             const separator = content.substring(0, MESSAGE_SIZE).lastIndexOf(' ') || MESSAGE_SIZE
             this.say(content.substring(0, separator))
