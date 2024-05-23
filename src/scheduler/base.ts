@@ -39,7 +39,10 @@ export default abstract class BaseScheduler<K extends string, V> {
         return this.running = true
     }
 
-    public stop() {
+    /**
+     * Stop the scheduler.
+     */
+    public stop(clear_flag?: true) {
         this.unbusy()
         this.tickets.forEach(c => c.rej("Scheduler was stopped!"))
         return this.running = false

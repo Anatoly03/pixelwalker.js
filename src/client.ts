@@ -163,7 +163,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public disconnect() {
         this.isConnected = false
-        this.block_scheduler.stop()
+        this.block_scheduler.stop(true)
         this.pocketbase?.authStore.clear()
         this.socket?.close()
     }
@@ -186,6 +186,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * Send raw bytes to server
      */
     public send(...args: Buffer[]): Promise<any | undefined> {
+        if (!this.connected) return Promise.reject("Client not connected, but `send` was called.")
         return new Promise((res, rej) => {
             if (!this.socket) throw new Error('Socket not existing.')
             if (this.socket.readyState != this.socket.OPEN) throw new Error('Socket not connected.')
