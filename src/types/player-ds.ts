@@ -105,6 +105,22 @@ class PlayerArray<P extends PlayerBase> {
     }
 
     /**
+     * Get the first element
+     */
+    public first() {
+        if (this.data.length == 0) return
+        return this.data[0]
+    }
+
+    /**
+     * Get the last element
+     */
+    public last() {
+        if (this.data.length == 0) return
+        return this.data[this.data.length - 1]
+    }
+
+    /**
      * Get player by public uid
      */
     public byCuid(cuid: string) {
