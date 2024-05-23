@@ -16,13 +16,12 @@ import Structure from './types/structure.js'
 
 import BotCommandModule from './modules/bot-command.js'
 import ChatModule from './modules/chat.js'
-import PlayerManagerModule from './modules/player-manager.js'
-import InitModule from './modules/start.js'
 import SystemMessageModule from './modules/system-command.js'
 import WorldManagerModule from './modules/world-manager.js'
 
 import BlockScheduler from './scheduler/scheduler-block.js'
 import { BlockMappings } from './data/mappings.js'
+import { PlayerMap, StoredPlayerMap } from './types/player-ds.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
     public connected = false
@@ -39,13 +38,16 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public world: World | undefined
     public cmdPrefix: string[]
 
-    public readonly players: Map<number, Player> = new Map()
-    public readonly globalPlayers: Map<string, PlayerBase> = new Map()
+    public readonly players
+    public readonly globalPlayers
 
     constructor(args: { token?: string });
     constructor(args: { user: string, pass: string });
     constructor(args: { token?: string, user?: string, pass?: string }) {
         super()
+
+        this.players = new PlayerMap(this)
+        this.globalPlayers = new StoredPlayerMap(this)
 
         this.pocketbase = null
         this.socket = null
@@ -106,8 +108,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
         
         this.include(BotCommandModule)
         this.include(ChatModule)
-        this.include(PlayerManagerModule)
-        this.include(InitModule)
         this.include(SystemMessageModule)
         this.include(WorldManagerModule)
 

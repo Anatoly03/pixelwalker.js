@@ -1,8 +1,5 @@
 import Client from "../client.js"
-import { MessageType } from "../data/consts.js"
-import { Magic, Bit7 } from "../types.js"
-import Player, { PlayerBase, SelfPlayer } from "../types/player.js"
-import World from "../types/world.js"
+import Player from "../types/player.js"
 
 /**
  * This module generates a module function that will log certain events.
@@ -14,7 +11,7 @@ export default function Module(client: Client): Client {
      */
     async function handle_command(id: number, message: string) {
         if (!message) return
-        const player = await client.wait_for(() => client.players.get(id))
+        const player = client.players.byId<true>(id)
         const prefix = client.cmdPrefix.find(v => message.toLowerCase().startsWith(v))
         if (!prefix) return
 

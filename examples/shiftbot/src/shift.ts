@@ -1,6 +1,6 @@
 
 import 'dotenv/config'
-import Client from '../../../dist/index.js'
+import Client, { Player } from '../../../dist/index.js'
 
 process.on('SIGINT', () => {
     process.on('SIGINT', () => {
