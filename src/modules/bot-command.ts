@@ -13,7 +13,7 @@ export default function BotCommandModule(command: EventEmitter<{[keys: string]: 
          */
         async function handle_command(id: number, message: string) {
             if (!message) return
-            const player = client.players.get(id)
+            const player = client.players.byId<true>(id)
             if (!player) return
             const prefix = client.cmdPrefix.find(v => message.toLowerCase().startsWith(v))
             if (!prefix) return

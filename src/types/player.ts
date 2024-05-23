@@ -1,6 +1,7 @@
 import Client from "../client.js"
 import { MessageType } from "../data/consts.js"
 import { Bit7, Magic, Boolean, Int32, Double, String } from "../types.js"
+import util from 'util'
 
 /**
  * Player Base
@@ -19,6 +20,14 @@ export class PlayerBase {
         this.username = args.username
         this.isAdmin = args.isAdmin
     }
+
+    public toString() {
+        return this.username
+    }
+
+    // public [util.inspect.custom](): string {
+    //     return `${this.constructor.name} {\n  cuid: '${this.cuid}',\n  username: '${this.username}',\n  ...\n}`
+    // }
 }
 
 /**
@@ -100,8 +109,8 @@ export default class Player extends PlayerBase {
         this.client.say(`${this.username}:` + (this.client.chatPrefix ? ' ' + this.client.chatPrefix : ''), content)
     }
 
-    public async kick(reason: string) {
-        this.client.say(`/kick #${this.id}` + (reason ? (' ' + reason) : ''), '') // The entire message is a preambel.
+    public async kick(reason: string = "Tsk Tsk Tsk") {
+        this.client.say(`/kick #${this.id} ${reason}`, '')
     }
 
     public async edit(value: boolean) {
@@ -128,6 +137,10 @@ export default class Player extends PlayerBase {
     public async reset() {
         this.client.say(`/resetplayer #${this.id}`, '')
     }
+
+    // public [util.inspect.custom](): string {
+    //     return `${this.constructor.name} {\n  id: '${this.id}',\n  username: '${this.username}',\n  ...\n}`
+    // }
 }
 
 /**

@@ -44,7 +44,7 @@ export default function Module (callback: (v: EventEmitter<KeyEvents>) => EventE
 
         client.raw.on('playerMoved', ([pid, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]) => {
             let local_player = players.get(pid) as LocalPlayer
-            let player = client.players.get(pid) as Player
+            const player = client.players.byId<true>(pid)
 
             if (local_player.horizontal != horizontal) {
                 if (local_player.horizontal == -1)

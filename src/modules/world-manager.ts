@@ -9,9 +9,11 @@ export default function Module(client: Client): Client {
      * TODO
      */
     client.raw.on('placeBlock', async ([id, x, y, layer, bid, ...args]) => {
-        if (!client.players || !client.world) return
+        const player = client.players.byId<true>(id)
+        if (!player || !client.world) return
         const [position, block] = client.world.set(x, y, layer, bid, args)
-        client.emit('player:block', [client.players.get(id) as Player, position, block])
+
+        client.emit('player:block', [player, position, block])
     })
 
     /**

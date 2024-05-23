@@ -16,13 +16,12 @@ import Structure from './types/structure.js'
 
 import BotCommandModule from './modules/bot-command.js'
 import ChatModule from './modules/chat.js'
-import PlayerManagerModule from './modules/player-manager.js'
-import InitModule from './modules/start.js'
 import SystemMessageModule from './modules/system-command.js'
 import WorldManagerModule from './modules/world-manager.js'
 
 import BlockScheduler from './scheduler/scheduler-block.js'
 import { BlockMappings } from './data/mappings.js'
+import { PlayerMap, StoredPlayerMap } from './types/player-ds.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
     private isConnected = false
@@ -44,8 +43,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public chatPrefix: string | undefined
     public cmdPrefix: string[] = ['!', '.']
 
-    public readonly players: Map<number, Player> = new Map()
-    public readonly globalPlayers: Map<string, PlayerBase> = new Map()
+    public readonly players
+    public readonly globalPlayers
 
     constructor(args: { token?: string });
     constructor(args: { user?: string, pass?: string });
@@ -54,6 +53,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
         this.socket = null
+
+        this.players = new PlayerMap(this)
+        this.globalPlayers = new StoredPlayerMap(this)
 
         if (args.token) {
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
@@ -106,8 +108,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
         
         this.include(BotCommandModule(this.command))
         this.include(ChatModule)
-        this.include(PlayerManagerModule)
-        this.include(InitModule)
         this.include(SystemMessageModule)
         this.include(WorldManagerModule)
 
