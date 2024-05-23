@@ -24,3 +24,12 @@ client
     .include(Players)
     .include(Ban)
     .connect(process.env.WORLD_ID)
+
+// client.on('start', async () => {
+//     await client.wait(200)
+
+//     client.players
+//         .filter(p => p.username == 'ANATOLY')
+//         .forEach(console.log)
+//         .kick()
+// })

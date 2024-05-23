@@ -73,7 +73,10 @@ class PlayerArray<P extends PlayerBase> {
         return this.data.reduceRight<Z>(callback, initialValue)
     }
 
-    // reverse?
+    public reverse() {
+        this.data = this.data.reverse()
+        return this
+    }
 
     public some(callback: (p: P) => boolean) {
         for (const p of this.data.values())
@@ -82,7 +85,10 @@ class PlayerArray<P extends PlayerBase> {
         return false
     }
 
-    // sort?
+    public sort(compareFn: ((a: P, b: P) => number) = (player => parseInt(player.username, 36))) {
+        this.data.sort(compareFn)
+        return this
+    }
 
     public values() {
         return this.data.values()
