@@ -35,19 +35,19 @@ export function module(client: Client) {
 
         if (PLAYER_QUEUE.length == 0 && !TOO_FEW_PLAYERS_CONDITIONS) {
             const TIME_LEFT = 30
-            client.say(`[BOT] ${player.username} finished! ${TIME_LEFT}s left!`)
+            client.say(`${player.username} finished! ${TIME_LEFT}s left!`)
             END_ROUND.time(TIME_LEFT * 1000, true)
         }
 
         PLAYER_QUEUE.push(player)
         
         console.log(`${PLAYER_QUEUE.length}. ${TIME.toFixed(1)}s\t${player.username}`)
-        player.pm(`[BOT] ${PLAYER_QUEUE.length}. ${TIME.toFixed(1)}s`)
+        player.pm(`${PLAYER_QUEUE.length}. ${TIME.toFixed(1)}s`)
 
         if (TOO_FEW_PLAYERS_CONDITIONS) {
             END_ROUND.accept(false)
             getPlayerEntry(player.cuid).gold++
-            return client.say(`[BOT] ${player.username} won!`)
+            return client.say(`${player.username} won!`)
         }
         
         if (PLAYER_LIMIT_CONDITION)
@@ -64,16 +64,16 @@ export function module(client: Client) {
 
         if (code == 'invalid') {
             console.warn(`[!] ${player.username} disqualified due to never being in the game.`)
-            player.pm('[BOT] Disqualified: You were never in the playing field. Did you tab out while the game was running?')
+            player.pm('Disqualified: You were never in the playing field. Did you tab out while the game was running?')
         }
 
         if (gameRound.players.length == 0) {
-            client.say('[BOT] Game over!')
+            client.say('Game over!')
             return END_ROUND.accept(false)
         }
 
         if (gameRound.players.length == 1) {
-            client.say(`[BOT] ${gameRound.players[0].username} won!`)
+            client.say(`${gameRound.players[0].username} won!`)
             getPlayerEntry(player.cuid).gold++
             return END_ROUND.accept(false)
         }
@@ -111,7 +111,7 @@ export function module(client: Client) {
     
         const meta = await build_map()
         console.log(`Round ${ROUND} - ${meta.name}`)
-        client.say(`[BOT] "${meta.name}" by ${meta.creator}`)
+        client.say(`"${meta.name}" by ${meta.creator}`)
     
         await client.wait(2000)
         POSITION_CHECKED = []

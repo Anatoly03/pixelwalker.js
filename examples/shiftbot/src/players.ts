@@ -55,22 +55,22 @@ export function module(client: Client) {
     })
 
     client.on('cmd:help', ([p]) => {
-        p.pm('[BOT] !help !wins !rounds !time !queue' + (is_bot_admin(p) ? ' ' : ''))
+        p.pm('!help !wins !rounds !time !queue' + (is_bot_admin(p) ? ' ' : ''))
     })
 
     client.on('cmd:wins', ([p]) => {
         const data = getPlayerEntry(p.cuid)
-        p.pm(`[BOT] Your medals: Gold ${data.gold}, Silver ${data.silver}, Bronze ${data.bronze}`)
+        p.pm(`Your medals: Gold ${data.gold}, Silver ${data.silver}, Bronze ${data.bronze}`)
     })
 
     client.on('cmd:rounds', ([p]) => {
         const data = getPlayerEntry(p.cuid)
-        p.pm(`[BOT] Rounds: ${data.rounds}`)
+        p.pm(`Rounds: ${data.rounds}`)
     })
 
     client.on('cmd:time', ([p]) => {
         const data = getPlayerEntry(p.cuid)
-        p.pm(`[BOT] Total Time in Game: ${data.time}s`)
+        p.pm(`Total Time in Game: ${data.time}s`)
     })
 
     return client

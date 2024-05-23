@@ -182,14 +182,14 @@ export async function flip_direction() {
 export function module(client: Client) {
     client.on('cmd:queue', ([player, _, name]) => {
         if (!name)
-            return player.pm('[BOT] Queue: ' + (QUEUE.length > 0 ? QUEUE.map(p => p[1]).join(', ') : '---'))
+            return player.pm('Queue: ' + (QUEUE.length > 0 ? QUEUE.map(p => p[1]).join(', ') : '---'))
         if (!is_bot_admin(player))
             return
         const result = find_map(name)
         if (!result)
-            return player.pm('[BOT] Couldn\'t find that map.')
+            return player.pm('Couldn\'t find that map.')
         QUEUE.push(result)
-        return player.pm('[BOT] Added to Queue: ' + result[1])
+        return player.pm('Added to Queue: ' + result[1])
     })
 
     client.onCommand('save', is_bot_admin, async ([player, _, x, y]) => {
@@ -215,7 +215,7 @@ export function module(client: Client) {
 
         const FILE_NAME = PREFIX + int.toString().padStart(2, '0') + SUFFIX
         writeFileSync(path.join(MAPS_PATH, FILE_NAME), structure.toString())
-        return '[BOT] Saved as ' + FILE_NAME
+        return 'Saved as ' + FILE_NAME
     })
 
     client.onCommand('*save-frame', is_bot_admin, async ([player, _, x, y]) => {
@@ -254,7 +254,7 @@ export function module(client: Client) {
         const result = find_map(name)
         if (result) QUEUE.unshift(result)
         const meta = await build_map()
-        client.say(`[BOT] "${meta.name}" by ${meta.creator}`)
+        client.say(`"${meta.name}" by ${meta.creator}`)
     })
 
     client.on('cmd:*build-frame', async ([p, _, name]) => {
