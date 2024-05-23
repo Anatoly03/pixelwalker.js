@@ -38,11 +38,11 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     public block_scheduler: BlockScheduler
     
-    public self: SelfPlayer | null
-    public world: World | null
+    public self: SelfPlayer | null = null
+    public world: World | null = null
     
-    public chatPrefix: string
-    public cmdPrefix: string[]
+    public chatPrefix: string | undefined
+    public cmdPrefix: string[] = ['!', '.']
 
     public readonly players: Map<number, Player> = new Map()
     public readonly globalPlayers: Map<string, PlayerBase> = new Map()
@@ -54,11 +54,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
         this.socket = new WebSocket(null)
-        this.self = null
-        this.world = null
-
-        this.chatPrefix = ''
-        this.cmdPrefix = ['!', '.']
 
         if (args.token) {
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
@@ -81,7 +76,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /**
-     * Connect client to server
+     * Connect client to server. `world_id` is always expected to be string,
+     * but is undefined here for compatibility with environment variables.
      */
     public connect(world_id: string | undefined): Promise<Client>
     public connect(world_id: string | undefined, room_type: typeof RoomTypes[0]): Promise<Client>
@@ -236,10 +232,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     setChatPrefix(prefix: string) {
         this.chatPrefix = prefix
+        return this
     }
 
     registerCommandPrefix(allowed: string[]) {
         this.cmdPrefix = allowed
+        return this
     }
 
     // TODO
