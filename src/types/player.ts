@@ -158,6 +158,15 @@ export class SelfPlayer extends Player {
     }
 
     public say(content: string) {
+        const MESSAGE_SIZE = 120
+
+        if (content.length > MESSAGE_SIZE) {
+            const separator = content.substring(0, MESSAGE_SIZE).lastIndexOf(' ') || MESSAGE_SIZE
+            this.say(content.substring(0, separator))
+            this.say(content.substring(separator, content.length))
+            return
+        }
+
         return this.client.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
     }
 
