@@ -2,6 +2,9 @@
 import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
 import { create_empty_arena, advance_one_piece, plan_to_queue, set_max_size, reset_everything, JOINT, LEFT_JOINT, TOP_LEFT, WIDTH, HORIZONTAL_BORDER, PLATFORM_SIZE, set_speed, SPEED } from './map.js'
 import { is_bot_admin } from './admin.js'
+import { StoredPlayer } from './storage.js'
+
+const MINIMUM_PLAYERS = 3
 
 export let GAME_SIGNUP = false
 export let GAME_RUNNING = false
@@ -10,6 +13,7 @@ export let GAME_HALT_FLAG = false
 export let GAME_IN_DEBUG = false
 
 let START_TIME = 0
+let PRACTICE_MODE = false
 
 let TILES = 0
 let LINES = 0
@@ -28,6 +32,10 @@ export function module(client: Client) {
         console.log(`${gameRound.players.length + 1}. ${player.username} (${SURVIVAL_TIME})`)
         player.pm(`[BOT] ${gameRound.players.length + 1}. ${SURVIVAL_TIME}s`)
 
+        const user_data = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
+        user_data.rounds = user_data.rounds + 1
+        user_data.time = user_data.time + SURVIVAL_TIME
+
         if (gameRound.players.length == 0) {
             // client.say('[BOT] Game over!')
             console.log('Game over!')
@@ -36,10 +44,17 @@ export function module(client: Client) {
         }
 
         if (gameRound.players.length == 1) {
-            client.say(`[BOT] ${gameRound.players[0].username} won! Platform Time: ${SURVIVAL_TIME}s`)
+            const winner = gameRound.players[0]
+            client.say(`[BOT] ${winner.username} won! Platform Time: ${SURVIVAL_TIME}s`)
+            console.log(`1. ${player.username}`)
             gameRound.players[0].crown(true)
             GAME_IS_STARTING = true
             GAME_RUNNING = false
+
+            const winner_data = StoredPlayer.players.byCuid(winner.cuid) as StoredPlayer
+            winner_data.wins = winner_data.wins + 1
+            winner_data.rounds = winner_data.rounds + 1
+            winner_data.time = winner_data.time + SURVIVAL_TIME
         }
 
         gameRound.players = gameRound.players.filter(p => p.id != player.id)
@@ -89,6 +104,14 @@ export function module(client: Client) {
             await client.wait(500)
 
             SIGNUP_LOCK = undefined
+
+            if (gameRound.players.length == 0)
+                return
+            else if (gameRound.players.length < MINIMUM_PLAYERS)
+                PRACTICE_MODE = true
+            else
+                PRACTICE_MODE = false
+
             console.log('Active in Round: ' + gameRound.players.map(p => p.username).join(' '))
 
             set_max_size(45)
@@ -99,6 +122,10 @@ export function module(client: Client) {
 
             START_TIME = performance.now()
             GAME_RUNNING = true
+
+            // if (PRACTICE_MODE) {
+            //     client.say(`Not enough players (${gameRound.players.length} of required ${MINIMUM_PLAYERS}). Practice Mode enabled. Data won't be saved.`)
+            // }
         }
 
         if (await advance_one_piece()) {

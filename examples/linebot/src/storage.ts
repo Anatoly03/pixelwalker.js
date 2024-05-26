@@ -22,7 +22,7 @@ export class StoredPlayer extends PlayerBase {
 
         client.onCommand('time', ([p]) => {
             const player = StoredPlayer.players.byCuid(p.cuid)
-            if (player) return `Your total time: ${player.time}`
+            if (player) return `Your total time: ${player.time}s`
         })
 
         return client
