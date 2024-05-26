@@ -12,19 +12,19 @@ type PTBase<P extends PlayerBase> = {
     module?: (c: Client) => Client }
 
 export class PlayerStorageModule<P extends PlayerBase> {
-    #DATA: { [keys: string]: P } = {}
-    #PATH: string = 'players.yaml'
-    #PT: PTBase<P>
+    protected data: { [keys: string]: P } = {}
+    protected PT: PTBase<P>
+    public path: string = 'players.yaml'
 
     constructor(path: string, ClassT: PTBase<P>) {
-        this.#PATH = path
-        this.#PT = ClassT
+        this.path = path
+        this.PT = ClassT
 
-        Object.defineProperty(this.#PT, 'players', {
+        Object.defineProperty(this.PT, 'players', {
             get: () => this.players()
         })
 
-        if (fs.existsSync(this.#PATH)) {
+        if (fs.existsSync(this.path)) {
             this.read()
         } else {
             this.save()
@@ -32,33 +32,33 @@ export class PlayerStorageModule<P extends PlayerBase> {
     }
 
     private read() {
-        this.#DATA = YAML.parse(fs.readFileSync(this.#PATH).toString('ascii'))
+        this.data = YAML.parse(fs.readFileSync(this.path).toString('ascii'))
     }
 
     private save() {
-        fs.writeFileSync(this.#PATH, YAML.stringify(this.#DATA))
+        fs.writeFileSync(this.path, YAML.stringify(this.data))
     }
 
     private players(): PlayerArray<P> {
         const array: P[] = []
         const that = this
 
-        for (const cuid in this.#DATA) {
+        for (const cuid in this.data) {
             const wrap = {
-                [util.inspect.custom]: () => `StorageWrapper[${this.#PT.name}, cuid='${cuid}']`,
+                [util.inspect.custom]: () => `StorageWrapper[${this.PT.name}, cuid='${cuid}']`,
             }
 
-            for (const key in this.#DATA[cuid]) {
+            for (const key in this.data[cuid]) {
                 Object.defineProperty(wrap, key, {
                     get: () => {
                         this.read()
-                        const p = this.#DATA[cuid]
+                        const p = this.data[cuid]
                         if (!p) return null
                         return p[key]
                     },
                     set: (value: any) => {
                         this.read()
-                        const p = this.#DATA[cuid]
+                        const p = this.data[cuid]
                         if (!p) return
                         p[key] = value
                         this.save()
@@ -77,12 +77,12 @@ export class PlayerStorageModule<P extends PlayerBase> {
         client.on('player:join', ([p]) => {
             if (this.players().byCuid(p.cuid)) return
             this.read()
-            this.#DATA[p.cuid] = new this.#PT(p)
+            this.data[p.cuid] = new this.PT(p)
             this.save()
         })
 
-        if (this.#PT.module)
-            return this.#PT.module(client)
+        if (this.PT.module)
+            return this.PT.module(client)
 
         return client
     }
@@ -91,4 +91,3 @@ export class PlayerStorageModule<P extends PlayerBase> {
 export default <P extends PlayerBase> (PATH: string, ClassT: { new(p?: Player): P, players: PlayerArray<P> }) => {
     return new PlayerStorageModule<P>(PATH, ClassT)
 }
-
