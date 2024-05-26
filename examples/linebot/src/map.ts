@@ -228,18 +228,16 @@ export function set_max_size(x: number) {
 }
 
 export function module(client: Client) {
-    client.on('cmd:*empty', ([player]) => {
+    client.onCommand('*empty', is_bot_admin, ([player]) => {
         return create_empty_arena()
     })
 
-    client.on('cmd:*build', ([player]) => {
+    client.onCommand('*build', is_bot_admin, ([player]) => {
         return create_empty_arena(30)
     })
 
-    client.on('cmd:queue', ([player, _, name]) => {
+    client.onCommand('queue', is_bot_admin, ([player, _, name]) => {
         if (!name)
-            return //
-        if (!is_bot_admin(player))
             return
         if (!fs.existsSync(path.join(TILES_PATH, name)))
             return
@@ -251,9 +249,7 @@ export function module(client: Client) {
         return player.pm('[BOT] Added to Queue.')
     })
 
-    client.on('cmd:frame', ([p, _, k]) => {
-        if (!is_bot_admin(p))
-            return
+    client.onCommand('frame', is_bot_admin, ([p, _, k]) => {
         if (BlockProperties[k] == Property.Solid || k == 'boost_up')
             FRAME = new Block(k as BlockIdentifier)
     })
@@ -262,7 +258,7 @@ export function module(client: Client) {
     //     return build_platform(30)
     // })
 
-    client.on('cmd:*piece', async ([player, _, z]) => {
+    client.onCommand('*piece', is_bot_admin, async ([player, _, z]) => {
         if (!z) z = '1'
         let amount: number = parseInt(z)
         if (Number.isInteger(amount)) {

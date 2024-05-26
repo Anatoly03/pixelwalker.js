@@ -128,15 +128,13 @@ export function module(client: Client) {
     client.on('player:join', ([p]) => SIGNUP_LOCK?.accept())
     client.on('player:god', ([p]) => {if (!p.god_mode) SIGNUP_LOCK?.accept()})
 
-    client.on('cmd:start', ([player, _, name]) => {
-        if (!is_bot_admin(player)) return
+    client.onCommand('start', is_bot_admin, ([player, _, name]) => {
         GAME_HALT_FLAG = false
         GAME_IS_STARTING = true
         gameRound.start()
     })
 
-    client.on('cmd:debug', ([player, _, name]) => {
-        if (!is_bot_admin(player)) return
+    client.onCommand('debug', is_bot_admin, ([player, _, name]) => {
         GAME_IN_DEBUG = !GAME_IN_DEBUG
         if (GAME_IN_DEBUG)
             gameRound.start()
@@ -144,36 +142,30 @@ export function module(client: Client) {
             gameRound.stop()
     })
 
-    client.on('cmd:last', ([player, _, name]) => {
-        if (!is_bot_admin(player)) return
+    client.onCommand('last', is_bot_admin, ([player, _, name]) => {
         GAME_HALT_FLAG = true
     })
 
-    client.on('cmd:stop', ([player, _, name]) => {
-        if (!is_bot_admin(player)) return
+    client.onCommand('stop', is_bot_admin, ([player, _, name]) => {
         gameRound.stop()
     })
 
-    client.on('cmd:restart', ([player, _, name]) => {
-        if (!is_bot_admin(player)) return
+    client.onCommand('restart', is_bot_admin, ([player, _, name]) => {
         gameRound.stop()
         GAME_HALT_FLAG = false
         GAME_IS_STARTING = true
         gameRound.start()
     })
 
-    client.on('cmd:continue', ([player, _, name]) => {
-        if (!is_bot_admin(player)) return
+    client.onCommand('continue', is_bot_admin, ([player, _, name]) => {
         gameRound.start()
     })
 
-    client.on('cmd:speed', ([player, _, s]) => {
-        if (!is_bot_admin(player)) return
+    client.onCommand('speed', is_bot_admin, ([player, _, s]) => {
         set_speed(parseInt(s))
     })
 
-    client.on('cmd:size', ([player, _, s]) => {
-        if (!is_bot_admin(player)) return
+    client.onCommand('size', is_bot_admin, ([player, _, s]) => {
         set_max_size(parseInt(s))
     })
 
