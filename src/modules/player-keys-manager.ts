@@ -46,6 +46,8 @@ export default function Module (callback: (v: EventEmitter<KeyEvents>) => EventE
             let local_player = players.get(pid) as LocalPlayer
             const player = client.players.byId<true>(pid)
 
+            if (!local_player || !player) return
+
             if (local_player.horizontal != horizontal) {
                 if (local_player.horizontal == -1)
                     event_emitter.emit('left:up', player)
