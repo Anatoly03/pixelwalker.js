@@ -7,7 +7,7 @@ import { GamePlayerModule, BasePlayerModule } from "../modules/player-manager.js
 
 type ReturnGuarantee<G extends boolean, R> = G extends true ? R : (R | undefined)
 
-class PlayerArray<P extends PlayerBase> {
+export class PlayerArray<P extends PlayerBase> {
     protected data: Array<P>
 
     constructor(reference: P[]) {
@@ -205,7 +205,7 @@ export class PlayerMap extends PlayerArray<Player> {
         }
     }
     
-    public filter(predicate: (value: Player, index: number, array: Player[]) => boolean): PlayerMap {
+    public override filter(predicate: (value: Player, index: number, array: Player[]) => boolean): PlayerMap {
         const copy = new PlayerMap()
         copy.data = this.data.filter(predicate)
         return copy
@@ -314,18 +314,17 @@ export class PlayerMap extends PlayerArray<Player> {
         return this
     }
 
-    public toString(): string {
+    public override toString(): string {
         return '[' + this.map(player => `${player.username}[${player.id}]`).join(', ') + ']'
     }
 
-    public none(): any {
+    public override none(): any {
         return new PlayerMap()
     }
 }
 
-export class StoredPlayerMap extends PlayerArray<PlayerBase> {
-    constructor(client?: Client) {
-        const array: PlayerBase[] = []
+export class StoredPlayerMap<P extends PlayerBase = PlayerBase> extends PlayerArray<P> {
+    constructor(array: P[] = [], client?: Client) {
         super(array)
 
         if (client) {
@@ -333,17 +332,17 @@ export class StoredPlayerMap extends PlayerArray<PlayerBase> {
         }
     }
 
-    public filter(predicate: (value: PlayerBase, index: number, array: PlayerBase[]) => boolean): StoredPlayerMap {
+    public override filter(predicate: (value: P, index: number, array: P[]) => boolean): StoredPlayerMap {
         const copy = new StoredPlayerMap()
         copy.data = this.data.filter(predicate)
         return copy
     }
 
-    public toString(): string {
+    public override toString(): string {
         return '[' + this.map(player => `${player.username}[${player.cuid}]`).join(', ') + ']'
     }
 
-    public none(): any {
+    public override none(): any {
         return new StoredPlayerMap()
     }
 }

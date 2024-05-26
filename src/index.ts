@@ -3,7 +3,8 @@ export { default, default as Client } from './client.js'
 export { default as World } from './types/world.js'
 export { default as Structure } from './types/structure.js'
 export { default as Block, WorldPosition } from "./types/block.js"
-export { default as Player } from './types/player.js'
+export { default as Player, PlayerBase, SelfPlayer } from './types/player.js'
+export { PlayerArray, StoredPlayerMap, PlayerMap } from './types/player-ds.js'
 export * as Animation from './types/animation.js'
 export * as Type from './types.js'
 export { MessageType } from './data/consts.js'
@@ -15,6 +16,7 @@ export const Modules = {
     Debug: (await import ('./modules/debug.js')).default,
     PlayerKeyManager: (await import ('./modules/player-keys-manager.js')).default,
     BanModule: (await import('./modules/bans.js')).default,
+    StorageModule: (await import('./modules/player-storage.js')).default
 }
 
 export const Util = {

@@ -183,15 +183,13 @@ export function BasePlayerModule(rawPlayers: PlayerBase[]) {
         /**
          * When a player joins, register the player into the constant players.
          */
-        client.raw.on('playerJoined', async ([_id, cuid, username, _f, isAdmin]) => {
+        client.raw.on('playerJoined', async ([_id, cuid, username, _f, isAdmin]): Promise<void> => {
             const exists = rawPlayers.find(p => p.cuid == cuid)
-            const new_object = new PlayerBase({
-                isAdmin, cuid, username
-            })
+            const new_object = new PlayerBase({ cuid, username })
 
             if (exists != undefined) {
-                if (exists.cuid != cuid || exists.username != username || exists.isAdmin != isAdmin)
-                    console.warn(`[WARN] During the runtime of the bot, the user ${exists.username} changed their metadata: Was: ${exists}, Is Now: ${new_object}`)
+                if (exists.username != username)
+                    console.warn(`[WARN] During the runtime of the bot, the user ${exists.username} changed their username top ${username}`)
                 return
             }
 

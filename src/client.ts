@@ -43,8 +43,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public chatPrefix: string | undefined
     public cmdPrefix: string[] = ['!', '.']
 
-    public readonly players
-    public readonly globalPlayers
+    public readonly players: PlayerMap
+    public readonly globalPlayers: StoredPlayerMap<PlayerBase>
 
     constructor(args: { token?: string });
     constructor(args: { user?: string, pass?: string });
@@ -55,7 +55,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.socket = null
 
         this.players = new PlayerMap(this)
-        this.globalPlayers = new StoredPlayerMap(this)
+        this.globalPlayers = new StoredPlayerMap<PlayerBase>([], this)
 
         if (args.token) {
             if (typeof args.token != 'string') throw new Error('Token should be of type string')

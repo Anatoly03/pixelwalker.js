@@ -9,16 +9,13 @@ import util from 'util'
 export class PlayerBase {
     public readonly cuid: string
     public readonly username: string
-    public readonly isAdmin: boolean
     
     constructor(args: {
         cuid: string
         username: string
-        isAdmin: boolean
     }) {
         this.cuid = args.cuid
         this.username = args.username
-        this.isAdmin = args.isAdmin
     }
 
     public toString() {
@@ -37,6 +34,7 @@ export default class Player extends PlayerBase {
     protected readonly client: Client
 
     public readonly id: number
+    public readonly isAdmin: boolean
     public face: number
     public x: number
     public y: number
@@ -78,6 +76,7 @@ export default class Player extends PlayerBase {
         this.client = args.client
 
         this.id = args.id
+        this.isAdmin = args.isAdmin
         this.face = args.face
         this.x = args.x
         this.y = args.y
