@@ -1,5 +1,5 @@
-
-import Client, { Animation, Block, Structure } from '../../../dist/index.js'
+import Client, { Animation, Block, Structure, BlockProperties, Property } from '../../../dist/index.js'
+import { BlockIdentifier } from '../../../dist/types/block.js'
 import { is_bot_admin } from './admin.js'
 import client from './line.js'
 import fs, { writeFileSync } from 'node:fs'
@@ -96,36 +96,38 @@ export async function create_empty_arena(PLATFORM_LENGTH?: number) {
 // }
 
 export function reset_everything() {
+    QUEUE.splice(0, QUEUE.length) // Reset queue
     CURRENT_TILE = undefined
     PIECE_X = undefined
 }
 
 export function plan_to_queue() {
     const calculated_y_joint = QUEUE.map(([_, piece]) => piece.meta.right_y - piece.meta.left_y).reduce((p, c) => p += c, JOINT.y)
+    const maps = fs.readdirSync(TILES_PATH)
+    let random = Math.floor(Math.random() * maps.length)
+    let piece
 
-    for (let i = 0; i < 1000; i++) {
-        const maps = fs.readdirSync(TILES_PATH)
-        const random_piece = maps[Math.floor(Math.random() * maps.length)]
+    for (let i = 0; i <= maps.length; i++) {
+        random = (random + 1) % maps.length // Advance through maps till a proper one is found.
+
+        const random_piece = maps[random]
         const value = fs.readFileSync(path.join(TILES_PATH, random_piece)).toString()
-        const piece = Structure.fromString(value)
+        piece = Structure.fromString(value)
         const piece_direction = piece.meta.right_y - piece.meta.left_y
-
-        if (i > 990) {
-            console.warn(`Problems finding proper piece: JOINT Y = ${JOINT.y}, MAP HEIGHT = ${map.height}, CALCULATED DELTA JOINT Y = ${calculated_y_joint}, PIECE LEFT = ${piece.meta.left_y}, PIECE HEIGHT = ${piece.height}, QUEUE LENGTH = ${QUEUE.length}`)
-        }
 
         // Absolute no go
         if (calculated_y_joint - piece.meta.left_y + piece.height >= map.height - ABSOLUTE_VERTICAL_BORDER) continue
         if (calculated_y_joint - piece.meta.left_y <= 1 + ABSOLUTE_VERTICAL_BORDER) continue
 
         // Unwanted
-        if (calculated_y_joint - piece.meta.left_y + piece.height > map.height - VERTICAL_BORDER && piece_direction >= 0) continue
-        if (calculated_y_joint - piece.meta.left_y < VERTICAL_BORDER && piece_direction <= 0) continue
+        if (i < 20 && calculated_y_joint - piece.meta.left_y + piece.height > map.height - VERTICAL_BORDER && piece_direction >= 0) continue
+        if (i < 20 && calculated_y_joint - piece.meta.left_y < VERTICAL_BORDER && piece_direction <= 0) continue
 
         return QUEUE.push([random_piece, piece])
     }
 
-    console.error(`After 1.000 iterations could not find proper piece: Y_JOINT = ${calculated_y_joint}`)
+    console.warn(`Problems finding proper piece: JOINT Y = ${JOINT.y}, MAP HEIGHT = ${map.height}, CALCULATED DELTA JOINT Y = ${calculated_y_joint}, PIECE LEFT = ${piece.meta.left_y}, PIECE HEIGHT = ${piece.height}, QUEUE LENGTH = ${QUEUE.length}`)
+    console.error(`After ${maps.length} iterations could not find proper piece: Y_JOINT = ${calculated_y_joint}`)
     return -1
 }
 
@@ -247,6 +249,13 @@ export function module(client: Client) {
         QUEUE.push([name, piece])
 
         return player.pm('[BOT] Added to Queue.')
+    })
+
+    client.on('cmd:frame', ([p, _, k]) => {
+        if (!is_bot_admin(p))
+            return
+        if (BlockProperties[k] == Property.Solid || k == 'boost_up')
+            FRAME = new Block(k as BlockIdentifier)
     })
     
     // client.on('cmd:*build', ([player]) => {
