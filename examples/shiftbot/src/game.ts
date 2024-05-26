@@ -3,7 +3,7 @@ import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
 
 import { is_bot_admin } from './admin.js'
 import { TOP_LEFT, build_map, clear_map, close_door, create_win_zone, height, open_door, remove_spawn, set_spawn, width } from './map.js'
-import { getPlayerEntry } from './players.js'
+import { StoredPlayer } from './storage.js'
 
 export function module(client: Client) {
     const gameRound = new Util.GameRound(client)
@@ -39,14 +39,26 @@ export function module(client: Client) {
             END_ROUND.time(TIME_LEFT * 1000, true)
         }
 
+        const user_data = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
+
         PLAYER_QUEUE.push(player)
         
         console.log(`${PLAYER_QUEUE.length}. ${TIME.toFixed(1)}s\t${player.username}`)
         player.pm(`${PLAYER_QUEUE.length}. ${TIME.toFixed(1)}s`)
 
+        user_data.rounds = user_data.rounds + 1
+        user_data.time = user_data.time + TIME
+
+        if (PLAYER_QUEUE.length == 1)
+            user_data.gold = user_data.gold + 1
+        else if (PLAYER_QUEUE.length == 2)
+            user_data.silver = user_data.silver + 1
+        else if (PLAYER_QUEUE.length == 3)
+            user_data.bronze = user_data.bronze + 1
+
         if (TOO_FEW_PLAYERS_CONDITIONS) {
             END_ROUND.accept(false)
-            getPlayerEntry(player.cuid).gold++
+
             return client.say(`${player.username} won!`)
         }
         
@@ -62,6 +74,12 @@ export function module(client: Client) {
 
         if (!wasActive) return
 
+        const TIME = (performance.now() - START_TIME) / 1000
+        const user_data = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
+
+        user_data.rounds = user_data.rounds + 1
+        user_data.time = user_data.time + TIME
+
         if (code == 'invalid') {
             console.warn(`[!] ${player.username} disqualified due to never being in the game.`)
             player.pm('Disqualified: You were never in the playing field. Did you tab out while the game was running?')
@@ -74,7 +92,9 @@ export function module(client: Client) {
 
         if (gameRound.players.length == 1) {
             client.say(`${gameRound.players[0].username} won!`)
-            getPlayerEntry(player.cuid).gold++
+
+            user_data.gold = user_data.gold + 1
+
             return END_ROUND.accept(false)
         }
 
@@ -102,12 +122,17 @@ export function module(client: Client) {
             // await SIGNUP_LOCK
             await Promise.all([remove_spawn(), ...SPAWNPOINTS?.map(p => client.block(p[0], p[1], p[2], 'spawn_point'))])
 
+            gameRound.players.forEach(player => {
+                const user_data = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
+                user_data.games = user_data.games + 1
+            })
+
             console.log('Active in Round: ' + gameRound.players.map(p => p.username).join(' '))
         } else {
             await client.wait(4000)
         }
 
-        gameRound.players.forEach(q => getPlayerEntry(q.cuid).rounds++)
+        // Rounds bump here?
     
         const meta = await build_map()
         console.log(`Round ${ROUND} - ${meta.name}`)

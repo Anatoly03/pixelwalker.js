@@ -13,21 +13,8 @@ export default client
 
 import * as Map from './map.js'
 import * as Game from './game.js'
-import * as Players from './players.js'
 import { is_bot_admin } from './admin.js'
-
-// client.command('test', (p: Player) => { console.log('Player Check: ' + p.username); return true }, async (args) => {
-//     console.log(args.slice(1))
-// })
-
-// client.command('test2', (p: Player) => { console.log('Player Check: ' + p.username); return false }, async (args) => {
-//     console.log(args.slice(1))
-// })
-
-// client.command('test3', async (args) => {
-//     console.log(args.slice(1))
-//     return 'Hello, You!'
-// })
+import { StoredPlayer } from './storage.js'
 
 client
     .on('player:join', ([p]) => p.god(true)) // Give everyone god mode
@@ -37,6 +24,6 @@ client
     .registerHelpCommand('help')
     .include(Map)
     .include(Game)
-    .include(Players)
     .include(Modules.BanModule('bans.yaml', is_bot_admin))
+    .include(Modules.StorageModule('players.yaml', StoredPlayer))
     .connect(process.env.WORLD_ID)

@@ -180,7 +180,7 @@ export async function flip_direction() {
 }
 
 export function module(client: Client) {
-    client.on('cmd:queue', ([player, _, name]) => {
+    client.onCommand('queue', ([player, _, name]) => {
         if (!name)
             return player.pm('Queue: ' + (QUEUE.length > 0 ? QUEUE.map(p => p[1]).join(', ') : '---'))
         if (!is_bot_admin(player))
@@ -244,34 +244,29 @@ export function module(client: Client) {
         return create_win_zone()
     })
 
-    client.on('cmd:*close', ([p, _, name]) => {
-        if (!is_bot_admin(p)) return
+    client.onCommand('*close', is_bot_admin, ([p, _, name]) => {
         return close_door()
     })
 
-    client.on('cmd:*build', async ([p, _, name]) => {
-        if (!is_bot_admin(p)) return
+    client.onCommand('*build', is_bot_admin, async ([p, _, name]) => {
         const result = find_map(name)
         if (result) QUEUE.unshift(result)
         const meta = await build_map()
         client.say(`"${meta.name}" by ${meta.creator}`)
     })
 
-    client.on('cmd:*build-frame', async ([p, _, name]) => {
-        if (!is_bot_admin(p)) return
+    client.onCommand('*build-frame', is_bot_admin, async ([p, _, name]) => {
         const data = fs.readFileSync(path.join(MAPS_PATH, CrowdControlFlip ? 'filled-reverse.yaml' : 'filled.yaml')).toString()
         const structure = Structure.fromString(data)
         map.paste(0, 0, structure)
         await client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, { animation: Animation.RANDOM, write_empty: true })
     })
 
-    client.on('cmd:*flip', ([p, _, name]) => {
-        if (!is_bot_admin(p)) return
+    client.onCommand('*flip', is_bot_admin, ([p, _, name]) => {
         return flip_direction()
     })
 
-    client.on('cmd:*clear', ([p, _, name]) => {
-        if (!is_bot_admin(p)) return
+    client.onCommand('*clear', is_bot_admin, ([p, _, name]) => {
         return clear_map()
     })
 

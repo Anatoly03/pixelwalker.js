@@ -68,7 +68,7 @@ export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
             player.y = y / 16
 
             // TODO
-            // client.emit('player:move', [player])
+            client.emit('player:move', [player])
         })
 
         /**
