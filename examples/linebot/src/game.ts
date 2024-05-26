@@ -26,7 +26,7 @@ export function module(client: Client) {
 
         const SURVIVAL_TIME = Math.floor((performance.now() - START_TIME) / 100) / 10
         console.log(`${gameRound.players.length + 1}. ${player.username} (${SURVIVAL_TIME})`)
-        player.pm(`[BOT ]${gameRound.players.length + 1}. ${SURVIVAL_TIME}s`)
+        player.pm(`[BOT] ${gameRound.players.length + 1}. ${SURVIVAL_TIME}s`)
 
         if (gameRound.players.length == 0) {
             // client.say('[BOT] Game over!')
