@@ -1,4 +1,4 @@
-import { Client, Player } from "..";
+import { Client, Player, PlayerBase } from "..";
 import { EventEmitter } from 'events'
 
 interface KeyEvents {
@@ -14,15 +14,20 @@ interface KeyEvents {
     'right:down': [Player]
 }
 
-class LocalPlayer {
+class LocalPlayer extends PlayerBase {
     public readonly id: number
     public horizontal: -1 | 0 | 1 | undefined
     public vertical: -1 | 0 | 1 | undefined
     public space_down: boolean | undefined
     public space_just_down: boolean | undefined
 
-    constructor(id: number) {
-        this.id = id
+    constructor(args: {
+        id: number
+        cuid: string
+        username: string
+    }) {
+        super(args)
+        this.id = args.id
     }
 }
 
@@ -34,8 +39,8 @@ export default function Module (callback: (v: EventEmitter<KeyEvents>) => EventE
     let players = new Map<number, LocalPlayer>()
 
     function Module (client: Client): Client {
-        client.raw.on('playerJoined', ([pid]) => {
-            return players.set(pid, new LocalPlayer(pid))
+        client.raw.on('playerJoined', ([id, cuid, username,]) => {
+            return players.set(id, new LocalPlayer({ id, cuid, username}))
         })
 
         client.raw.on('playerLeft', ([pid]) => {
