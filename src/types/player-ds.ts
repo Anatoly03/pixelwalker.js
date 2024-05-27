@@ -2,22 +2,25 @@ import Client from "../client.js"
 import Player, { PlayerBase } from "./player.js"
 import util from 'util'
 
-import StartModule from "../modules/start.js"
-import { GamePlayerModule, BasePlayerModule } from "../modules/player-manager.js"
-
-type ReturnGuarantee<G extends boolean, R> = G extends true ? R : (R | undefined)
-
-export class PlayerArray<P extends PlayerBase> {
+export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     protected data: Array<P>
+    protected mut: Mut
 
-    constructor(reference: P[]) {
+    constructor(reference: P[] = [], mut: Mut = false as Mut) {
         this.data = reference
+        this.mut = mut
     }
 
+    /**
+     * Get the amount of players in the array.
+     */
     get length() {
         return this.data.length
     }
 
+    /**
+     * Maps all players to a regular array with a callback function.
+     */
     public map<Z>(callback: (p: P) => Z): Z[] {
         const r: Z[] = []
 
@@ -27,12 +30,18 @@ export class PlayerArray<P extends PlayerBase> {
         return r
     }
 
+    /**
+     * Iterate with callback over each player.
+     */
     public forEach(callback: (p: P) => void) {
         for (const p of this.data.values())
             callback(p)
         return this
     }
 
+    /**
+     * Returns a string representation of all players separated by a string, which defaults to a comma.
+     */
     public join(separator: string = ', '): string {
         let r: string = ''
 
@@ -42,6 +51,9 @@ export class PlayerArray<P extends PlayerBase> {
         return r
     }
 
+    /**
+     * Run over all players and make sure all players satisfy a conditional lambda.
+     */
     public every(callback: (p: P) => boolean) {
         for (const p of this.data.values())
             if (!callback(p))
@@ -49,35 +61,54 @@ export class PlayerArray<P extends PlayerBase> {
         return true
     }
 
-    public filter(predicate: (value: P, index: number, array: P[]) => boolean): any {
-        const copy = new PlayerArray(this.toArray())
-        copy.data = this.data.filter(predicate)
-        return copy
+    /**
+     * Filter by keeping only players that satisfy the predicate.
+     */
+    public filter(predicate: (value: P, index: number, array: P[]) => boolean): this {
+        return new (<{ new(a: P[]): unknown }> this.constructor)(this.data.filter(predicate)) as this
     }
 
+    /**
+     * Find the first player that matches the predicate.
+     */
     public find(callback: (p: P) => boolean): P | undefined {
         for (const p of this.data.values())
             if (callback(p))
                 return p
     }
 
+    /**
+     * Determines wether a player object is in the array or not.
+     */
     public includes(searchElement: P) {
         return this.data.includes(searchElement)
     }
 
+    /**
+     * Accumulates a result over all player entries and returns.
+     */
     public reduce<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number, array: P[]) => Z, initialValue: Z): Z {
         return this.data.reduce<Z>(callback, initialValue)
     }
 
+    /**
+     * Accumulates a result over all player entries and returns, starting from the right.
+     */
     public reduceRight<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number, array: P[]) => Z, initialValue: Z): Z {
         return this.data.reduceRight<Z>(callback, initialValue)
     }
 
+    /**
+     * Reverse the order of entries in the player array.
+     */
     public reverse() {
         this.data = this.data.reverse()
         return this
     }
 
+    /**
+     * Determines whether the specified callback function returns true for any element of an array.
+     */
     public some(callback: (p: P) => boolean) {
         for (const p of this.data.values())
             if (callback(p))
@@ -110,6 +141,9 @@ export class PlayerArray<P extends PlayerBase> {
         return this
     }
 
+    /**
+     * Returns an iterable over all players.
+     */
     public values() {
         return this.data.values()
     }
@@ -141,14 +175,14 @@ export class PlayerArray<P extends PlayerBase> {
     }
 
     /**
-     * Retrieve 
+     * Get an empty array. 
      */
-    public none(): any {
-        return new PlayerArray([])
+    public none(): this {
+        return new (<{ new(a: P[]): unknown }> this.constructor)([]) as this
     }
 
     /**
-     * Get player by public uid
+     * Get player by public cuid
      */
     public byCuid(cuid: string) {
         for (const p of this.data.values())
@@ -166,10 +200,43 @@ export class PlayerArray<P extends PlayerBase> {
     }
 
     /**
+     * Pushes items into the array if mutable.
+     */
+    public push(this: PlayerArray<P, true>, ...items: P[]): this {
+        this.data.push(...items)
+        return this as this
+    }
+
+    /**
+     * Mutable Filter
+     */
+    public filter_mut(this: PlayerArray<P, true>, predicate: (value: P, index: number, array: P[]) => boolean): this {
+        this.data = this.data.filter(predicate)
+        return this as this
+    }
+
+    /**
+     * Remove players by trait
+     */
+    public remove_all(this: PlayerArray<P, true>, predicate: (value: P, index: number, array: P[]) => boolean): this {
+        this.filter_mut(predicate)
+        return this.filter(predicate) as this
+    }
+
+    /**
+     * Return an immutable copy of the class.
+     */
+    public immut() {
+        return this as PlayerArray<P, false>
+    }
+
+    /**
      * Returns a string representation of the player array.
      */
-    public toString(): string {
-        return '[' + this.map(player => player.username).join(', ') + ']'
+    public toString(keys: (keyof P)[] = ['username', 'cuid']): string {
+        const mapper = (player: P) => keys.map((k, i) => i == 0 ? player[k] : `[${player[k]}]`).join('')
+        return '[' + this.map(mapper).join(', ') + ']'
+        // return '[' + this.map(player => `${player.username}[${player.cuid}]`).join(', ') + ']'
     }
 
     // https://stackoverflow.com/a/40699119/16002144
@@ -189,27 +256,11 @@ export class PlayerArray<P extends PlayerBase> {
     }
 }
 
-export class PlayerMap extends PlayerArray<Player> {
-    private client?: Client
-    // private selectors: any[] // TODO Game selectors @p[]?
-
-    constructor(client?: Client) {
-        const array: Player[] = []
-        super(array)
-        // this.selectors = []
-
-        if (client) {
-            this.client = client
-                .include(StartModule(array))
-                .include(GamePlayerModule(this, array))
-        }
-    }
+export class PlayerMap<Mut extends boolean = false> extends PlayerArray<Player, Mut> {
     
-    public override filter(predicate: (value: Player, index: number, array: Player[]) => boolean): PlayerMap {
-        const copy = new PlayerMap()
-        copy.data = this.data.filter(predicate)
-        return copy
-    }
+    // public override filter(predicate: (value: Player, index: number, array: Player[]) => boolean): PlayerMap {
+    //     return new PlayerMap(this.data.filter(predicate))
+    // }
 
     public byUsername(username: string): Player | undefined;
     public byUsername(identifier: `#${number}`): Player | undefined;
@@ -223,8 +274,8 @@ export class PlayerMap extends PlayerArray<Player> {
      * Gets player by specified `id`. If the generic parameter is set to true, the type
      * is forced to return a value. Use it only when output is guaranteed.
      */
-    public byId<Guarantee extends boolean = false>(id: number): ReturnGuarantee<Guarantee, Player> {
-        return this.data.find(v => v.id == id) as ReturnGuarantee<Guarantee, Player>
+    public byId<Guarantee extends boolean = false>(id: number) {
+        return this.data.find(v => v.id == id) as (Guarantee extends true ? Player : (Player | undefined))
     }
 
     /**
@@ -315,34 +366,7 @@ export class PlayerMap extends PlayerArray<Player> {
     }
 
     public override toString(): string {
-        return '[' + this.map(player => `${player.username}[${player.id}]`).join(', ') + ']'
-    }
-
-    public override none(): any {
-        return new PlayerMap()
-    }
-}
-
-export class StoredPlayerMap<P extends PlayerBase = PlayerBase> extends PlayerArray<P> {
-    constructor(array: P[] = [], client?: Client) {
-        super(array)
-
-        if (client) {
-            client.include(BasePlayerModule(array))
-        }
-    }
-
-    public override filter(predicate: (value: P, index: number, array: P[]) => boolean): StoredPlayerMap {
-        const copy = new StoredPlayerMap()
-        copy.data = this.data.filter(predicate)
-        return copy
-    }
-
-    public override toString(): string {
-        return '[' + this.map(player => `${player.username}[${player.cuid}]`).join(', ') + ']'
-    }
-
-    public override none(): any {
-        return new StoredPlayerMap()
+        return super.toString(['username', 'id'])
+        // return '[' + this.map(player => `${player.username}[${player.id}]`).join(', ') + ']'
     }
 }

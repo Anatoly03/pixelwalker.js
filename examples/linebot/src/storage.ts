@@ -1,7 +1,8 @@
 import Client, { PlayerArray, PlayerBase } from "../../../dist"
 
 export class StoredPlayer extends PlayerBase {
-    static players: PlayerArray<StoredPlayer>
+    static players: PlayerArray<StoredPlayer, true>
+    static path = 'players.yaml'
     constructor(args) { super(args) }
 
     public wins: number = 0
@@ -9,6 +10,11 @@ export class StoredPlayer extends PlayerBase {
     public time: number = 0
 
     static module(client: Client) {
+
+        client.on('player:join', ([p]) => {
+            if (this.players.some(k => k.cuid == p.cuid)) return
+            this.players.push(new StoredPlayer(p))
+        })
 
         client.onCommand('wins', ([p]) => {
             const player = StoredPlayer.players.byCuid(p.cuid)

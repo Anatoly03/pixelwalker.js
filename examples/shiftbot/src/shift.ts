@@ -25,5 +25,5 @@ client
     .include(Map)
     .include(Game)
     .include(Modules.BanModule('bans.yaml', is_bot_admin))
-    .include(Modules.StorageModule('players.yaml', StoredPlayer))
+    .include(new Modules.StorageModule('players.yaml', StoredPlayer))
     .connect(process.env.WORLD_ID)

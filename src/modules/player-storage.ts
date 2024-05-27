@@ -1,28 +1,30 @@
 
 import Client from '../client'
 import Player, { PlayerBase, SelfPlayer } from '../types/player'
-import { PlayerArray, StoredPlayerMap } from '../types/player-ds'
+import { PlayerArray } from '../types/player-ds'
 import fs from 'node:fs'
 import YAML from 'yaml'
 import util from 'util'
 
 type PTBase<P extends PlayerBase> = {
     new(p?: Player): P,
-    players: PlayerArray<P>,
-    module?: (c: Client) => Client }
+    players: PlayerArray<P, true>,
+    module?: (c: Client) => Client
+}
 
-export class PlayerStorageModule<P extends PlayerBase> {
-    protected data: { [keys: string]: P } = {}
-    protected PT: PTBase<P>
-    public path: string = 'players.yaml'
+export default class StoredPlayerArray<P extends PlayerBase> extends PlayerArray<P, true> {
+    private PT: PTBase<P> | undefined
+    public readonly path: string = 'players.yaml'
 
-    constructor(path: string, ClassT: PTBase<P>) {
+    constructor(path: string, ClassT?: PTBase<P>, array: P[] = []) {
+        super(array)
         this.path = path
         this.PT = ClassT
 
-        Object.defineProperty(this.PT, 'players', {
-            get: () => this.players()
-        })
+        if (this.PT)
+            Object.defineProperty(this.PT, 'players', {
+                get: () => this.wrapper()
+            })
 
         if (fs.existsSync(this.path)) {
             this.read()
@@ -39,13 +41,38 @@ export class PlayerStorageModule<P extends PlayerBase> {
         fs.writeFileSync(this.path, YAML.stringify(this.data))
     }
 
-    private players(): PlayerArray<P> {
+    public override push(...items: P[]): this {
+        const that = super.push(...items)
+        this.save()
+        return that
+    }
+
+    public override filter_mut(predicate: (value: P, index: number, array: P[]) => boolean): this {
+        const that = super.filter_mut(predicate)
+        this.save()
+        return that
+    }
+
+    public remove_all(predicate: (value: P, index: number, array: P[]) => boolean): this {
+        const that = super.remove_all(predicate)
+        this.save()
+        return that
+    }
+
+    public module(client: Client): Client {
+        if (!this.PT || !this.PT.module) return client
+        return this.PT.module(client)
+    }
+
+    private wrapper(): PlayerArray<P, true> {
+        if (!this.PT || !this.PT.module) throw new Error('PT was unexpected null')
+
         const array: P[] = []
         const that = this
 
         for (const cuid in this.data) {
             const wrap = {
-                [util.inspect.custom]: () => `StorageWrapper[${this.PT.name}, cuid='${cuid}']`,
+                [util.inspect.custom]: () => `StorageWrapper[${this.PT?.name}, cuid='${cuid}']`,
             }
 
             for (const key in this.data[cuid]) {
@@ -69,25 +96,7 @@ export class PlayerStorageModule<P extends PlayerBase> {
             array.push(wrap as unknown as P)
         }
 
-        return new PlayerArray<P>(array)
-    }
-
-    public module(client: Client) {
-
-        client.on('player:join', ([p]) => {
-            if (this.players().byCuid(p.cuid)) return
-            this.read()
-            this.data[p.cuid] = new this.PT(p)
-            this.save()
-        })
-
-        if (this.PT.module)
-            return this.PT.module(client)
-
-        return client
+        return new StoredPlayerArray<P>(this.path, undefined, array)
     }
 }
 
-export default <P extends PlayerBase> (PATH: string, ClassT: { new(p?: Player): P, players: PlayerArray<P> }) => {
-    return new PlayerStorageModule<P>(PATH, ClassT)
-}

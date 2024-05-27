@@ -1,9 +1,9 @@
 import Client from "../client"
 import { BlockMappingsReverse } from "../data/mappings.js"
-import { PlayerMap } from "../types/player-ds"
+import { PlayerArray, PlayerMap } from "../types/player-ds"
 import Player, { PlayerBase } from "../types/player.js"
 
-export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
+export function GamePlayerModule(players: PlayerMap<true>) {
     return (client: Client) => {
         /**
          * On player join, create a player object with data
@@ -32,7 +32,7 @@ export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
             }
             
             const player = new Player(data)
-            rawPlayers.push(player)
+            players.push(player)
             client.emit('player:join', [player])
         })
 
@@ -50,10 +50,8 @@ export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
          * and destroy it.
          */
         client.raw.on('playerLeft', async ([id]) => {
-            const playerIndex = rawPlayers.findIndex(p => p.id == id)
-            if (playerIndex == -1) return
-            const [player] = rawPlayers.splice(playerIndex, 1)
-            client.emit('player:leave', [player])
+            const removedPlayers = players.remove_all(p => p.id == id)
+            removedPlayers.forEach(player => client.emit('player:leave', [player]))
         })
 
 
@@ -178,13 +176,13 @@ export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
     }
 }
 
-export function BasePlayerModule(rawPlayers: PlayerBase[]) {
+export function BasePlayerModule(players: PlayerArray<PlayerBase, true>) {
     return (client: Client) => {
         /**
          * When a player joins, register the player into the constant players.
          */
         client.raw.on('playerJoined', async ([_id, cuid, username, _f, isAdmin]): Promise<void> => {
-            const exists = rawPlayers.find(p => p.cuid == cuid)
+            const exists = players.find(p => p.cuid == cuid)
             const new_object = new PlayerBase({ cuid, username })
 
             if (exists != undefined) {
@@ -193,7 +191,7 @@ export function BasePlayerModule(rawPlayers: PlayerBase[]) {
                 return
             }
 
-            rawPlayers.push(new_object)
+            players.push(new_object)
         })
 
         return client
