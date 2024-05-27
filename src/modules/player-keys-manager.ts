@@ -1,4 +1,4 @@
-import { Client, Player, PlayerBase } from "..";
+import { Client, Player, PlayerArray, PlayerBase } from "..";
 import { EventEmitter } from 'events'
 
 interface KeyEvents {
@@ -36,19 +36,19 @@ class LocalPlayer extends PlayerBase {
  */
 export default function Module (callback: (v: EventEmitter<KeyEvents>) => EventEmitter<KeyEvents>) {
     let event_emitter = callback(new EventEmitter())
-    let players = new Map<number, LocalPlayer>()
+    let players = new PlayerArray<LocalPlayer, true>() 
 
     function Module (client: Client): Client {
         client.raw.on('playerJoined', ([id, cuid, username,]) => {
-            return players.set(id, new LocalPlayer({ id, cuid, username}))
+            return players.push(new LocalPlayer({ id, cuid, username}))
         })
 
         client.raw.on('playerLeft', ([pid]) => {
-            return players.delete(pid)
+            return players.remove_all(p => p.id == pid)
         })
 
         client.raw.on('playerMoved', ([pid, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]) => {
-            let local_player = players.get(pid) as LocalPlayer
+            let local_player = players.find(p => p.id == pid) as LocalPlayer
             const player = client.players.byId<true>(pid)
 
             if (!local_player || !player) return
