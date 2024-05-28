@@ -46,7 +46,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public cmdPrefix: string[] = ['!', '.']
 
     readonly #players: PlayerMap<true>
-    readonly #globalPlayers: PlayerArray<PlayerBase, true>
+    readonly #globalPlayers: PlayerArray<PlayerBase, true, false>
 
     constructor(args: { token?: string });
     constructor(args: { user?: string, pass?: string });
@@ -57,7 +57,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.#socket = null
 
         this.#players = new PlayerMap<true>()
-        this.#globalPlayers = new PlayerArray<PlayerBase, true>()
+        this.#globalPlayers = new PlayerArray<PlayerBase, true, false>()
 
         if (args.token) {
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
@@ -176,7 +176,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.#players.immut() as PlayerMap<false>
     }
 
-    get globalPlayers(): PlayerArray<PlayerBase, false> {
+    get globalPlayers(): PlayerArray<PlayerBase, false, false> {
         return this.#globalPlayers.immut()
     }
 

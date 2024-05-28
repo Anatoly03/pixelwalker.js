@@ -2,38 +2,77 @@ import Client from "../client.js"
 import Player, { PlayerBase } from "./player.js"
 import util from 'util'
 
-export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
-    protected data: Array<P>
-    protected mut: Mut
+export class PlayerArray<P extends PlayerBase, Mut extends boolean, Sync extends boolean> {
+    #mut: Mut
+    #sync: Sync
 
-    constructor(reference: P[] = [], mut: Mut = false as Mut) {
+    protected data: Array<P>
+
+    constructor(reference: P[] = [], mutable: Mut = false as Mut, synced: Sync = false as Sync) {
         this.data = reference
-        this.mut = mut
+        this.#mut = mutable
+        this.#sync = synced
+    }
+
+    /**
+     * Get an empty array. 
+     */
+    public none<P extends PlayerBase>(this: PlayerArray<P, Mut, Sync>) {
+        return new PlayerArray([] as P[], false, false)
+    }
+
+
+    public is_mut(): this is PlayerArray<P, true, Sync> {
+        return this.#mut
+    }
+
+    public is_synchronized(): this is PlayerArray<P, true, true> {
+        return this.#mut && this.#sync
     }
 
     /**
      * Get the amount of players in the array.
      */
-    get length() {
+    get length(): number {
+        if (this.is_synchronized()) this.load()
         return this.data.length
     }
+
+    /**
+     * If the subclass is synchronised with external data, load
+     * external data and write it to data.
+     */
+    protected load(this: PlayerArray<P, true, true>) {
+        if (!this.is_synchronized()) throw new Error('There was an attempt to synchronize an unsychron PlayerArray. (load)')
+        if (!this.is_mut()) throw new Error('There was an attempt to mutate an immutable PlayerArray.')
+    }
+
+    /**
+     * If the subclass is synchronised with external data, write to
+     * external data the current state of the array.
+     */
+    protected save(this: PlayerArray<P, true, true>) {
+        if (!this.is_synchronized()) throw new Error('There was an attempt to synchronize an unsychron PlayerArray. (save)')
+    }
+
 
     /**
      * Maps all players to a regular array with a callback function.
      */
     public map<Z>(callback: (p: P) => Z): Z[] {
+        if (this.is_synchronized()) this.load()
         const r: Z[] = []
 
         for (const p of this.data.values())
             r.push(callback(p))
-
         return r
     }
 
     /**
      * Iterate with callback over each player.
      */
-    public forEach(callback: (p: P) => void) {
+    public forEach(callback: (p: P) => void): this {
+        if (this.is_synchronized()) this.load()
         for (const p of this.data.values())
             callback(p)
         return this
@@ -43,11 +82,11 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Returns a string representation of all players separated by a string, which defaults to a comma.
      */
     public join(separator: string = ', '): string {
+        if (this.is_synchronized()) this.load()
         let r: string = ''
 
         for (const p of this.data.values())
             r += (r == '' ? '' : separator) + p.username
-
         return r
     }
 
@@ -55,6 +94,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Run over all players and make sure all players satisfy a conditional lambda.
      */
     public every(callback: (p: P) => boolean) {
+        if (this.is_synchronized()) this.load()
         for (const p of this.data.values())
             if (!callback(p))
                 return false
@@ -62,16 +102,18 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     }
 
     /**
-     * Filter by keeping only players that satisfy the predicate.
+     * Filter by keeping only players that satisfy the predicate. Returns an mutable array copy.
      */
-    public filter(predicate: (value: P, index: number, array: P[]) => boolean): this {
-        return new (<{ new(a: P[]): unknown }> this.constructor)(this.data.filter(predicate)) as this
+    public filter(predicate: (value: P, index: number, array: P[]) => boolean) {
+        if (this.is_synchronized()) this.load()
+        return new PlayerArray(this.data.filter(predicate), false, false)
     }
 
     /**
      * Find the first player that matches the predicate.
      */
     public find(callback: (p: P) => boolean): P | undefined {
+        if (this.is_synchronized()) this.load()
         for (const p of this.data.values())
             if (callback(p))
                 return p
@@ -81,6 +123,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Determines wether a player object is in the array or not.
      */
     public includes(searchElement: P) {
+        if (this.is_synchronized()) this.load()
         return this.data.includes(searchElement)
     }
 
@@ -88,6 +131,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Accumulates a result over all player entries and returns.
      */
     public reduce<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number, array: P[]) => Z, initialValue: Z): Z {
+        if (this.is_synchronized()) this.load()
         return this.data.reduce<Z>(callback, initialValue)
     }
 
@@ -95,6 +139,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Accumulates a result over all player entries and returns, starting from the right.
      */
     public reduceRight<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number, array: P[]) => Z, initialValue: Z): Z {
+        if (this.is_synchronized()) this.load()
         return this.data.reduceRight<Z>(callback, initialValue)
     }
 
@@ -102,6 +147,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Reverse the order of entries in the player array.
      */
     public reverse() {
+        if (this.is_synchronized()) this.load()
         this.data = this.data.reverse()
         return this
     }
@@ -110,6 +156,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Determines whether the specified callback function returns true for any element of an array.
      */
     public some(callback: (p: P) => boolean) {
+        if (this.is_synchronized()) this.load()
         for (const p of this.data.values())
             if (callback(p))
                 return true
@@ -120,6 +167,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Sort players with comparator lambda.
      */
     public sort(compareFn: ((a: P, b: P) => number) = ((player1, player2) => parseInt(player1.username, 36) - parseInt(player2.username, 36))) {
+        if (this.is_synchronized()) this.load()
         this.data.sort(compareFn)
         return this
     }
@@ -128,6 +176,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Sort by attribute or mapping of players
      */
     public sortBy<Z extends string | number | boolean>(callback: (p: P) => Z) {
+        if (this.is_synchronized()) this.load()
         this.data.sort((p1, p2) => {
             const m1 = callback(p1),
                 m2 = callback(p2)
@@ -145,10 +194,12 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Returns an iterable over all players.
      */
     public values() {
+        if (this.is_synchronized()) this.load()
         return this.data.values()
     }
 
     [Symbol.iterator]() {
+        if (this.is_synchronized()) this.load()
         let idx = 0, data = this.data
         return {
             next: () => ({
@@ -162,6 +213,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Get the first element
      */
     public first() {
+        if (this.is_synchronized()) this.load()
         if (this.data.length == 0) return
         return this.data[0]
     }
@@ -170,21 +222,16 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Get the last element
      */
     public last() {
+        if (this.is_synchronized()) this.load()
         if (this.data.length == 0) return
         return this.data[this.data.length - 1]
-    }
-
-    /**
-     * Get an empty array. 
-     */
-    public none(): this {
-        return new (<{ new(a: P[]): unknown }> this.constructor)([]) as this
     }
 
     /**
      * Get player by public cuid
      */
     public byCuid(cuid: string) {
+        if (this.is_synchronized()) this.load()
         for (const p of this.data.values())
             if (p.cuid == cuid)
                 return p
@@ -194,6 +241,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Get player by username
      */
     public byUsername(username: string): P | undefined {
+        if (this.is_synchronized()) this.load()
         for (const p of this.data.values())
             if (p.username == username)
                 return p
@@ -202,32 +250,50 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Pushes items into the array if mutable.
      */
-    public push(this: PlayerArray<P, true>, ...items: P[]): this {
+    public push(this: PlayerArray<P, true, Sync>, ...items: P[]): this {
+        if (this.is_synchronized()) this.load()
         this.data.push(...items)
+        if (this.is_synchronized()) this.save()
         return this as this
     }
 
     /**
      * Mutable Filter
      */
-    public filter_mut(this: PlayerArray<P, true>, predicate: (value: P, index: number, array: P[]) => boolean): this {
+    public filter_mut(this: PlayerArray<P, true, Sync>, predicate: (value: P, index: number, array: P[]) => boolean): this {
+        if (this.is_synchronized()) this.load()
         this.data = this.data.filter(predicate)
+        if (this.is_synchronized()) this.save()
         return this as this
     }
 
     /**
-     * Remove players by trait
+     * Remove players by trait and return all removed results.
      */
-    public remove_all(this: PlayerArray<P, true>, predicate: (value: P, index: number, array: P[]) => boolean): this {
-        this.filter_mut(predicate)
-        return this.filter(predicate) as this
+    public remove_all(this: PlayerArray<P, true, Sync>, predicate: (value: P, index: number, array: P[]) => boolean) {
+        if (this.is_synchronized()) this.load()
+        this.filter_mut((v, i, a) => !predicate(v, i, a))
+        if (this.is_synchronized()) this.save()
+        return this.filter(predicate)
     }
 
     /**
      * Return an immutable copy of the class.
      */
-    public immut() {
-        return this as PlayerArray<P, false>
+    public immut(this: PlayerArray<P, true, Sync>): PlayerArray<P, false, false> {
+        const that = this as unknown as PlayerArray<P, false, false>
+        that.#mut = false
+        that.#sync = false
+        return that
+    }
+
+    /**
+     * Return an immutable copy of the class.
+     */
+    public unsync(this: PlayerArray<P, true, true>): PlayerArray<P, Mut, false> {
+        const that = this as unknown as PlayerArray<P, Mut, false>
+        that.#sync = false
+        return that
     }
 
     /**
@@ -256,15 +322,17 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     }
 }
 
-export class PlayerMap<Mut extends boolean = false> extends PlayerArray<Player, Mut> {
-    
-    // public override filter(predicate: (value: Player, index: number, array: Player[]) => boolean): PlayerMap {
-    //     return new PlayerMap(this.data.filter(predicate))
-    // }
+export class PlayerMap<Mut extends boolean = false> extends PlayerArray<Player, Mut, false> {
+    public override filter(predicate: (value: Player, index: number, array: Player[]) => boolean) {
+        return new PlayerMap(this.data.filter(predicate), false, false)
+    }
 
-    public byUsername(username: string): Player | undefined;
-    public byUsername(identifier: `#${number}`): Player | undefined;
-    public byUsername(username: string): Player | undefined {  
+    /**
+     * Get player by username.
+     */
+    public override byUsername(username: string): Player | undefined;
+    public override byUsername(identifier: `#${number}`): Player | undefined;
+    public override byUsername(username: string): Player | undefined {  
         if (username.startsWith('#'))
             return this.byId(parseInt(username.substring(1)))
         return super.byUsername(username)

@@ -176,7 +176,7 @@ export function GamePlayerModule(players: PlayerMap<true>) {
     }
 }
 
-export function BasePlayerModule(players: PlayerArray<PlayerBase, true>) {
+export function BasePlayerModule(players: PlayerArray<PlayerBase, true, false>) {
     return (client: Client) => {
         /**
          * When a player joins, register the player into the constant players.

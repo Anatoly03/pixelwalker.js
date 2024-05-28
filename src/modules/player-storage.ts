@@ -6,18 +6,20 @@ import fs from 'node:fs'
 import YAML from 'yaml'
 import util from 'util'
 
-type PTBase<P extends PlayerBase> = {
-    new(p?: Player): P,
-    players: PlayerArray<P, true>,
-    module?: (c: Client) => Client
+type PTBase<P extends PlayerBase, K extends PlayerBase> = {
+    new(p: K): P,
+    players: PlayerArray<P, true, true>,
+    module?: (c: Client, ...args: any[]) => Client
 }
 
-export default class StoredPlayerArray<P extends PlayerBase> extends PlayerArray<P, true> {
-    private PT: PTBase<P> | undefined
+export default class StoredPlayerArray<P extends PlayerBase, K extends PlayerBase> extends PlayerArray<P, true, true> {
+    private PT: PTBase<P, K> | undefined
     public readonly path: string = 'players.yaml'
+    public module_args: any[] = []
 
-    constructor(path: string, ClassT?: PTBase<P>, array: P[] = []) {
-        super(array)
+    constructor(path: string, ClassT?: PTBase<P, K>, array: P[] = []) {
+        super(typeof path == 'string' ? array : path, true, true)
+
         this.path = path
         this.PT = ClassT
 
@@ -27,44 +29,46 @@ export default class StoredPlayerArray<P extends PlayerBase> extends PlayerArray
             })
 
         if (fs.existsSync(this.path)) {
-            this.read()
+            this.load()
         } else {
             this.save()
         }
     }
 
-    private read() {
+    protected load() {
+        super.load()
         this.data = YAML.parse(fs.readFileSync(this.path).toString('ascii'))
     }
 
-    private save() {
+    protected save() {
+        super.save()
         fs.writeFileSync(this.path, YAML.stringify(this.data))
     }
 
-    public override push(...items: P[]): this {
-        const that = super.push(...items)
-        this.save()
-        return that
-    }
+    // public override push(...items: P[]): this {
+    //     const that = super.push(...items)
+    //     this.save()
+    //     return that
+    // }
 
-    public override filter_mut(predicate: (value: P, index: number, array: P[]) => boolean): this {
-        const that = super.filter_mut(predicate)
-        this.save()
-        return that
-    }
+    // public override filter_mut(predicate: (value: P, index: number, array: P[]) => boolean): this {
+    //     const that = super.filter_mut(predicate)
+    //     this.save()
+    //     return that
+    // }
 
-    public remove_all(predicate: (value: P, index: number, array: P[]) => boolean): this {
-        const that = super.remove_all(predicate)
-        this.save()
-        return that
-    }
+    // public remove_all(predicate: (value: P, index: number, array: P[]) => boolean): this {
+    //     const that = super.remove_all(predicate)
+    //     this.save()
+    //     return that
+    // }
 
     public module(client: Client): Client {
         if (!this.PT || !this.PT.module) return client
-        return this.PT.module(client)
+        return this.PT.module(client, ...this.module_args)
     }
 
-    private wrapper(): PlayerArray<P, true> {
+    private wrapper(): PlayerArray<P, true, true> {
         if (!this.PT || !this.PT.module) throw new Error('PT was unexpected null')
 
         const array: P[] = []
@@ -75,16 +79,18 @@ export default class StoredPlayerArray<P extends PlayerBase> extends PlayerArray
                 [util.inspect.custom]: () => `StorageWrapper[${this.PT?.name}, cuid='${cuid}']`,
             }
 
+            // TODO should it be deep keys wrapping?
+
             for (const key in this.data[cuid]) {
                 Object.defineProperty(wrap, key, {
                     get: () => {
-                        this.read()
+                        this.load()
                         const p = this.data[cuid]
                         if (!p) return null
                         return p[key]
                     },
                     set: (value: any) => {
-                        this.read()
+                        this.load()
                         const p = this.data[cuid]
                         if (!p) return
                         p[key] = value
@@ -96,7 +102,7 @@ export default class StoredPlayerArray<P extends PlayerBase> extends PlayerArray
             array.push(wrap as unknown as P)
         }
 
-        return new StoredPlayerArray<P>(this.path, undefined, array)
+        return new StoredPlayerArray<P, K>(this.path, undefined, array)
     }
 }
 

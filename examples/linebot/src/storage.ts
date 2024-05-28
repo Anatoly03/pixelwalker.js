@@ -1,13 +1,13 @@
 import Client, { PlayerArray, PlayerBase } from "../../../dist"
 
 export class StoredPlayer extends PlayerBase {
-    static players: PlayerArray<StoredPlayer, true>
-    static path = 'players.yaml'
-    constructor(args) { super(args) }
-
     public wins: number = 0
     public rounds: number = 0
     public time: number = 0
+
+    constructor(args: any) { super(args) }
+
+    static players: PlayerArray<StoredPlayer, true, true>
 
     static module(client: Client) {
 
