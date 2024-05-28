@@ -106,11 +106,9 @@ export function module(client: Client) {
     }
 
     function disqualify(player: Player, code: 'left' | 'god' | 'kill') {
-        const wasActive = gameRound.players.find(p => p.id == player.id) != undefined
-
-        gameRound.players = gameRound.players.filter(p => p.id != player.id)
-
-        if (!wasActive) return
+        // const wasActive = gameRound.players.find(p => p.id == player.id) != undefined
+        // gameRound.players = gameRound.players.filter(p => p.id != player.id)
+        // if (!wasActive) return
 
         const TIME = (performance.now() - START_TIME) / 1000
         // const user_data = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
@@ -134,7 +132,14 @@ export function module(client: Client) {
             const positions = STRUCTURE.list('gravity_dot', 'gravity_slow_dot')
             console.log(`Round Start - ${STRUCTURE.meta.name}`)
 
+            // Try to sign up players
             await gameRound.signup()
+            while (gameRound.players.length < 1) {
+                console.log('Starting to wait...')
+                SIGNUP_LOCK = Util.Breakpoint()
+                await SIGNUP_LOCK.wait()
+                await gameRound.signup()
+            }
 
             gameRound.players.forEach(p => {
                 const [x, y] = positions[Math.floor(positions.length * Math.random())]
@@ -142,9 +147,6 @@ export function module(client: Client) {
             })
 
             await client.wait(2000)
-
-            // TODO SIGNUP_LOCK
-            // await SIGNUP_LOCK
 
             console.log('Active in Round: ' + gameRound.players.map(p => p.username).join(' '))
 
@@ -221,6 +223,9 @@ export function module(client: Client) {
             WORM_DIRECTION = 2
         })
     ))
+
+    client.on('player:god', () => SIGNUP_LOCK.accept(true))
+    client.on('player:join', () => SIGNUP_LOCK.accept(true))
 
     return client
 }
