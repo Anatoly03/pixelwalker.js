@@ -151,7 +151,7 @@ export function module(client: Client) {
         }
 
         const promises: Promise<any>[] = [push_worm()]
-        if (WORM.length > 10) promises.push(pop_worm())
+        if (WORM.length > WORM_LENGTH) promises.push(pop_worm())
         await Promise.all(promises)
 
         // if (TICK % 15 == 0) WORM_DIRECTION = Math.floor(Math.random() * 4) as typeof WORM_DIRECTION
@@ -159,6 +159,7 @@ export function module(client: Client) {
 
         if (TICK % 100 == 99) elect_bomber()
         if (WORM_SPEED > 25 && TICK % 2 == 0) WORM_SPEED --
+        if (TICK % 25 == 0) WORM_LENGTH ++
 
         if (TICK % 2 == 0) {
             await (() => {
