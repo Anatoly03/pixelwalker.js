@@ -14,6 +14,7 @@ export function module(client: Client) {
     let STRUCTURE: Structure | undefined
     let WORMER: Player | undefined
     let GAME_IS_STARTING = false
+    let GAME_IS_RUNNING = false
     let GAME_HALT_FLAG = false
     let START_TIME = 0
     let SIGNUP_LOCK: ReturnType<typeof Util.Breakpoint>
@@ -124,6 +125,7 @@ export function module(client: Client) {
     
     gameRound.setLoop(async () => {    
         if (GAME_IS_STARTING) {
+            GAME_IS_RUNNING = false
             if (GAME_HALT_FLAG) return gameRound.stop()
             WORM = []
             TICK = 0
@@ -154,6 +156,7 @@ export function module(client: Client) {
             START_TIME = performance.now()
 
             await elect_bomber()
+            GAME_IS_RUNNING = true
         }
 
         const promises: Promise<any>[] = [push_worm()]
@@ -198,6 +201,7 @@ export function module(client: Client) {
     // })
 
     client.onCommand('halt', is_bot_admin, () => {
+        GAME_IS_RUNNING = false
         gameRound.stop()
     })
 
@@ -226,6 +230,10 @@ export function module(client: Client) {
 
     client.on('player:god', () => SIGNUP_LOCK.accept(true))
     client.on('player:join', () => SIGNUP_LOCK.accept(true))
+
+    client.on('player:join', ([p]) => {
+        if (GAME_IS_RUNNING) p.pm(`Game with ${gameRound.players.length} currently running. Please wait a moment.`)
+    })
 
     return client
 }
