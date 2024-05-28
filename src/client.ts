@@ -273,7 +273,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public say(preamble: string, content?: string) {
         if (content == undefined)
             return this.say(this.chatPrefix || '', preamble)
-        return this.self?.say(preamble + ' ' + (this.chatPrefix || ''), content)
+        return this.self?.say(preamble, content)
     }
 
     public god(value: boolean, mod_mode: boolean) {

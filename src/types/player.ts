@@ -178,6 +178,8 @@ export class SelfPlayer extends Player {
             return this.say(this.client.chatPrefix || '', preamble)
         }
 
+        preamble += ' '
+
         const MESSAGE_SIZE = 120
         const CONTENT_ALLOWED_SIZE = MESSAGE_SIZE - preamble.length - (preamble.length > 0 ? 1 : 0)
 
