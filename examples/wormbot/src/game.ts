@@ -19,10 +19,10 @@ export function module(client: Client) {
     let SIGNUP_LOCK: ReturnType<typeof Util.Breakpoint>
     let WORM: [number, number][] = []
     let WORM_DIRECTION: 0 | 1 | 2 | 3 = 0
-    let WORM_SPEED = 50
-    let WORM_LENGTH = 37
-    // let WORM_SPEED = 150
-    // let WORM_LENGTH = 10
+    // let WORM_SPEED = 50
+    // let WORM_LENGTH = 37
+    let WORM_SPEED = 150
+    let WORM_LENGTH = 10
     let OBSTACLE_BLOCKS = [
         new Block('gravity_up'),
         new Block('gravity_down'),
@@ -126,6 +126,7 @@ export function module(client: Client) {
     
     gameRound.setLoop(async () => {    
         if (GAME_IS_STARTING) {
+            if (GAME_HALT_FLAG) return gameRound.stop()
             WORM = []
             TICK = 0
 
