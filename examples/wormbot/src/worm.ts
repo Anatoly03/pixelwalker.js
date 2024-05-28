@@ -12,7 +12,7 @@ const client = new Client({ token: process.env.TOKEN })
 export default client
 
 import * as Map from './map.js'
-// import * as Game from './game.js'
+import * as Game from './game.js'
 import { StoredPlayer } from './storage.js'
 
 export function is_bot_admin(player: Player) {
@@ -26,7 +26,7 @@ client
     .setChatPrefix('[BOT]')
     .registerHelpCommand('help')
     .include(Map)
-    // .include(Game)
+    .include(Game)
     .include(Modules.BanModule('bans.yaml', is_bot_admin))
     .include(new Modules.StorageModule('players.yaml', StoredPlayer))
     .connect(process.env.WORLD_ID)

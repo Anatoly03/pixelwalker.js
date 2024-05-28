@@ -17,7 +17,7 @@ const MAPS_PATH = process.env.MAPS_PATH || 'maps'
 const map = new Structure(width, height)
 
 function get_map(): Structure {
-    let maps = fs.readdirSync(MAPS_PATH),
+    let maps = fs.readdirSync(MAPS_PATH).filter(p => !p.startsWith('.')),
         map_path: string
 
     if (QUEUE.length > 0)
@@ -52,7 +52,7 @@ export async function build_map() {
     const structure = get_map()
     map.paste(0, 0, structure)
     await client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, { animation: Animation.RANDOM, write_empty: true })
-    return structure.meta
+    return structure
 }
 
 export function module(client: Client) {
@@ -96,7 +96,7 @@ export function module(client: Client) {
     client.onCommand('*build', is_bot_admin, async ([p, _, name]) => {
         const result = find_map(name || '')
         if (result) QUEUE.unshift(result)
-        const meta = await build_map()
+        const { meta } = await build_map()
         client.say(`"${meta.name}" by ${meta.creator}`)
     })
 
