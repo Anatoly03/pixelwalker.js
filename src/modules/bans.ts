@@ -42,19 +42,19 @@ export class BannedPlayer extends PlayerBase {
 
             if (to_ban_player) {
                 this.players.push(new BannedPlayer({...to_ban_player, reason }))
-                player.pm('[BOT] Banned: ' + to_ban_player.username)
+                player.pm('Banned: ' + to_ban_player.username)
 
-                const bannedPlayer = client.players.find(v => v.cuid == to_ban_player.cuid)
+                const bannedPlayer = client.players.find(v => v.cuid == to_ban_player.cuid && player.id != client.self?.id)
                 if (bannedPlayer) bannedPlayer.kick(reason)
 
                 return
             }
 
             if (similar.length > 0) {
-                return player.pm(`[BOT] Could not ban. Did you mean any of: ${similar.map(p => p.username).join(', ')}?`)
+                return player.pm(`Could not ban. Did you mean any of: ${similar.map(p => p.username).join(', ')}?`)
             }
 
-            return player.pm('[BOT] Could not find any player.')
+            return player.pm('Could not find any player.')
         })
 
         client.onCommand('unban', PERMISSION_CALLBACK, ([player, _, to_unban]) => {
@@ -64,21 +64,21 @@ export class BannedPlayer extends PlayerBase {
             const to_unban_player = this.players.remove_all(p => to_unban == p.username)
 
             if (to_unban_player.length > 0) {
-                player.pm('[BOT] Unbanned: ' + to_unban_player.first()?.username)
+                player.pm('Unbanned: ' + to_unban_player.first()?.username)
                 return
             }
 
             if (similar.length > 0) {
-                return player.pm(`[BOT] Could not unban. Did you mean any of: ${similar.map(p => p.username).join(', ')}?`)
+                return player.pm(`Could not unban. Did you mean any of: ${similar.map(p => p.username).join(', ')}?`)
             }
 
-            return player.pm('[BOT] Could not find any player.')
+            return player.pm('Could not find any player.')
         })
 
         client.on('player:join', async ([player]) => {
             let match
 
-            if (match = this.players.find(p => p.cuid == player.cuid)) {
+            if (match = this.players.find(p => p.cuid == player.cuid && player.id != client.self?.id)) {
                 player.kick(match.reason)
             }
         })
