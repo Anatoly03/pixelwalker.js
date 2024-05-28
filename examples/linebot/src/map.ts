@@ -1,7 +1,6 @@
 import Client, { Animation, Block, Structure, BlockProperties, Property } from '../../../dist/index.js'
 import { BlockIdentifier } from '../../../dist/types/block.js'
-import { is_bot_admin } from './admin.js'
-import client from './line.js'
+import client, { is_bot_admin } from './line.js'
 import fs, { writeFileSync } from 'node:fs'
 import path from 'node:path'
 

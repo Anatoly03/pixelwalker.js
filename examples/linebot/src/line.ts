@@ -1,7 +1,7 @@
 
 
 import 'dotenv/config'
-import Client, { Modules } from '../../../dist/index.js'
+import Client, { Modules, Player } from '../../../dist/index.js'
 
 process.on('SIGINT', () => {
     process.on('SIGINT', () => {
@@ -14,8 +14,11 @@ export default client
 
 import * as Map from './map.js'
 import * as Game from './game.js'
-import { is_bot_admin } from './admin.js'
 import { StoredPlayer } from './storage.js'
+
+export function is_bot_admin(player: Player) {
+    return player.cuid == client.self?.cuid
+}
 
 client
     .on('player:join', ([p]) => p.god(true)) // Give everyone god mode

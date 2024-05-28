@@ -1,7 +1,7 @@
 
 import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
 
-import { is_bot_admin } from './admin.js'
+import { is_bot_admin } from './shift.js'
 import { TOP_LEFT, build_map, clear_map, close_door, create_win_zone, height, open_door, remove_spawn, set_spawn, width } from './map.js'
 import { StoredPlayer } from './storage.js'
 

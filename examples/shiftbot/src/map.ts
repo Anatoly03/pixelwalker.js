@@ -1,10 +1,8 @@
 
 import Client, { Animation, Block, Structure } from '../../../dist/index.js'
-import client from './shift.js'
+import client, { is_bot_admin } from './shift.js'
 import fs, { writeFileSync } from 'node:fs'
 import path from 'node:path'
-
-import { is_bot_admin } from './admin.js'
 
 export const width = 50
 export const height = 37

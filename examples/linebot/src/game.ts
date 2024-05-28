@@ -1,7 +1,7 @@
 
 import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
 import { create_empty_arena, advance_one_piece, plan_to_queue, set_max_size, reset_everything, JOINT, LEFT_JOINT, TOP_LEFT, WIDTH, HORIZONTAL_BORDER, PLATFORM_SIZE, set_speed, SPEED } from './map.js'
-import { is_bot_admin } from './admin.js'
+import { is_bot_admin } from './line.js'
 import { StoredPlayer } from './storage.js'
 
 const MINIMUM_PLAYERS = 3
