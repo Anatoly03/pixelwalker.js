@@ -302,7 +302,6 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean, Sync extends
     public toString(keys: (keyof P)[] = ['username', 'cuid']): string {
         const mapper = (player: P) => keys.map((k, i) => i == 0 ? player[k] : `[${player[k]}]`).join('')
         return '[' + this.map(mapper).join(', ') + ']'
-        // return '[' + this.map(player => `${player.username}[${player.cuid}]`).join(', ') + ']'
     }
 
     // https://stackoverflow.com/a/40699119/16002144
@@ -435,6 +434,5 @@ export class PlayerMap<Mut extends boolean = false> extends PlayerArray<Player, 
 
     public override toString(): string {
         return super.toString(['username', 'id'])
-        // return '[' + this.map(player => `${player.username}[${player.id}]`).join(', ') + ']'
     }
 }

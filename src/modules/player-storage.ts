@@ -45,24 +45,6 @@ export default class StoredPlayerArray<P extends PlayerBase, K extends PlayerBas
         fs.writeFileSync(this.path, YAML.stringify(this.data))
     }
 
-    // public override push(...items: P[]): this {
-    //     const that = super.push(...items)
-    //     this.save()
-    //     return that
-    // }
-
-    // public override filter_mut(predicate: (value: P, index: number, array: P[]) => boolean): this {
-    //     const that = super.filter_mut(predicate)
-    //     this.save()
-    //     return that
-    // }
-
-    // public remove_all(predicate: (value: P, index: number, array: P[]) => boolean): this {
-    //     const that = super.remove_all(predicate)
-    //     this.save()
-    //     return that
-    // }
-
     public module(client: Client): Client {
         if (!this.PT || !this.PT.module) return client
         return this.PT.module(client, ...this.module_args)
