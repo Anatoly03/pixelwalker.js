@@ -112,10 +112,17 @@ export function module(client: Client) {
         // if (!wasActive) return
 
         const TIME = (performance.now() - START_TIME) / 1000
-        // const user_data = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
 
-        // user_data.rounds = user_data.rounds + 1
-        // user_data.time = user_data.time + TIME
+        if (WORMER) {
+            const wormerData = StoredPlayer.players.byCuid(WORMER.cuid) as StoredPlayer
+            wormerData.kills = wormerData.kills + 1
+        }
+
+        player.pm(`${gameRound.players.length + 1}. ${TIME}s`)
+
+        const playerData = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
+        playerData.rounds = playerData.rounds + 1
+        playerData.time = playerData.time + TIME
 
         if (gameRound.players.length <= 1)
             GAME_IS_STARTING = true
@@ -123,7 +130,9 @@ export function module(client: Client) {
 
     gameRound.on('eliminate', disqualify)
     
-    gameRound.setLoop(async () => {    
+    gameRound.setLoop(async () => {
+        const TIME = (performance.now() - START_TIME) / 1000
+
         if (GAME_IS_STARTING) {
             GAME_IS_RUNNING = false
             if (GAME_HALT_FLAG) return gameRound.stop()
@@ -157,6 +166,17 @@ export function module(client: Client) {
 
             await elect_bomber()
             GAME_IS_RUNNING = true
+        }
+
+        if (TIME >= 300) {
+            gameRound.players.forEach(pl => {
+                const player = StoredPlayer.players.byCuid(pl.cuid) as StoredPlayer
+                player.wins = player.wins + 1
+                player.rounds = player.rounds + 1
+                player.time = player.time + 300
+            })
+            GAME_IS_STARTING = true
+            return
         }
 
         const promises: Promise<any>[] = [push_worm()]
