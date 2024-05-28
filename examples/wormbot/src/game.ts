@@ -1,5 +1,5 @@
 
-import Client, { Player, SolidBlocks, Structure, Util } from '../../../dist/index.js'
+import Client, { Player, SolidBlocks, Structure, Util, Modules, Block } from '../../../dist/index.js'
 
 import { is_bot_admin } from './worm.js'
 import { TOP_LEFT, build_map, width, height } from './map.js'
@@ -12,19 +12,45 @@ export function module(client: Client) {
 
     let TICK = 0
     let STRUCTURE: Structure | undefined
-    let WORMER = null
+    let WORMER: Player | undefined
     let GAME_IS_STARTING = false
     let GAME_HALT_FLAG = false
     let START_TIME = 0
     let SIGNUP_LOCK: ReturnType<typeof Util.Breakpoint>
     let WORM: [number, number][] = []
     let WORM_DIRECTION: 0 | 1 | 2 | 3 = 0
+    let WORM_SPEED = 150
+    let WORM_LENGTH = 10
+    let OBSTACLE_BLOCKS = [
+        new Block('gravity_up'),
+        new Block('gravity_down'),
+        new Block('gravity_left'),
+        new Block('gravity_right'),
+        new Block('gravity_slow_dot'),
+        new Block('hazard_stripes'),
+        new Block('dark_hazard_stripes'),
+    ] 
 
     function elect_bomber(player?: Player) {
-        if (!player) player = gameRound.players[Math.floor(gameRound.players.length * Math.random())]
+        const choices = gameRound.players.filter(p => !WORMER || WORMER.id != p.id)
+
+        if (choices.length == 0) return
+
+        if (WORMER) {
+            const positions = STRUCTURE?.list('gravity_dot', 'gravity_slow_dot') || []
+            const [x, y] = positions[Math.floor(positions.length * Math.random())]
+            WORMER.teleport(TOP_LEFT.x + x, TOP_LEFT.y + y)
+        }
+
+        if (!player) player = choices[Math.floor(choices.length * Math.random())]
+
+        WORMER = player
+
         if (!STRUCTURE) return
+
         const [[x, y]] = STRUCTURE.list('crown')
-        return player.teleport(TOP_LEFT.x + x, TOP_LEFT.y + y)
+
+        if (player) return player.teleport(TOP_LEFT.x + x, TOP_LEFT.y + y)
     }
 
     function push_worm(x?: number, y?: number) {
@@ -46,15 +72,18 @@ export function module(client: Client) {
 
         if (x <= 0) x += width - 2
         if (y <= 0) y += height - 2
-        if (x >= width) x -= width - 2
-        if (y >= height) y -= height - 2
+        if (x >= width - 1) x -= width - 2
+        if (y >= height - 1) y -= height - 2
 
         WORM.push([x, y])
 
         if (x < 1 || y < 1 || x > width - 2 || y > height - 2) return Promise.resolve(true) // Outside
         if (Math.abs(CROWN_COORDINATE[0] - x) <= 1 && Math.abs(CROWN_COORDINATE[1] - y) <= 1) return Promise.resolve(true) // Crown Box
 
-        return client.block(TOP_LEFT.x + x, TOP_LEFT.y + y, 1, 'basic_blue')
+        return Promise.all([
+            client.block(TOP_LEFT.x + x, TOP_LEFT.y + y, 1, 'spikes_center'),
+            client.block(TOP_LEFT.x + x, TOP_LEFT.y + y, 0, 'basic_blue_bg'),
+        ])
     }
 
     function pop_worm() {
@@ -74,17 +103,20 @@ export function module(client: Client) {
     }
 
     function disqualify(player: Player, code: 'left' | 'god' | 'kill') {
-        const wasActive = gameRound.players.findIndex(p => p.id == player.id) >= 0
+        const wasActive = gameRound.players.find(p => p.id == player.id) != undefined
 
         gameRound.players = gameRound.players.filter(p => p.id != player.id)
 
         if (!wasActive) return
 
         const TIME = (performance.now() - START_TIME) / 1000
-        const user_data = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
+        // const user_data = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
 
-        user_data.rounds = user_data.rounds + 1
-        user_data.time = user_data.time + TIME
+        // user_data.rounds = user_data.rounds + 1
+        // user_data.time = user_data.time + TIME
+
+        if (gameRound.players.length <= 1)
+            GAME_IS_STARTING = true
     }
 
     gameRound.on('eliminate', disqualify)
@@ -105,7 +137,7 @@ export function module(client: Client) {
                 p.teleport(TOP_LEFT.x + x, TOP_LEFT.y + y)
             })
 
-            await client.wait(4000)
+            await client.wait(2000)
 
             // TODO SIGNUP_LOCK
             // await SIGNUP_LOCK
@@ -123,9 +155,28 @@ export function module(client: Client) {
         await Promise.all(promises)
 
         // if (TICK % 15 == 0) WORM_DIRECTION = Math.floor(Math.random() * 4) as typeof WORM_DIRECTION
-        if (TICK % 15 == 0) WORM_DIRECTION = (Math.abs(WORM_DIRECTION + [-1, 1][+(Math.random() > .5)])) % 4
+        // if (TICK % 15 == 0) WORM_DIRECTION = (Math.abs(WORM_DIRECTION + [-1, 1][+(Math.random() > .5)])) % 4
+
+        if (TICK % 100 == 99) elect_bomber()
+        if (WORM_SPEED > 25 && TICK % 2 == 0) WORM_SPEED --
+
+        if (TICK % 2 == 0) {
+            await (() => {
+                const x = Math.floor(Math.random() * (width - 2)) + 1,
+                    y = Math.floor(Math.random() * (height - 2)) + 1,
+                    [CROWN_COORDINATE] = STRUCTURE?.list('crown') as [number, number, number][] || [10, 10],
+                    block = OBSTACLE_BLOCKS[Math.floor(OBSTACLE_BLOCKS.length * Math.random())]
+
+                if (gameRound.players.some(v => Math.abs(v.x - x) < 5 && Math.abs(v.y - y) < 5)) return
+
+                if (Math.abs(CROWN_COORDINATE[0] - x) <= 1 && Math.abs(CROWN_COORDINATE[1] - y) <= 1) return
+
+                return client.block(TOP_LEFT.x + x, TOP_LEFT.y + y, 1, block)
+            })()
+        }
         
-        await client.wait(130)
+        await client.wait(WORM_SPEED)
+
         TICK += 1
     })
 
@@ -146,6 +197,25 @@ export function module(client: Client) {
     client.onCommand('last', is_bot_admin, () => {
         GAME_HALT_FLAG = true
     })
+
+    client.include(Modules.PlayerKeyManager(event =>
+        event.on('left:down', player => {
+            if (!WORMER || WORMER?.id != player.id) return
+            WORM_DIRECTION = 1
+        })
+        .on('up:down', player => {
+            if (!WORMER || WORMER?.id != player.id) return
+            WORM_DIRECTION = 0
+        })
+        .on('right:down', player => {
+            if (!WORMER || WORMER?.id != player.id) return
+            WORM_DIRECTION = 3
+        })
+        .on('down:down', player => {
+            if (!WORMER || WORMER?.id != player.id) return
+            WORM_DIRECTION = 2
+        })
+    ))
 
     return client
 }

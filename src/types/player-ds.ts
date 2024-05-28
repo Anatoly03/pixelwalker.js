@@ -248,6 +248,14 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean, Sync extends
     }
 
     /**
+     * Get a random player from selected array
+     */
+    public random() {
+        if (this.length == 0) return
+        return this.data[Math.floor(this.length * Math.random())]
+    }
+
+    /**
      * Pushes items into the array if mutable.
      */
     public push(this: PlayerArray<P, true, Sync>, ...items: P[]): this {
@@ -384,13 +392,6 @@ export class PlayerMap<Mut extends boolean = false> extends PlayerArray<Player, 
     public god(state: boolean): this {
         this.data.forEach(player => player.god(state))
         return this
-    }
-
-    /**
-     * Get a random player from selected array
-     */
-    public random() {
-        return this.data[Math.floor(this.length * Math.random())]
     }
 
     /**
