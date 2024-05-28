@@ -1,4 +1,4 @@
-import { Client, Player, PlayerArray, PlayerBase } from "..";
+import { Client, Player } from "..";
 import { EventEmitter } from 'events'
 
 interface KeyEvents {
@@ -14,20 +14,15 @@ interface KeyEvents {
     'right:down': [Player]
 }
 
-class LocalPlayer extends PlayerBase {
+class LocalPlayer {
     public readonly id: number
     public horizontal: -1 | 0 | 1 | undefined
     public vertical: -1 | 0 | 1 | undefined
     public space_down: boolean | undefined
     public space_just_down: boolean | undefined
 
-    constructor(args: {
-        id: number
-        cuid: string
-        username: string
-    }) {
-        super(args)
-        this.id = args.id
+    constructor(id: number) {
+        this.id = id
     }
 }
 
@@ -36,19 +31,19 @@ class LocalPlayer extends PlayerBase {
  */
 export default function Module (callback: (v: EventEmitter<KeyEvents>) => EventEmitter<KeyEvents>) {
     let event_emitter = callback(new EventEmitter())
-    let players = new PlayerArray<LocalPlayer, true>() 
+    let players = new Map<number, LocalPlayer>()
 
     function Module (client: Client): Client {
-        client.raw.on('playerJoined', ([id, cuid, username,]) => {
-            return players.push(new LocalPlayer({ id, cuid, username}))
+        client.raw.on('playerJoined', ([pid]) => {
+            return players.set(pid, new LocalPlayer(pid))
         })
 
         client.raw.on('playerLeft', ([pid]) => {
-            return players.remove_all(p => p.id == pid)
+            return players.delete(pid)
         })
 
         client.raw.on('playerMoved', ([pid, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]) => {
-            let local_player = players.find(p => p.id == pid) as LocalPlayer
+            let local_player = players.get(pid) as LocalPlayer
             const player = client.players.byId<true>(pid)
 
             if (!local_player || !player) return
