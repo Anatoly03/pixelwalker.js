@@ -19,8 +19,10 @@ export function module(client: Client) {
     let SIGNUP_LOCK: ReturnType<typeof Util.Breakpoint>
     let WORM: [number, number][] = []
     let WORM_DIRECTION: 0 | 1 | 2 | 3 = 0
-    let WORM_SPEED = 150
-    let WORM_LENGTH = 10
+    let WORM_SPEED = 50
+    let WORM_LENGTH = 37
+    // let WORM_SPEED = 150
+    // let WORM_LENGTH = 10
     let OBSTACLE_BLOCKS = [
         new Block('gravity_up'),
         new Block('gravity_down'),
@@ -34,15 +36,15 @@ export function module(client: Client) {
     function elect_bomber(player?: Player) {
         const choices = gameRound.players.filter(p => !WORMER || WORMER.id != p.id)
 
-        if (choices.length == 0) return
+        if (choices.length == 0) return // Unexpected
+
+        player = player || choices[Math.floor(choices.length * Math.random())]
 
         if (WORMER) {
-            const positions = STRUCTURE?.list('gravity_dot', 'gravity_slow_dot') || []
-            const [x, y] = positions[Math.floor(positions.length * Math.random())]
-            WORMER.teleport(TOP_LEFT.x + x, TOP_LEFT.y + y)
+            // const positions = STRUCTURE?.list('gravity_dot', 'gravity_slow_dot') || []
+            // const [x, y] = positions[Math.floor(positions.length * Math.random())]
+            WORMER.teleport(TOP_LEFT.x + Math.floor(player.x), TOP_LEFT.y + Math.floor(player.y))
         }
-
-        if (!player) player = choices[Math.floor(choices.length * Math.random())]
 
         WORMER = player
 
@@ -89,6 +91,7 @@ export function module(client: Client) {
     function pop_worm() {
         const w = WORM.shift() as [number, number]
         if (!w) return Promise.resolve(true)
+        if (WORM.findIndex(([x, y]) => w[0] == x && w[1] == y) != -1) return Promise.resolve(true) // The Worm is very huge, it spans over the entire field and became a modulo.
 
         const [CROWN_COORDINATE] = STRUCTURE?.list('crown') as [number, number, number][] || [10, 10]
         const [x, y] = w
