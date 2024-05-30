@@ -1,7 +1,7 @@
 
 import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
 import { create_empty_arena, advance_one_piece, plan_to_queue, set_max_size, reset_everything, JOINT, LEFT_JOINT, TOP_LEFT, WIDTH, HORIZONTAL_BORDER, PLATFORM_SIZE, set_speed, SPEED } from './map.js'
-import { is_bot_admin } from './line.js'
+import { is_bot_admin, storedPlayers } from './line.js'
 import { StoredPlayer } from './storage.js'
 
 const MINIMUM_PLAYERS = 3
@@ -32,7 +32,7 @@ export function module(client: Client) {
         console.log(`${gameRound.players.length + 1}. ${player.username} (${SURVIVAL_TIME})`)
         player.pm(`[BOT] ${gameRound.players.length + 1}. ${SURVIVAL_TIME}s`)
 
-        const user_data = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
+        const user_data = storedPlayers.byCuid(player.cuid) as StoredPlayer
         user_data.rounds = user_data.rounds + 1
         user_data.time = user_data.time + SURVIVAL_TIME
 
@@ -51,7 +51,7 @@ export function module(client: Client) {
             GAME_IS_STARTING = true
             GAME_RUNNING = false
 
-            const winner_data = StoredPlayer.players.byCuid(winner.cuid) as StoredPlayer
+            const winner_data = storedPlayers.byCuid(winner.cuid) as StoredPlayer
             winner_data.wins = winner_data.wins + 1
             winner_data.rounds = winner_data.rounds + 1
             winner_data.time = winner_data.time + SURVIVAL_TIME
