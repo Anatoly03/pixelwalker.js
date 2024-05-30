@@ -1,14 +1,11 @@
 
-import Client, { PlayerArray, PlayerBase, PlayerStorage } from "../../../dist"
-import { is_bot_admin } from "./worm"
+import Client, { PlayerBase, PlayerStorage } from "../../../dist"
 
 export class StoredPlayer extends PlayerBase {
     public wins: number = 0     // Survived so many times more than five minutes
     public rounds: number = 0   // Played so many games
     public time: number = 0     // Played so much times
     public kills: number = 0    // Eliminated so many players as wormer
-
-    constructor(args: any) { super(args) }
 }
 
 export class StoredPlayerManager extends PlayerStorage<StoredPlayer> {
@@ -43,23 +40,6 @@ export class StoredPlayerManager extends PlayerStorage<StoredPlayer> {
         client.onCommand('time', ([p]) => {
             const player = this.byCuid(p.cuid) as StoredPlayer
             if (player) return `Total Time in Game: ${player.time.toFixed(1)}s`
-        })
-
-        client.onCommand('add', is_bot_admin, ([p]) => {
-            const player = this.byCuid(p.cuid) as StoredPlayer
-            // console.log('pfff', ((<any>this).data)[0])
-            // console.log('pss', new Array(((<any>this).data)[0]))
-            console.log('players', this)
-            // console.log('to array', this.toArray())
-            console.log(this.map(x => x))
-            console.log(player)
-            console.log()
-            if (player) {
-                player.wins = 10
-                console.log(player)
-                console.log(this.is_mut())
-                return 'Should work!'
-            }
         })
 
         return client
