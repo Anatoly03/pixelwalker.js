@@ -133,7 +133,7 @@ export function module(client: Client) {
         if (gameRound.players.length == 1) {
             const winner = gameRound.players[0]
 
-            const winnerData = storedPlayers.byCuid(player.cuid) as StoredPlayer
+            const winnerData = storedPlayers.byCuid(winner.cuid) as StoredPlayer
             winnerData.rounds = winnerData.rounds + 1
             winnerData.wins = winnerData.wins + 1
             winnerData.time = winnerData.time + TIME

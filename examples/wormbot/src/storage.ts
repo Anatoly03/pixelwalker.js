@@ -32,7 +32,7 @@ export class StoredPlayerManager extends PlayerStorage<StoredPlayer> {
 
         client.onCommand('wins', ([p]) => {
             const player = this.byCuid(p.cuid)
-            if (player) return `Rounds: ${player.wins}`
+            if (player) return `Wins: ${player.wins}`
         })
 
         client.onCommand('rounds', ([p]) => {
