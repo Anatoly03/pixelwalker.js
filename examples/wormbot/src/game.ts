@@ -128,7 +128,7 @@ export function module(client: Client) {
         playerData.rounds = playerData.rounds + 1
         playerData.time = playerData.time + TIME
 
-        console.log(playerData)
+        // console.log(playerData)
 
         if (gameRound.players.length == 1) {
             const winner = gameRound.players[0]
