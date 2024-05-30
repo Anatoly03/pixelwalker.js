@@ -85,7 +85,7 @@ export function module(client: Client) {
 
         return Promise.all([
             client.block(TOP_LEFT.x + x, TOP_LEFT.y + y, 1, 'spikes_center'),
-            client.block(TOP_LEFT.x + x, TOP_LEFT.y + y, 0, 'basic_blue_bg'),
+            client.block(TOP_LEFT.x + x, TOP_LEFT.y + y, 0, 'pastel_blue_bg'),
         ])
     }
 
@@ -139,8 +139,12 @@ export function module(client: Client) {
             winnerData.time = winnerData.time + TIME
 
             GAME_IS_STARTING = true
-        } else if (gameRound.players.length == 0){
+
+            client.say(`${player.username} came in second! ${winner.username} won!`)
+        } else if (gameRound.players.length == 0) {
             GAME_IS_STARTING = true
+        } else if (gameRound.players.length == 2) {
+            client.say(`${player.username} came in third!`)
         }
     }
 
@@ -156,7 +160,7 @@ export function module(client: Client) {
             WORM = []
             TICK = 0
 
-            WORM_SPEED = 150
+            WORM_SPEED = 100
             WORM_LENGTH = 10
 
             STRUCTURE = await build_map()
