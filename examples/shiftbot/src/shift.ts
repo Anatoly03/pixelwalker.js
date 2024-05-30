@@ -13,11 +13,13 @@ export default client
 
 import * as Map from './map.js'
 import * as Game from './game.js'
-import { StoredPlayer } from './storage.js'
+import { StoredPlayer, StoredPlayerManager } from './storage.js'
 
 export function is_bot_admin(player: Player) {
     return player.cuid == client.self?.cuid
 }
+
+export const storedPlayers = new StoredPlayerManager('players.yaml', StoredPlayer)
 
 client
     .on('player:join', ([p]) => p.god(true)) // Give everyone god mode
@@ -27,6 +29,6 @@ client
     .registerHelpCommand('help')
     .include(Map)
     .include(Game)
-    .include(Modules.BanModule('bans.yaml', is_bot_admin))
-    .include(new Modules.StorageModule('players.yaml', StoredPlayer))
+    .include(new Modules.BanModule('bans.yaml', is_bot_admin))
+    .include(storedPlayers)
     .connect(process.env.WORLD_ID)

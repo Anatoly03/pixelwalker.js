@@ -214,7 +214,7 @@ export function module(client: Client) {
         // if (TICK % 15 == 0) WORM_DIRECTION = (Math.abs(WORM_DIRECTION + [-1, 1][+(Math.random() > .5)])) % 4
 
         if (TICK % 100 == 99) elect_bomber()
-        if (WORM_SPEED > 25 && TICK % 2 == 0) WORM_SPEED --
+        if (WORM_SPEED > 1 && TICK % 2 == 0) WORM_SPEED --
         if (TICK % 25 == 0) WORM_LENGTH ++
 
         if (TICK % 2 == 0) {

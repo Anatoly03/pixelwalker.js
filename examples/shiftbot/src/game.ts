@@ -1,7 +1,7 @@
 
 import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
 
-import { is_bot_admin } from './shift.js'
+import { is_bot_admin, storedPlayers } from './shift.js'
 import { TOP_LEFT, build_map, clear_map, close_door, create_win_zone, height, open_door, remove_spawn, set_spawn, width } from './map.js'
 import { StoredPlayer } from './storage.js'
 
@@ -39,7 +39,7 @@ export function module(client: Client) {
             END_ROUND.time(TIME_LEFT * 1000, true)
         }
 
-        const user_data = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
+        const user_data = storedPlayers.byCuid(player.cuid) as StoredPlayer
 
         PLAYER_QUEUE.push(player)
         
@@ -75,7 +75,7 @@ export function module(client: Client) {
         if (!wasActive) return
 
         const TIME = (performance.now() - START_TIME) / 1000
-        const user_data = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
+        const user_data = storedPlayers.byCuid(player.cuid) as StoredPlayer
 
         user_data.rounds = user_data.rounds + 1
         user_data.time = user_data.time + TIME
@@ -123,7 +123,7 @@ export function module(client: Client) {
             await Promise.all([remove_spawn(), ...SPAWNPOINTS?.map(p => client.block(p[0], p[1], p[2], 'spawn_point'))])
 
             gameRound.players.forEach(player => {
-                const user_data = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
+                const user_data = storedPlayers.byCuid(player.cuid) as StoredPlayer
                 user_data.games = user_data.games + 1
             })
 
