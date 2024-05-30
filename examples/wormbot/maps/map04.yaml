@@ -8,6 +8,10 @@ meta:
     - gravity_left
     - gravity_right
     - gravity_slow_dot
+    - boost_right
+    - boost_down
+    - boost_up
+    - boost_left
     - basic_blue
     - beveled_blue
     - jungle_blue
