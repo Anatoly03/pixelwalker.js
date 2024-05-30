@@ -36,13 +36,13 @@ export default class PlayerStorage<P extends PlayerBase, K extends PlayerBase = 
     }
 
     public load() {
-        console.log('load')
+        // console.log('load')
         this.#rawValues = YAML.parse(fs.readFileSync(this.path).toString('ascii')) as P[]
         this.#wrapValues = this.#rawValues.map(p => this.get_wrapper(p))
     }
 
     public save() {
-        console.log('save')
+        // console.log('save')
         fs.writeFileSync(this.path, YAML.stringify(this.#rawValues))
     }
 
@@ -61,14 +61,14 @@ export default class PlayerStorage<P extends PlayerBase, K extends PlayerBase = 
             if ((typeof value !== 'object' && typeof value !== 'function') || value === null) {
                 Object.defineProperty(wrap, key, {
                     get: () => {
-                        console.log('wrap getter')
+                        // console.log('wrap getter')
                         that.load()
                         const p = this.#rawValues.find(k => k.cuid == entry.cuid)
                         if (!p) return null
                         return p[key]
                     },
                     set: (value: any) => {
-                        console.log(`Set was called on player ${entry.username} with key ${key}`)
+                        // console.log(`Set was called on player ${entry.username} with key ${key}`)
                         that.load()
                         const p = this.#rawValues.find(k => k.cuid == entry.cuid)
                         if (!p) return

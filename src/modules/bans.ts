@@ -24,7 +24,7 @@ export default class BannedPlayersManager extends PlayerStorage<BannedPlayer, Co
 
     constructor(path: string, PERMISSION_CALLBACK: ((p: Player) => boolean) =
         (p) => (this.#client_self != undefined && this.#client_self.cuid == p.cuid)) {
-            console.log('hi')
+        // console.log('hi')
         super(path, BannedPlayer, [{
             username: 'TESTUSER',
             cuid: 'testuserid',
