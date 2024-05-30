@@ -1,5 +1,5 @@
 
-import Client, { Player, SolidBlocks, Structure, Util, Modules, Block } from '../../../dist/index.js'
+import Client, { Player, SolidBlocks, Structure, Util, Modules, Block, BlockIdentifier } from '../../../dist/index.js'
 
 import { is_bot_admin, storedPlayers } from './worm.js'
 import { TOP_LEFT, build_map, width, height } from './map.js'
@@ -162,6 +162,7 @@ export function module(client: Client) {
             STRUCTURE = await build_map()
             const positions = STRUCTURE.list('gravity_dot', 'gravity_slow_dot')
             console.log(`Round Start - ${STRUCTURE.meta.name}`)
+            OBSTACLE_BLOCKS = (STRUCTURE.meta.fill_blocks as BlockIdentifier[]).map(s => new Block(s))
 
             await client.wait(2000)
 

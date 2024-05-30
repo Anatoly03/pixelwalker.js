@@ -2,6 +2,14 @@ file-version: 0
 meta:
   creator: ANATOLY
   name: Empty Map
+  fill_blocks:
+    - gravity_up
+    - gravity_down
+    - gravity_left
+    - gravity_right
+    - gravity_slow_dot
+    - hazard_stripes
+    - dark_hazard_stripes
 width: 47
 height: 33
 palette:

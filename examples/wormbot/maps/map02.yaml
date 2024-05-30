@@ -2,6 +2,13 @@ file-version: 0
 meta:
   creator: ANATOLY
   name: Temple Summoning
+  fill_blocks:
+    - gravity_up
+    - gravity_down
+    - gravity_left
+    - gravity_right
+    - gravity_slow_dot
+    - jungle_gray
 width: 47
 height: 33
 palette:

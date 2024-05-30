@@ -4,6 +4,8 @@ import client from './worm.js'
 import fs, { writeFileSync } from 'node:fs'
 import path from 'node:path'
 
+new Block('jungle_gray')
+
 import { is_bot_admin } from './worm.js'
 
 export const width = 47
@@ -85,7 +87,8 @@ export function module(client: Client) {
 
         structure.meta = {
             creator: player.username,
-            name: 'World Name'
+            name: 'World Name',
+            fill_blocks: ['basic_blue', 'basic_red']
         }
 
         const FILE_NAME = PREFIX + int.toString().padStart(2, '0') + SUFFIX

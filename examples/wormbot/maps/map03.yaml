@@ -2,6 +2,16 @@ file-version: 0
 meta:
   creator: LEOGIACO
   name: Forest Crossroads
+  fill_blocks:
+    - gravity_up
+    - gravity_down
+    - gravity_left
+    - gravity_right
+    - gravity_slow_dot
+    - basic_green
+    - glass_green
+    - minerals_green
+    - metal_silver
 width: 47
 height: 33
 palette:
