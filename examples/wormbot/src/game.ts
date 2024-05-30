@@ -1,7 +1,7 @@
 
 import Client, { Player, SolidBlocks, Structure, Util, Modules, Block } from '../../../dist/index.js'
 
-import { is_bot_admin } from './worm.js'
+import { is_bot_admin, storedPlayers } from './worm.js'
 import { TOP_LEFT, build_map, width, height } from './map.js'
 import { StoredPlayer } from './storage.js'
 
@@ -44,7 +44,7 @@ export function module(client: Client) {
         if (WORMER) {
             // const positions = STRUCTURE?.list('gravity_dot', 'gravity_slow_dot') || []
             // const [x, y] = positions[Math.floor(positions.length * Math.random())]
-            WORMER.teleport(TOP_LEFT.x + Math.floor(player.x), TOP_LEFT.y + Math.floor(player.y))
+            WORMER.teleport(Math.floor(player.x), Math.floor(player.y))
         }
 
         WORMER = player
@@ -113,19 +113,35 @@ export function module(client: Client) {
 
         const TIME = (performance.now() - START_TIME) / 1000
 
-        if (WORMER) {
-            const wormerData = StoredPlayer.players.byCuid(WORMER.cuid) as StoredPlayer
+        console.log(`${gameRound.players.length + 1}. ${player.username} ${TIME.toFixed(1)}s`)
+
+        if (WORMER?.id == player.id) {
+            elect_bomber()
+        } else if (WORMER) {
+            const wormerData = storedPlayers.byCuid(WORMER.cuid) as StoredPlayer
             wormerData.kills = wormerData.kills + 1
         }
 
         player.pm(`${gameRound.players.length + 1}. ${TIME}s`)
 
-        const playerData = StoredPlayer.players.byCuid(player.cuid) as StoredPlayer
+        const playerData = storedPlayers.byCuid(player.cuid) as StoredPlayer
         playerData.rounds = playerData.rounds + 1
         playerData.time = playerData.time + TIME
 
-        if (gameRound.players.length <= 1)
+        console.log(playerData)
+
+        if (gameRound.players.length == 1) {
+            const winner = gameRound.players[0]
+
+            const winnerData = storedPlayers.byCuid(player.cuid) as StoredPlayer
+            winnerData.rounds = winnerData.rounds + 1
+            winnerData.wins = winnerData.wins + 1
+            winnerData.time = winnerData.time + TIME
+
             GAME_IS_STARTING = true
+        } else if (gameRound.players.length == 0){
+            GAME_IS_STARTING = true
+        }
     }
 
     gameRound.on('eliminate', disqualify)
@@ -136,12 +152,18 @@ export function module(client: Client) {
         if (GAME_IS_STARTING) {
             GAME_IS_RUNNING = false
             if (GAME_HALT_FLAG) return gameRound.stop()
+
             WORM = []
             TICK = 0
+
+            WORM_SPEED = 150
+            WORM_LENGTH = 10
 
             STRUCTURE = await build_map()
             const positions = STRUCTURE.list('gravity_dot', 'gravity_slow_dot')
             console.log(`Round Start - ${STRUCTURE.meta.name}`)
+
+            await client.wait(2000)
 
             // Try to sign up players
             await gameRound.signup()
@@ -170,7 +192,7 @@ export function module(client: Client) {
 
         if (TIME >= 300) {
             gameRound.players.forEach(pl => {
-                const player = StoredPlayer.players.byCuid(pl.cuid) as StoredPlayer
+                const player = storedPlayers.byCuid(pl.cuid) as StoredPlayer
                 player.wins = player.wins + 1
                 player.rounds = player.rounds + 1
                 player.time = player.time + 300
@@ -197,7 +219,7 @@ export function module(client: Client) {
                     [CROWN_COORDINATE] = STRUCTURE?.list('crown') as [number, number, number][] || [10, 10],
                     block = OBSTACLE_BLOCKS[Math.floor(OBSTACLE_BLOCKS.length * Math.random())]
 
-                if (gameRound.players.some(v => Math.abs(v.x - x) < 5 && Math.abs(v.y - y) < 5)) return
+                if (gameRound.players.some(v => (v.x - (TOP_LEFT.x + x)) ** 2 + (v.y - (TOP_LEFT.y + y)) ** 2 < 6 ** 2)) return
 
                 if (Math.abs(CROWN_COORDINATE[0] - x) <= 1 && Math.abs(CROWN_COORDINATE[1] - y) <= 1) return
 
@@ -225,6 +247,10 @@ export function module(client: Client) {
         gameRound.stop()
     })
 
+    client.onCommand('*elect', is_bot_admin, () => {
+        elect_bomber()
+    })
+
     client.onCommand('last', is_bot_admin, () => {
         GAME_HALT_FLAG = true
     })
@@ -248,8 +274,8 @@ export function module(client: Client) {
         })
     ))
 
-    client.on('player:god', () => SIGNUP_LOCK.accept(true))
-    client.on('player:join', () => SIGNUP_LOCK.accept(true))
+    client.on('player:god', () => SIGNUP_LOCK?.accept(true))
+    client.on('player:join', () => SIGNUP_LOCK?.accept(true))
 
     client.on('player:join', ([p]) => {
         if (GAME_IS_RUNNING) p.pm(`Game with ${gameRound.players.length} currently running. Please wait a moment.`)

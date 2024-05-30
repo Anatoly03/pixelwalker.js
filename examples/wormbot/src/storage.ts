@@ -1,5 +1,6 @@
 
-import Client, { PlayerArray, PlayerBase } from "../../../dist"
+import Client, { PlayerArray, PlayerBase, PlayerStorage } from "../../../dist"
+import { is_bot_admin } from "./worm"
 
 export class StoredPlayer extends PlayerBase {
     public wins: number = 0     // Survived so many times more than five minutes
@@ -8,18 +9,18 @@ export class StoredPlayer extends PlayerBase {
     public kills: number = 0    // Eliminated so many players as wormer
 
     constructor(args: any) { super(args) }
+}
 
-    static players: PlayerArray<StoredPlayer, true, true>
-
-    static module(client: Client) {
+export class StoredPlayerManager extends PlayerStorage<StoredPlayer> {
+    public override module(client: Client) {
 
         client.on('player:join', ([p]) => {
-            if (this.players.some(k => k.cuid == p.cuid)) return
-            this.players.push(new StoredPlayer(p))
+            if (this.byCuid(p.cuid) != undefined) return
+            this.push(new StoredPlayer(p))
         })
 
         client.onCommand('stats', ([p]) => {
-            const player = StoredPlayer.players.byCuid(p.cuid)
+            const player = this.byCuid(p.cuid)
             if (!player) return
             let s = `You won ${player.wins} of ${player.rounds} times. `
             if (player.rounds > 0) s += `Win Accuracy: ${(player.wins / player.rounds).toFixed(1)}% `
@@ -30,18 +31,35 @@ export class StoredPlayer extends PlayerBase {
         })
 
         client.onCommand('wins', ([p]) => {
-            const player = StoredPlayer.players.byCuid(p.cuid)
+            const player = this.byCuid(p.cuid)
             if (player) return `Rounds: ${player.wins}`
         })
 
         client.onCommand('rounds', ([p]) => {
-            const player = StoredPlayer.players.byCuid(p.cuid)
+            const player = this.byCuid(p.cuid)
             if (player) return `Rounds: ${player.rounds}`
         })
 
         client.onCommand('time', ([p]) => {
-            const player = StoredPlayer.players.byCuid(p.cuid) as StoredPlayer
+            const player = this.byCuid(p.cuid) as StoredPlayer
             if (player) return `Total Time in Game: ${player.time.toFixed(1)}s`
+        })
+
+        client.onCommand('add', is_bot_admin, ([p]) => {
+            const player = this.byCuid(p.cuid) as StoredPlayer
+            // console.log('pfff', ((<any>this).data)[0])
+            // console.log('pss', new Array(((<any>this).data)[0]))
+            console.log('players', this)
+            // console.log('to array', this.toArray())
+            console.log(this.map(x => x))
+            console.log(player)
+            console.log()
+            if (player) {
+                player.wins = 10
+                console.log(player)
+                console.log(this.is_mut())
+                return 'Should work!'
+            }
         })
 
         return client

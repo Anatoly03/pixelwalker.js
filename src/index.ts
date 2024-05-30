@@ -11,6 +11,7 @@ export { MessageType } from './data/consts.js'
 export { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
 export { SolidBlocks, Decorations, Property, BlockProperties } from './data/block_properties.js'
 export { RoomTypes } from './data/room_types.js'
+export { default as PlayerStorage } from './modules/player-storage.js'
 
 export const Modules = {
     Debug: (await import ('./modules/debug.js')).default,
