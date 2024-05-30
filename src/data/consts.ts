@@ -35,6 +35,9 @@ export interface LibraryEvents {
     'player:coin:blue': [[Player, number]]
     'player:death': [[Player, number]]
     'player:block': [[Player, WorldPosition, Block]]
+    'player:move': [[Player]]
+    'player:respawn': [[Player]]
+    'player:reset': [[Player]]
     'world:clear': [[]]
     'world:key': [[Player, string]]
 }

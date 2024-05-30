@@ -9,16 +9,13 @@ import util from 'util'
 export class PlayerBase {
     public readonly cuid: string
     public readonly username: string
-    public readonly isAdmin: boolean
     
     constructor(args: {
         cuid: string
         username: string
-        isAdmin: boolean
     }) {
         this.cuid = args.cuid
         this.username = args.username
-        this.isAdmin = args.isAdmin
     }
 
     public toString() {
@@ -37,6 +34,7 @@ export default class Player extends PlayerBase {
     protected readonly client: Client
 
     public readonly id: number
+    public readonly isAdmin: boolean
     public face: number
     public x: number
     public y: number
@@ -78,6 +76,7 @@ export default class Player extends PlayerBase {
         this.client = args.client
 
         this.id = args.id
+        this.isAdmin = args.isAdmin
         this.face = args.face
         this.x = args.x
         this.y = args.y
@@ -100,44 +99,42 @@ export default class Player extends PlayerBase {
     }
 
     public async pm(content: string) {
-        this.client.say(`/pm #${this.id} ${content}`)
-        // this.client.say(`/pm ${this.username} ${content}`)
+        // TODO add chat prefix
+        this.client.say(`/pm #${this.id}` + (this.client.chatPrefix ? ' ' + this.client.chatPrefix : ''), content)
     }
 
     public async respond(content: string) {
-        this.client.say(`${this.username}: ${content}`)
+        // TODO add chat prefix
+        this.client.say(`${this.username}:` + (this.client.chatPrefix ? ' ' + this.client.chatPrefix : ''), content)
     }
 
-    public async kick(reason?: string) {
-        this.client.say(`/kick #${this.id}${reason ? ` ${reason}` : ''}`)
-        // this.client.say(`/kick ${this.username} ${reason}`)
+    public async kick(reason: string = "Tsk Tsk Tsk") {
+        this.client.say(`/kick #${this.id} ${reason}`, '')
     }
 
     public async edit(value: boolean) {
-        this.client.say(`/${value ? 'giveedit' : 'takeedit'} #${this.id}`)
-        // this.client.say(`/${value ? 'giveedit' : 'takeedit'} ${this.username}`)
+        this.client.say(`/${value ? 'giveedit' : 'takeedit'} #${this.id}`, '')
     }
 
     public async god(value: boolean) {
-        this.client.say(`/${value ? 'givegod' : 'takegod'} #${this.id}`)
-        // this.client.say(`/${value ? 'givegod' : 'takegod'} ${this.username}`)
+        this.client.say(`/${value ? 'givegod' : 'takegod'} #${this.id}`, '')
     }
 
     public async crown(value: boolean) {
-        this.client.say(`/${value ? 'givecrown' : 'takecrown'} #${this.id}`)
+        this.client.say(`/${value ? 'givecrown' : 'takecrown'} #${this.id}`, '')
     }
 
     public async teleport(x: number, y:number): Promise<void>;
     public async teleport(p: Player): Promise<void>;
     public async teleport(x: number | Player, y?: number) {
         if (typeof x == 'number' && typeof y == 'number')
-            this.client.say(`/tp #${this.id} ${x} ${y}`)
+            this.client.say(`/tp #${this.id} ${x} ${y}`, '')
         else if (x instanceof Player)
-            this.client.say(`/tp #${this.id} #${x.id}`)
+            this.client.say(`/tp #${this.id} #${x.id}`, '')
     }
 
     public async reset() {
-        this.client.say(`/resetplayer #${this.id}`)
+        this.client.say(`/resetplayer #${this.id}`, '')
     }
 
     // public [util.inspect.custom](): string {
@@ -174,8 +171,30 @@ export class SelfPlayer extends Player {
         }})
     }
 
-    public say(content: string) {
-        return this.client.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(content))
+    public say(content: string): void;
+    public say(preamble: string, content: string): void;
+    public say(preamble: string, content?: string) {
+        if (content == undefined) {
+            return this.say(this.client.chatPrefix || '', preamble)
+        }
+
+        preamble += ' '
+
+        const MESSAGE_SIZE = 120
+        const CONTENT_ALLOWED_SIZE = MESSAGE_SIZE - preamble.length - (preamble.length > 0 ? 1 : 0)
+
+        if (preamble.length > MESSAGE_SIZE)
+            throw new Error('Chat preamble is larger than message size. Bad.')
+
+        // TODO regex?
+        if (content.length > CONTENT_ALLOWED_SIZE) {
+            const separator = content.substring(0, CONTENT_ALLOWED_SIZE).lastIndexOf(' ') || CONTENT_ALLOWED_SIZE
+            this.say(preamble, content.substring(0, separator))
+            this.say(preamble, content.substring(separator, content.length))
+            return
+        }
+
+        return this.client.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(preamble + ' ' + content))
     }
 
     public set_god(value: boolean) {

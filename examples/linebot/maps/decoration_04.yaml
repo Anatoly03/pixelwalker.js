@@ -1,0 +1,14 @@
+file-version: 0
+meta:
+  left_y: 1
+  right_y: 1
+width: 3
+height: 2
+palette:
+  - empty
+  - basic_gray
+  - beach_parasol
+layers:
+  foreground: "0 1 2 1 0 1 "
+  background: "0 0 0 0 0 0 "
+  data: []

@@ -1,9 +1,9 @@
 import Client from "../client"
 import { BlockMappingsReverse } from "../data/mappings.js"
-import { PlayerMap } from "../types/player-ds"
+import { PlayerArray, PlayerMap } from "../types/player-ds"
 import Player, { PlayerBase } from "../types/player.js"
 
-export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
+export function GamePlayerModule(players: PlayerMap<true>) {
     return (client: Client) => {
         /**
          * On player join, create a player object with data
@@ -32,7 +32,7 @@ export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
             }
             
             const player = new Player(data)
-            rawPlayers.push(player)
+            players.push(player)
             client.emit('player:join', [player])
         })
 
@@ -50,10 +50,8 @@ export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
          * and destroy it.
          */
         client.raw.on('playerLeft', async ([id]) => {
-            const playerIndex = rawPlayers.findIndex(p => p.id == id)
-            if (playerIndex == -1) return
-            const [player] = rawPlayers.splice(playerIndex, 1)
-            client.emit('player:leave', [player])
+            const removedPlayers = players.remove_all(p => p.id == id)
+            removedPlayers.forEach(player => client.emit('player:leave', [player]))
         })
 
 
@@ -61,13 +59,14 @@ export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
          * TODO Player movement
          */
         client.raw.on('playerMoved', async ([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]) => {
-            const player = players.byId<true>(id)
+            const player = players.byId(id)
+            if (!player) return
 
             player.x = x / 16
             player.y = y / 16
 
             // TODO
-            // client.emit('player:move', [player])
+            client.emit('player:move', [player])
         })
 
         /**
@@ -158,29 +157,41 @@ export function GamePlayerModule(players: PlayerMap, rawPlayers: Player[]) {
             if (old_death_count < death_count) client.emit('player:death', [player, old_death_count])
         })
 
+        client.raw.on('playerReset', ([id, x, y]) => {
+            const player = players.byId<true>(id)
+            player.x = x / 16
+            player.y = y / 16
+            // TODO
+            client.emit('player:reset', [player])
+        })
+
+        client.raw.on('playerRespawn', ([id, x, y]) => {
+            const player = players.byId<true>(id)
+            player.x = x / 16
+            player.y = y / 16
+            client.emit('player:respawn', [player])
+        })
 
         return client
     }
 }
 
-export function BasePlayerModule(rawPlayers: PlayerBase[]) {
+export function BasePlayerModule(players: PlayerArray<PlayerBase, true>) {
     return (client: Client) => {
         /**
          * When a player joins, register the player into the constant players.
          */
-        client.raw.on('playerJoined', async ([_id, cuid, username, _f, isAdmin]) => {
-            const exists = rawPlayers.find(p => p.cuid == cuid)
-            const new_object = new PlayerBase({
-                isAdmin, cuid, username
-            })
+        client.raw.on('playerJoined', async ([_id, cuid, username, _f, isAdmin]): Promise<void> => {
+            const exists = players.find(p => p.cuid == cuid)
+            const new_object = new PlayerBase({ cuid, username })
 
             if (exists != undefined) {
-                if (exists.cuid != cuid || exists.username != username || exists.isAdmin != isAdmin)
-                    console.warn(`[WARN] During the runtime of the bot, the user ${exists.username} changed their metadata: Was: ${exists}, Is Now: ${new_object}`)
+                if (exists.username != username)
+                    console.warn(`[WARN] During the runtime of the bot, the user ${exists.username} changed their username top ${username}`)
                 return
             }
 
-            rawPlayers.push(new_object)
+            players.push(new_object)
         })
 
         return client

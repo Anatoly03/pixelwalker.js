@@ -1,0 +1,19 @@
+file-version: 0
+meta:
+  left_y: 3
+  right_y: 3
+width: 5
+height: 4
+palette:
+  - empty
+  - basic_gray
+  - spikes
+layers:
+  foreground: "0 0 0 1 0 2 2 1 2 1 1 1 0 2 2 1 0 0 0 1 "
+  background: "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+  data:
+    - - 3
+    - - 3
+    - - 0
+    - - 1
+    - - 1

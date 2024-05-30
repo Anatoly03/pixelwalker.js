@@ -18,52 +18,56 @@ import BotCommandModule from './modules/bot-command.js'
 import ChatModule from './modules/chat.js'
 import SystemMessageModule from './modules/system-command.js'
 import WorldManagerModule from './modules/world-manager.js'
+import StartModule from "./modules/start.js"
+import { GamePlayerModule, BasePlayerModule } from "./modules/player-manager.js"
 
 import BlockScheduler from './scheduler/scheduler-block.js'
 import { BlockMappings } from './data/mappings.js'
-import { PlayerMap, StoredPlayerMap } from './types/player-ds.js'
+import { PlayerArray, PlayerMap } from './types/player-ds.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
-    public connected = false
+    #isConnected = false
+
+    readonly #pocketbase: PocketBase
+    #socket: WebSocket | null
+
+    readonly #command: EventEmitter<{[keys: string]: [[Player, ...string[]]]}> = new EventEmitter()
+    #command_permissions: [string, (p: Player) => boolean][] = []
 
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
     public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
 
-    public block_scheduler: BlockScheduler
+    public readonly block_scheduler: BlockScheduler
+    
+    public self: SelfPlayer | null = null
+    public world: World | null = null
+    
+    public chatPrefix: string | undefined
+    public cmdPrefix: string[] = ['!', '.']
 
-    private pocketbase: PocketBase | null
-    private socket: WebSocket | null
-
-    public self: SelfPlayer | null
-    public world: World | undefined
-    public cmdPrefix: string[]
-
-    public readonly players
-    public readonly globalPlayers
+    readonly #players: PlayerMap<true>
+    readonly #globalPlayers: PlayerArray<PlayerBase, true>
 
     constructor(args: { token?: string });
-    constructor(args: { user: string, pass: string });
+    constructor(args: { user?: string, pass?: string });
     constructor(args: { token?: string, user?: string, pass?: string }) {
         super()
 
-        this.players = new PlayerMap(this)
-        this.globalPlayers = new StoredPlayerMap(this)
+        this.#pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
+        this.#socket = null
 
-        this.pocketbase = null
-        this.socket = null
-        this.self = null
-        this.world = undefined
-        this.cmdPrefix = ['.', '!']
+        this.#players = new PlayerMap<true>()
+        this.#globalPlayers = new PlayerArray<PlayerBase, true>()
 
         if (args.token) {
-            this.pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
-            this.pocketbase.authStore.save(args.token, { verified: true })
-            if (!this.pocketbase.authStore.isValid) throw new Error('Invalid Token')
-        }
-
-        if (args.user && args.pass) {
-            throw new Error('Authentication with user and password not supported yet.')
+            this.#pocketbase.authStore.save(args.token, { verified: true })
+            if (!this.#pocketbase.authStore.isValid) throw new Error('Invalid Token')
+        } else if (args.user && args.pass) {
+            if (typeof args.user != 'string' || typeof args.pass != 'string') throw new Error('Username and password should be of type string')
+            this.#pocketbase.collection('users').authWithPassword(args.user, args.pass)
+        } else {
+            throw new Error('Invalid attempt to connect with pocketbase client.')
         }
 
         this.block_scheduler = new BlockScheduler(this)
@@ -71,15 +75,13 @@ export default class Client extends EventEmitter<LibraryEvents> {
         // On process interrupt, gracefully disconnect.
         // DO NOT merge this into one function, otherwise it does not work.
         process.on('SIGINT', (signal) => this.disconnect())
-
         // Print unhandled promises after termination
-        process.on("unhandledRejection", (error) => {
-            console.error(error); // This prints error with stack included (as for normal errors)
-        });
+        process.on("unhandledRejection", (error) => console.error(error));
     }
 
     /**
-     * Connect client to server
+     * Connect client to server. `world_id` is always expected to be string,
+     * but is undefined here for compatibility with environment variables.
      */
     public connect(world_id: string | undefined): Promise<Client>
     public connect(world_id: string | undefined, room_type: typeof RoomTypes[0]): Promise<Client>
@@ -87,29 +89,33 @@ export default class Client extends EventEmitter<LibraryEvents> {
         if (world_id == undefined) throw new Error('`world_id` was not provided in `Client.connect()`')
         if (room_type && !RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
         if (!room_type) room_type = RoomTypes[0]
-        if (this.pocketbase == null) throw new Error('Can\'t connect to a world without having pocketbase data.')
+        if (this.#pocketbase == null) throw new Error('Can\'t connect to a world without having pocketbase data.')
 
-        const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
+        const { token } = await this.#pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
 
         try {
-            this.socket = new WebSocket(`wss://${API_ROOM_LINK}/room/${token}`)
-            this.socket.binaryType = 'arraybuffer'
+            this.#socket = new WebSocket(`wss://${API_ROOM_LINK}/room/${token}`)
+            this.#socket.binaryType = 'arraybuffer'
         } catch (e) {
             throw new Error('Socket failed to connect.')
         }
 
-        this.socket.on('message', (event) => this.receive_message(Buffer.from(event as any)))
-        this.socket.on('error', (err) => { this.emit('error', [err]); this.disconnect() })
-        this.socket.on('close', (code, buffer) => { this.emit('close', [code, buffer.toString('ascii')]); this.disconnect() })
+        this.#socket.on('message', (event) => this.receive_message(Buffer.from(event as WithImplicitCoercion<ArrayBuffer>)))
+        this.#socket.on('error', (err) => { this.emit('error', [err]); this.disconnect() })
+        this.#socket.on('close', (code, buffer) => { this.emit('close', [code, buffer.toString('ascii')]); this.disconnect() })
 
-        this.connected = true
+        this.#isConnected = true
 
         this.block_scheduler.start()
         
-        this.include(BotCommandModule)
+        this.include(BotCommandModule(this.#command))
         this.include(ChatModule)
         this.include(SystemMessageModule)
         this.include(WorldManagerModule)
+        
+        this.include(StartModule(this.#players))
+        this.include(GamePlayerModule(this.#players))
+        this.include(BasePlayerModule(this.#globalPlayers))
 
         return this
     }
@@ -150,30 +156,28 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /**
-     * Busy-Wait in the local thread until the return value defined by
-     * callback is non-undefined. This function forces to wait current
-     * control flow till certain information is received.
+     * Connection state of the client, value from readonly `isConnected`.
      */
-    public wait_for<WaitType>(condition: (() => WaitType | undefined)): Promise<WaitType> {
-        const promise = (res: (v: WaitType) => void, rej: (v: any) => void) => {
-            let x: WaitType | undefined = condition()
-            if (!this.connected) rej("Client not connected!")
-            if (x) return res(x)
-            // else binder.bind(res)
-            setTimeout(() => promise(res, rej), 5)
-        }
-
-        return new Promise((res, rej) => promise(res, rej))
+    public get connected(): boolean {
+        return this.#isConnected == true
     }
 
     /**
      * Disconnect client from server
      */
     public disconnect() {
-        this.connected = false
-        this.block_scheduler.stop()
-        this.pocketbase?.authStore.clear()
-        this.socket?.close()
+        this.#isConnected = false
+        this.block_scheduler.stop(true)
+        this.#pocketbase?.authStore.clear()
+        this.#socket?.close()
+    }
+
+    get players(): PlayerMap<false> {
+        return this.#players.immut() as PlayerMap<false>
+    }
+
+    get globalPlayers(): PlayerArray<PlayerBase, false> {
+        return this.#globalPlayers.immut()
     }
 
     /**
@@ -194,15 +198,60 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * Send raw bytes to server
      */
     public send(...args: Buffer[]): Promise<any | undefined> {
+        if (!this.connected) return Promise.reject("Client not connected, but `send` was called.")
         return new Promise((res, rej) => {
-            if (!this.socket) throw new Error('Socket not existing.')
-            if (this.socket.readyState != this.socket.OPEN) throw new Error('Socket not connected.')
+            if (!this.#socket) throw new Error('Socket not existing.')
+            if (this.#socket.readyState != this.#socket.OPEN) throw new Error('Socket not connected.')
             const buffer = Buffer.concat(args)
-            this.socket.send(buffer, {}, (err: any) => {
+            this.#socket.send(buffer, {}, (err: any) => {
                 if (err) return rej(err)
                 res(true)
             })
         })
+    }
+
+    /** Set a wrapped event listener for a command with a permission check and a callback. If callback returns string, privately message. */
+    public onCommand(cmd: string, permission_check: (player: Player) => boolean, callback: (args: [Player, ...string[]]) => (Promise<any> | any)): Client;
+    /** Set a wrapped event listener for a command and a callback. Permission check is automatically true. If a string is returned, it is privately delivered to the user. If callback returns string, privately message. */
+    public onCommand(cmd: string, callback: (args: [Player, ...string[]]) => (Promise<any> | any)): Client;
+    /** Command Management Wrapper */
+    public onCommand(cmd: string, cb1: ((p: Player) => boolean) | ((args: [Player, ...string[]]) => (Promise<any> | any)), cb2?: (args: [Player, ...string[]]) => (Promise<any> | any)): Client {
+        if (cb2 == undefined)
+            return this.onCommand(cmd, () => true, cb1 as ((args: [Player, ...string[]]) => (Promise<any> | any)))
+
+        this.#command_permissions.push([cmd, cb1 as (player: Player) => boolean])
+
+        this.#command.on(cmd, async (args: [Player, ...string[]]) => {
+            if (!(cb1 as ((p: Player) => boolean))(args[0])) return
+            const output = await cb2(args)
+            if (typeof output == 'string')
+                args[0].pm(output)
+        })
+
+        return this
+    }
+
+    /** Set an event listener for a help command, that will navigate through all registered commands and display the ones you can use. */
+    registerHelpCommand(cmd: string) {
+        this.onCommand(cmd, () => true, ([player]) => {
+            const list = this.#command_permissions
+                .filter(([pl, cb]) => cb(player))
+                .map(([p]) => this.cmdPrefix[0] + p)
+                .filter((v, i, a) => a.indexOf(v) === i) // Remove duplicates: https://stackoverflow.com/a/14438954/16002144
+                .join(' ')
+            return list.length > 0 ? list : undefined
+        })
+        return this
+    }
+
+    setChatPrefix(prefix: string) {
+        this.chatPrefix = prefix
+        return this
+    }
+
+    registerCommandPrefix(allowed: string[]) {
+        this.cmdPrefix = allowed
+        return this
     }
 
     // TODO
@@ -219,8 +268,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.world?.put_block(x, y, layer, block) || Promise.reject('The `client.world` object was not loaded.')
     }
 
-    public say(content: string) {
-        return this.self?.say(content)
+    public say(content: string): void;
+    public say(preamble: string, content: string): void;
+    public say(preamble: string, content?: string) {
+        if (content == undefined)
+            return this.say(this.chatPrefix || '', preamble)
+        return this.self?.say(preamble, content)
     }
 
     public god(value: boolean, mod_mode: boolean) {

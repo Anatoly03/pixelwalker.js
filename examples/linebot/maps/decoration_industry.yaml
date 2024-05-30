@@ -1,0 +1,26 @@
+file-version: 0
+meta:
+  left_y: 4
+  right_y: 4
+width: 17
+height: 5
+palette:
+  - empty
+  - beach_rock
+  - factory_wood
+  - factory_wooden_crate
+  - factory_stone
+  - factory_metal_crate
+  - key_gate_green
+  - key_green
+  - fire
+  - factory_scales
+  - checker_yellow_bg
+layers:
+  foreground: "0 0 0 1 2 0 0 3 3 2 0 0 3 3 2 0 4 4 4 2 0 4 4 4 2 0 0 0 0 2 0 0 0 1
+    2 0 0 0 0 2 0 0 0 1 2 0 0 0 0 2 5 6 5 5 2 5 7 8 5 2 5 6 5 5 2 0 0 9 9 2 0 0
+    9 9 2 0 0 9 9 2 0 0 0 1 2 "
+  background: "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 A 0 0 0 0 A A 0 0 0 A 0 0 0 0 0 0 0 0 0 0
+    0 0 0 0 0 0 0 0 0 0 0 0 0 "
+  data: []

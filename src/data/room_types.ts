@@ -2,8 +2,7 @@ import { API_ROOM_LINK } from "./consts.js"
 import fs from 'node:fs'
 
 const data: Response = await fetch(`https://${API_ROOM_LINK}/listroomtypes`)
-const text = await data.text()
-const map: string[] = JSON.parse(text)
+const map: string[] = await data.json()
 
 export const RoomTypes: string[] = map
 export default RoomTypes

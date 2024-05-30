@@ -1,4 +1,4 @@
-import { Client, Player } from "..";
+import { Client, Player, World } from "..";
 import { PlayerBase } from "../types/player";
 
 /**
@@ -10,8 +10,8 @@ export default function Module(client: Client): Client {
      */
     client.raw.on('placeBlock', async ([id, x, y, layer, bid, ...args]) => {
         const player = client.players.byId<true>(id)
-        const world = await client.wait_for(() => client.world)
-        const [position, block] = world.set(x, y, layer, bid, args)
+        if (!player || !client.world) return
+        const [position, block] = client.world.set(x, y, layer, bid, args)
 
         client.emit('player:block', [player, position, block])
     })
@@ -21,19 +21,18 @@ export default function Module(client: Client): Client {
      * // TODO Emit events?
      */ 
     client.raw.on('worldMetadata', async ([title, plays, owner]) => {
-        const world = await client.wait_for(() => client.world)
-
-        world.title = title
-        world.owner = owner
-        world.plays = plays
+        if (!client.world) return
+        client.world.title = title
+        client.world.owner = owner
+        client.world.plays = plays
     })
 
     /**
      * TODO
      */
     client.raw.on('worldCleared', async ([]) => {
-        const world = await client.wait_for(() => client.world)
-        world.clear(true)
+        if (!client.world) return
+        client.world.clear(true)
         client.emit('world:clear', [])
     })
 
@@ -41,8 +40,8 @@ export default function Module(client: Client): Client {
      * Reload world with new buffer.
      */
     client.raw.on('worldReloaded', async ([buffer]) => {
-        const world = await client.wait_for(() => client.world)
-        world.init(buffer)
+        if (!client.world) return
+        client.world.init(buffer)
     })
 
     return client

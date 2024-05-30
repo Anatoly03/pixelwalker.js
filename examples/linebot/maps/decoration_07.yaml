@@ -1,0 +1,14 @@
+file-version: 0
+meta:
+  left_y: 1
+  right_y: 1
+width: 1
+height: 2
+palette:
+  - empty
+  - meadow_yellow_flower
+  - bricks_brown
+layers:
+  foreground: "1 2 "
+  background: "0 0 "
+  data: []
