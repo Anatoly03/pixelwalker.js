@@ -122,7 +122,7 @@ export function module(client: Client) {
             wormerData.kills = wormerData.kills + 1
         }
 
-        player.pm(`${gameRound.players.length + 1}. ${TIME}s`)
+        player.pm(`${gameRound.players.length + 1}. ${TIME.toFixed(1)}s`)
 
         const playerData = storedPlayers.byCuid(player.cuid) as StoredPlayer
         playerData.rounds = playerData.rounds + 1
