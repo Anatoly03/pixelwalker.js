@@ -80,7 +80,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Filter by keeping only players that satisfy the predicate. Returns an mutable array copy.
      */
-    public filter(predicate: (value: P, index: number, array: P[]) => boolean) {
+    public filter(predicate: (value: P, index: number) => boolean) {
         return new PlayerArray(this.data.filter(predicate), false)
     }
 
@@ -103,14 +103,14 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Accumulates a result over all player entries and returns.
      */
-    public reduce<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number, array: P[]) => Z, initialValue: Z): Z {
+    public reduce<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number) => Z, initialValue: Z): Z {
         return this.data.reduce<Z>(callback, initialValue)
     }
 
     /**
      * Accumulates a result over all player entries and returns, starting from the right.
      */
-    public reduceRight<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number, array: P[]) => Z, initialValue: Z): Z {
+    public reduceRight<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number) => Z, initialValue: Z): Z {
         return this.data.reduceRight<Z>(callback, initialValue)
     }
 
@@ -227,7 +227,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Mutable Filter
      */
-    public filter_mut(this: PlayerArray<P, true>, predicate: (value: P, index: number, array: P[]) => boolean): this {
+    public filter_mut(this: PlayerArray<P, true>, predicate: (value: P, index: number) => boolean): this {
         this.data = this.data.filter(predicate)
         return this as this
     }
@@ -235,8 +235,8 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Remove players by trait and return all removed results.
      */
-    public remove_all(this: PlayerArray<P, true>, predicate: (value: P, index: number, array: P[]) => boolean) {
-        this.filter_mut((v, i, a) => !predicate(v, i, a))
+    public remove_all(this: PlayerArray<P, true>, predicate: (value: P, index: number) => boolean) {
+        this.filter_mut((v, i) => !predicate(v, i))
         return this.filter(predicate)
     }
 
@@ -275,7 +275,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
 }
 
 export class PlayerMap<Mut extends boolean = false> extends PlayerArray<Player, Mut> {
-    public override filter(predicate: (value: Player, index: number, array: Player[]) => boolean) {
+    public override filter(predicate: (value: Player, index: number) => boolean) {
         return new PlayerMap(this.data.filter(predicate), false)
     }
 
