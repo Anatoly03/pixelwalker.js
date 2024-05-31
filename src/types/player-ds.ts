@@ -143,10 +143,10 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Sort by attribute or mapping of players
      */
-    public sortBy<Z extends string | number | boolean>(callback: (p: P) => Z) {
+    public sortBy(callback: (p: P) => keyof P) {
         this.data.sort((p1, p2) => {
-            const m1 = callback(p1),
-                m2 = callback(p2)
+            const m1 = callback(p1) as any,
+                m2 = callback(p2) as any
 
             if (Number.isInteger(m1))
                 return m1 as number - (m2 as number)
@@ -236,8 +236,9 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Remove players by trait and return all removed results.
      */
     public remove_all(this: PlayerArray<P, true>, predicate: (value: P, index: number) => boolean) {
+        const filtered = this.filter(predicate)
         this.filter_mut((v, i) => !predicate(v, i))
-        return this.filter(predicate)
+        return filtered
     }
 
     /**

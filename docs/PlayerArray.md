@@ -49,21 +49,62 @@ Try to find first player that matches a callback function truthy.
 
 Returns true, if input parameter is included in the data structure. Per default, matching is done over the `cuid` parameter, but the map of in game players does it over a custom `id`
 
-#### `.reduce()`
-#### `.reduceRight()`
-#### `.reverse()`
-#### `.some()`
-#### `.sort()`
-#### `.sortBy()`
+#### `.reduce<Z>((Z, P, number) => Z, Z): Z`, `.reduceRight<Z>(...)`
+
+Accumulates a value of type `Z` over a callback function with the lambda `(previousValue, currentPlayer, index) => newValue` over all players and returns the result. Additional a second parameter can be defined, which is the initial value of the accumulator. `reduceRight` accumulates from the right to the left.
+
+#### `.reverse(): this`
+
+Reverse Array elements.
+
+#### `.some((P) => boolean): boolean`
+
+Matches against all players and returns true if and only if at least one player in the array returns true on a given callback function.
+
+#### `.sort((P, P) => number): this`
+
+Sort the array with a given comparison function.
+
+#### `.sortBy((P) => keyof P)`
+
+Equivalent to sort, except it is a macro for specifically sorting by player keys: `.sortBy(p => p.username)`
+
 #### `.values()`
-#### `.first()`
-#### `.last()`
-#### `.byCuid()`
-#### `.byUsername()`
-#### `.random()`
-#### `.push()`
-#### `.filter_mut()`
-#### `.remove_all()`
+
+Returns an iterable over the players.
+
+#### `.first()`, `.last()`
+
+Returns the last and first elements respectively.
+
+#### `.byCuid()`, `.byUsername()`
+
+Get players by common attributes.
+
+#### `.random(): P`
+
+Get a random player from the array.
+
+#### `.push(): this`
+
+Requires `Mut` generic to be `true`. Pushes players into the array.
+
+#### `.filter_mut((P, number) => boolean): this`
+
+Requires `Mut` generic to be `true`. Filters the mutable player array and returns the reference to it.
+
+#### `.remove_all((P, number) => boolean): this`
+
+Requires `Mut` generic to be `true`. Mutably filteres all values that do not match the callback (equiv: Keeps only the values that do not match the callback). Removes all values that match the callback and returns them as a new array.
+
 #### `.immut()`
+
+
+
 #### `.toString()`
+
+
+
 #### `.toArray()`
+
+
