@@ -99,12 +99,13 @@ Requires `Mut` generic to be `true`. Mutably filteres all values that do not mat
 
 #### `.immut()`
 
-
+Requires `Mut` generic to be `true`. Returns the same player array without mutability option.
 
 #### `.toString()`
 
-
+Reduces the array to a string variant. 
 
 #### `.toArray()`
 
+Converts the player array to a regular array.
 
