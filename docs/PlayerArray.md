@@ -41,8 +41,14 @@ Matches against all players and returns true if and only if all players in the a
 
 Returns a player array filtered with only players that return true on a callback.
 
-#### `.find()`
-#### `.includes()`
+#### `.find((P) => boolean): P | undefined`
+
+Try to find first player that matches a callback function truthy.
+
+#### `.includes(P): P`
+
+Returns true, if input parameter is included in the data structure. Per default, matching is done over the `cuid` parameter, but the map of in game players does it over a custom `id`
+
 #### `.reduce()`
 #### `.reduceRight()`
 #### `.reverse()`

@@ -96,8 +96,8 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Determines wether a player object is in the array or not.
      */
-    public includes(searchElement: P) {
-        return this.data.includes(searchElement)
+    public includes(searchElement: P): boolean {
+        return this.data.find(p => p.cuid == searchElement.cuid) != undefined
     }
 
     /**
@@ -288,6 +288,10 @@ export class PlayerMap<Mut extends boolean = false> extends PlayerArray<Player, 
         if (username.startsWith('#'))
             return this.byId(parseInt(username.substring(1)))
         return super.byUsername(username)
+    }
+
+    public override includes(searchElement: Player): boolean {
+        return this.data.find(p => p.id == searchElement.id) != undefined
     }
 
     /**
