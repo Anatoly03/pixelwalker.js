@@ -22,7 +22,7 @@ client
 import Client from 'pixelwalker.js'
 
 export default (client) => 
-    client.on('cmd:hello', async ([player, _]) => {
+    client.onCommand('hello', async ([player, _]) => {
         client.say(`🤖 Hello, ${player.username}! `)
     })
 
@@ -62,7 +62,7 @@ In this example a very simple snake trail is generated. The block types are stor
 ##### Replace Block Types
 
 ```js
-client.on('cmd:replace', async ([player, _, from, to]) => {
+client.onCommand('replace', async ([player, _, from, to]) => {
     if (BlockMappings[from] == undefined || BlockMappings[to] == undefined) return
     const blocks = client.world.list(from)
     blocks.map(([x, y, layer]) => client.block(x, y, layer, to))
@@ -87,7 +87,7 @@ client.on('player:block', async ([player, pos, block]) => {
         client.block(pos[0] + x, pos[1] + y, pos[2], block)
 })
 
-client.on('cmd:brush', ([player, _, size]) => {
+client.onCommand('brush', ([player, _, size]) => {
     const value = parseInt(size)
     brushes[player.id] = value != NaN ? value : 1
 })
