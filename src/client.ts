@@ -26,7 +26,25 @@ import { BlockMappings } from './data/mappings.js'
 import { PlayerArray, GamePlayerArray } from './types/player-ds.js'
 
 /**
- * @class Client
+ * @example Snake Tail
+ * ```ts
+ * import Client from 'pixelwalker.js'
+ * const client = new Client({ token })
+ * 
+ * client.on('start', () => client.say('🤖 Connected!'))
+ * 
+ * const blocks = ['glass_red', 'glass_orange', 'glass_yellow', 'glass_green', 'glass_cyan', 'glass_blue', 'glass_purple', 'glass_magenta', 0]
+ * 
+ * client.on('player:block', async ([player, pos, block]) => {
+ *     if (block.name == 'empty') return
+ *     if (!blocks.includes(block.name)) return
+ * 
+ *     await client.wait(250)
+ *     client.block(pos[0], pos[1], pos[2], blocks[blocks.indexOf(block.name) + 1])
+ * })
+ * 
+ * client.connect(world_id)
+ * ```
  */
 export default class Client extends EventEmitter<LibraryEvents> {
     /**
