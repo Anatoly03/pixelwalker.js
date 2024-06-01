@@ -29,31 +29,75 @@ import { PlayerArray, GamePlayerArray } from './types/player-ds.js'
  * @class Client
  */
 export default class Client extends EventEmitter<LibraryEvents> {
+    /**
+     * Connection State Marker
+     */
     #isConnected = false
+
+    /**
+     * PocketBase API
+     */
     #pocketbase: PocketBase
+
+    /**
+     * Socket that connects with the game
+     */
     #socket: WebSocket | null
 
+    /**
+     * All registered commands.
+     */
     #command: EventEmitter<{[keys: string]: [[Player, ...string[]]]}> = new EventEmitter()
+
+    /**
+     * All registered command permissions
+     */
     #command_permissions: [string, (p: Player) => boolean][] = []
 
+    /**
+     * @todo @ignore
+     */
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
+
+    /**
+     * @ignore @todo
+     */
     public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
 
+    /**
+     * @ignore
+     */
     public readonly block_scheduler: BlockScheduler
     
+    /**
+     * If the client is connected, stores a reference to the player instance, which the client controls.
+     */
     public self: SelfPlayer | null = null
+
+    /**
+     * @todo
+     */
     public world: World | null = null
-    
-    public chatPrefix: string | undefined
+
+    /**
+     * @ignore Command prefici which the bot respond to
+     */
     public cmdPrefix: string[] = ['!', '.']
 
+    /**
+     * @ignore Stores the chat prefix which the bot uses to append to messages.
+     */
+    public chatPrefix: string | undefined
+
     readonly #players: GamePlayerArray<true>
+
     readonly #globalPlayers: PlayerArray<PlayerBase, true>
 
     /**
      * Create a new Client instance, by logging in with a token.
      * @param {string} token The token which is used to sign into pocketbase.
-     * @example This is a standart way of creating a new Client instance
+     * @example
+     * This is a standart way of creating a new Client instance
      * ```ts
      * import 'dotenv/config'
      * const client = new Client({ token: process.env.TOKEN as string })
@@ -224,14 +268,20 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /**
-     * @todo
+     * @todo @ignore
+     * @example
+     * ```ts
+     * client.players
+     *   .filter(p => !p.god)
+     *   .teleport(0, 0)
+     * ```
      */
     get players(): GamePlayerArray<false> {
         return this.#players.immut() as GamePlayerArray<false>
     }
 
     /**
-     * @todo
+     * @todo @ignore
      */
     get globalPlayers(): PlayerArray<PlayerBase, false> {
         return this.#globalPlayers.immut()
@@ -276,6 +326,30 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /**
+     * Register a help command. Creates an event listener for a help command, that will navigate through all registered commands and display the ones you have permissions to use.
+     * @param cmd The help command, defaults to `help`
+     * @returns {(client: Client): Client} Factory for a help command module
+     * @example Module `HelpCommand`
+     * ```ts
+     * const client = new Client({ token })
+     * client.include(Client.HelpCommand('cmds'))
+     * ```
+     */
+    public static HelpCommand(cmd: string = 'help') {
+        return (client: Client) => {
+            client.onCommand(cmd, () => true, ([player]) => {
+                const list = client.#command_permissions
+                    .filter(([pl, cb]) => cb(player))
+                    .map(([p]) => client.cmdPrefix[0] + p)
+                    .filter((v, i, a) => a.indexOf(v) === i) // Remove duplicates: https://stackoverflow.com/a/14438954/16002144
+                    .join(' ')
+                return list.length > 0 ? list : undefined
+            })
+            return client
+        }
+    }
+
+    /**
      * Register a command with permission checking. If the command returns a string value it is privately messaged to the person who executed the command.
      * @example
      * ```ts
@@ -316,25 +390,30 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this
     }
 
-    /** Set an event listener for a help command, that will navigate through all registered commands and display the ones you can use. */
-    registerHelpCommand(cmd: string) {
-        this.onCommand(cmd, () => true, ([player]) => {
-            const list = this.#command_permissions
-                .filter(([pl, cb]) => cb(player))
-                .map(([p]) => this.cmdPrefix[0] + p)
-                .filter((v, i, a) => a.indexOf(v) === i) // Remove duplicates: https://stackoverflow.com/a/14438954/16002144
-                .join(' ')
-            return list.length > 0 ? list : undefined
-        })
-        return this
-    }
-
-    setChatPrefix(prefix: string) {
+    /**
+     * Set a global prefix that will be always appended to your chat messages.
+     * @param {string} prefix 
+     * @returns {this}
+     * @example
+     * ```ts
+     * client.setChatPrefix('[BOT]')
+     * ```
+     */
+    setChatPrefix(prefix: string): this {
         this.chatPrefix = prefix
         return this
     }
 
-    registerCommandPrefix(allowed: string[]) {
+    /**
+     * Set global allowed commands prefici that the API will listen to.
+     * @param {string} prefix 
+     * @returns {this}
+     * @example
+     * ```ts
+     * client.registerCommandPrefix(['!', '\\', '...', ',,,,', '@'])
+     * ```
+     */
+    registerCommandPrefix(allowed: string[]): this {
         this.cmdPrefix = allowed
         return this
     }

@@ -8,7 +8,7 @@ process.on('SIGINT', () => {
     })    
 })
 
-const client = new Client({ token: process.env.TOKEN })
+const client = new Client({ token: process.env.TOKEN as string })
 export default client
 
 import * as Checkpoint from './checkpoint.js'
@@ -26,10 +26,10 @@ client
     .on('player:join', ([p]) => p.god(true)) // Give everyone god mode
     .once('start', ([self]) => self.set_god(true)) // Self should not be part of players in game.
     .on('player:join', ([player]) => console.log(`${player.username} joined: ${player.cuid}`))
-    .registerHelpCommand('help')
+    .include(Client.HelpCommand('help'))
     .include(Checkpoint)
     .include(History)
     .include(Settings)
-    .include(Modules.BanModule('bans.yaml'))
+    .include(new Modules.BanModule('bans.yaml'))
     // .include(Modules.Debug(['*']))
-    .connect(process.env.WORLD_ID)
+    .connect(process.env.WORLD_ID as string)
