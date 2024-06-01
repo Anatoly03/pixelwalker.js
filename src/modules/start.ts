@@ -1,6 +1,6 @@
 import Client from "../client.js"
 import { MessageType } from "../data/consts.js"
-import { Magic, Bit7 } from "../types.js"
+import { Magic, Bit7 } from "../types/message-bytes.js"
 import { GamePlayerArray } from "../types/player-ds.js"
 import Player, { PlayerBase, SelfPlayer } from "../types/player.js"
 import World from "../types/world.js"

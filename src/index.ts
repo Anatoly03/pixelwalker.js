@@ -6,7 +6,7 @@ export { default as Block, WorldPosition, BlockIdentifier } from "./types/block.
 export { default as Player, PlayerBase, SelfPlayer } from './types/player.js'
 export { PlayerArray, GamePlayerArray } from './types/player-ds.js'
 export * as Animation from './types/animation.js'
-export * as Type from './types.js'
+export * as BitType from './types/message-bytes.js'
 export { MessageType } from './data/consts.js'
 export { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
 export { SolidBlocks, Decorations, Property, BlockProperties } from './data/block_properties.js'

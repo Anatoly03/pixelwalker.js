@@ -1,6 +1,6 @@
 import Client from "../client"
 import { HeaderTypes, MessageType, SpecialBlockData } from "../data/consts.js"
-import { Bit7, Boolean, Byte, Int32, Magic } from "../types.js"
+import { Bit7, Boolean, Byte, Int32, Magic } from "../types/message-bytes.js"
 import Block from "../types/block.js"
 import BaseScheduler from "./base.js"
 

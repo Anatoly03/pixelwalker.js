@@ -7,7 +7,7 @@ import RoomTypes from './data/room_types.js'
 
 import { read7BitInt, deserialise } from './math.js'
 import { MessageType, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents, SystemMessageEvents } from './data/consts.js'
-import { Magic } from './types.js'
+import { Magic } from './types/message-bytes.js'
 import Block, { BlockIdentifier } from './types/block.js'
 import Player, { PlayerBase, SelfPlayer } from './types/player.js'
 

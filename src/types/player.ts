@@ -1,7 +1,6 @@
 import Client from "../client.js"
 import { MessageType } from "../data/consts.js"
-import { Bit7, Magic, Boolean, Int32, Double, String } from "../types.js"
-import util from 'util'
+import { Bit7, Magic, Boolean, Int32, Double, String } from "./message-bytes.js"
 
 /**
  * @example
