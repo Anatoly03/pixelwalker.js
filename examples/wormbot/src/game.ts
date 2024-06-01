@@ -184,6 +184,10 @@ export function module(client: Client) {
                 p.teleport(TOP_LEFT.x + x, TOP_LEFT.y + y)
             })
 
+            client.players
+                .filter(p => !gameRound.players.find(q => q.id == p.id))
+                .forEach(p => teleport_non_player(p))
+
             await client.wait(2000)
 
             console.log('Active in Round: ' + gameRound.players.map(p => p.username).join(' '))
@@ -235,6 +239,24 @@ export function module(client: Client) {
         await client.wait(WORM_SPEED)
 
         TICK += 1
+    })
+
+
+    async function teleport_non_player(player: Player) {
+        if (gameRound.players.map(p => p.id).includes(player.id)) return
+
+        if (player.x > TOP_LEFT.x && player.y > TOP_LEFT.y && player.x < TOP_LEFT.x + width - 1 && player.y < TOP_LEFT.y + height - 1) {
+            player.teleport(TOP_LEFT.x + Math.floor(width / 2), TOP_LEFT.y + height)
+            // player.pm('[BOT] While not actively participating in game, do not annoy those who are.')
+        }
+    }
+
+    client.raw.on('playerMoved', async ([pid]) => {
+        if (!GAME_IS_RUNNING) return
+        const player = client.players.byId(pid)
+        if (!player) return
+        if (player.username == 'ANATOLY') return
+        teleport_non_player(player)
     })
 
     client.onCommand('start', is_bot_admin, () => {
