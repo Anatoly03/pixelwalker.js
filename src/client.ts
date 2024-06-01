@@ -65,7 +65,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * Create a new Client instance, by logging in with a username and a password.
      * @param {string} user Username
      * @param {string} pass Password
-     * @example ```ts
+     * @example
+     * ```ts
      * import 'dotenv/config'
      * const client = new Client({ user: 'user@example.com', pass: 'PixieWalkie' })
      * ```
@@ -104,7 +105,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * Connect client instance to a room with default room type. 
      * @param {string} world_id The identifier of the room to connect to.
-     * @example ```ts
+     * @example
+     * ```ts
      * const client = new Client({ token })
      * client.connect('r450e0e380a815a') // Connect to the room: https://pixelwalker.net/world/r450e0e380a815a
      * ```
@@ -194,11 +196,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     /**
      * Connection state of the client. Returns true, if the client is currently holding an active connection.
-     * @example ```ts
+     * @example
+     * ```ts
      * const client = new Client({ token })
-     * console.log('Before Connection:', client.connected)
+     * console.log('Before Connection:', client.connected) // false
      * await client.connect(world_id)
-     * console.log('After Connection:', client.connected)
+     * console.log('After Connection:', client.connected) // true
      * ```
      */
     public get connected(): boolean {
@@ -206,7 +209,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /**
-     * @example ```ts
+     * @example
+     * ```ts
      * const client = new Client({ token })
      * await client.connect(world_id)
      * client.disconnect()
@@ -249,7 +253,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     /**
      * Send raw bytes to server
-     * @example ```ts
+     * @example
+     * ```ts
      * import { MessageType, Type } from "pixelwalker.js"
      * const { Bit7, Magic, Boolean, Int32, Double, String } = Type
      * 
@@ -272,7 +277,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     /**
      * Register a command with permission checking. If the command returns a string value it is privately messaged to the person who executed the command.
-     * @example ```ts
+     * @example
+     * ```ts
      * client.onCommand('god_all', p => p.isAdmin, ([player, _, state]) => {
      *     let s = state == 'true'
      *     let l = client.players.forEach(q => q.god(s)).length
@@ -284,7 +290,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     /**
      * Register a (global use) command. If the command returns a string value it is privately messaged to the person who executed the command.
-     * @example ```ts
+     * @example
+     * ```ts
      * client.onCommand('edit', ([player, _, state]) => {
      *     let s = state == 'true'
      *     player.edit(s)
