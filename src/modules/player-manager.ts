@@ -117,6 +117,9 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
         client.raw.on('playerTouchBlock', async ([id, x, y, bid]) => {
             const player = players.byId<true>(id)
             const block_name = BlockMappingsReverse[bid]
+
+            if (!block_name)
+                return console.warn('[WARN] Unknown block id: ' + bid)
             
             if (block_name.startsWith('key_'))
                 return client.emit('world:key', [player, block_name.substring(4)])
