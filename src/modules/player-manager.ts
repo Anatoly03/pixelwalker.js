@@ -1,9 +1,9 @@
 import Client from "../client"
 import { BlockMappingsReverse } from "../data/mappings.js"
-import { PlayerArray, PlayerMap } from "../types/player-ds"
+import { PlayerArray, GamePlayerArray } from "../types/player-ds"
 import Player, { PlayerBase } from "../types/player.js"
 
-export function GamePlayerModule(players: PlayerMap<true>) {
+export function GamePlayerModule(players: GamePlayerArray<true>) {
     return (client: Client) => {
         /**
          * On player join, create a player object with data

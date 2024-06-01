@@ -4,7 +4,7 @@ export { default as World } from './types/world.js'
 export { default as Structure } from './types/structure.js'
 export { default as Block, WorldPosition, BlockIdentifier } from "./types/block.js"
 export { default as Player, PlayerBase, SelfPlayer } from './types/player.js'
-export { PlayerArray, PlayerMap } from './types/player-ds.js'
+export { PlayerArray, GamePlayerArray as PlayerMap } from './types/player-ds.js'
 export * as Animation from './types/animation.js'
 export * as Type from './types.js'
 export { MessageType } from './data/consts.js'

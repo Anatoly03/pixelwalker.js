@@ -275,9 +275,9 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     }
 }
 
-export class PlayerMap<Mut extends boolean = false> extends PlayerArray<Player, Mut> {
+export class GamePlayerArray<Mut extends boolean = false> extends PlayerArray<Player, Mut> {
     public override filter(predicate: (value: Player, index: number) => boolean) {
-        return new PlayerMap(this.data.filter(predicate), false)
+        return new GamePlayerArray(this.data.filter(predicate), false)
     }
 
     /**

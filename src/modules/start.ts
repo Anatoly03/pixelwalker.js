@@ -1,11 +1,11 @@
 import Client from "../client.js"
 import { MessageType } from "../data/consts.js"
 import { Magic, Bit7 } from "../types.js"
-import { PlayerMap } from "../types/player-ds.js"
+import { GamePlayerArray } from "../types/player-ds.js"
 import Player, { PlayerBase, SelfPlayer } from "../types/player.js"
 import World from "../types/world.js"
 
-export default function StartModule(players: PlayerMap<true>) {
+export default function StartModule(players: GamePlayerArray<true>) {
     return (client: Client) => {
         /**
          * On init, set everything up

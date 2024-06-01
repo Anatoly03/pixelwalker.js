@@ -23,7 +23,7 @@ import { GamePlayerModule, BasePlayerModule } from "./modules/player-manager.js"
 
 import BlockScheduler from './scheduler/scheduler-block.js'
 import { BlockMappings } from './data/mappings.js'
-import { PlayerArray, PlayerMap } from './types/player-ds.js'
+import { PlayerArray, GamePlayerArray } from './types/player-ds.js'
 
 export default class Client extends EventEmitter<LibraryEvents> {
     #isConnected = false
@@ -45,7 +45,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public chatPrefix: string | undefined
     public cmdPrefix: string[] = ['!', '.']
 
-    readonly #players: PlayerMap<true>
+    readonly #players: GamePlayerArray<true>
     readonly #globalPlayers: PlayerArray<PlayerBase, true>
 
     constructor(args: { token?: string });
@@ -56,7 +56,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.#pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
         this.#socket = null
 
-        this.#players = new PlayerMap<true>()
+        this.#players = new GamePlayerArray<true>()
         this.#globalPlayers = new PlayerArray<PlayerBase, true>()
 
         if (args.token) {
@@ -172,8 +172,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.#socket?.close()
     }
 
-    get players(): PlayerMap<false> {
-        return this.#players.immut() as PlayerMap<false>
+    get players(): GamePlayerArray<false> {
+        return this.#players.immut() as GamePlayerArray<false>
     }
 
     get globalPlayers(): PlayerArray<PlayerBase, false> {
