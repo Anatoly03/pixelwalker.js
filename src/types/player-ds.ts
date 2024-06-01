@@ -135,9 +135,23 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Sort players with comparator lambda.
      */
-    public sort(compareFn: ((a: P, b: P) => number) = ((player1, player2) => parseInt(player1.username, 36) - parseInt(player2.username, 36))) {
+    public sort(compareFn: ((a: P, b: P) => number) = ((player1, player2) => parseInt(player1.username, 36) - parseInt(player2.username, 36))): this {
         this.data.sort(compareFn)
         return this
+    }
+
+    /**
+     * Shuffle the array with a random order.
+     * 
+     * @example Shuffled order of player turns for all players without god mode
+     * ```ts
+     * client.players
+     *     .filter(p => !p.god)
+     *     .shuffle()
+     * ```
+     */
+    public shuffle(): this {
+        return this.sort(() => Math.random() - .5)
     }
 
     /**
