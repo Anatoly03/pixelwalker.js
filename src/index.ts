@@ -13,6 +13,9 @@ export { SolidBlocks, Decorations, Property, BlockProperties } from './data/bloc
 export { RoomTypes } from './data/room_types.js'
 export { default as PlayerStorage } from './modules/player-storage.js'
 
+/**
+ * @namespace
+ */
 export const Modules = {
     Debug: (await import ('./modules/debug.js')).default,
     PlayerKeyManager: (await import ('./modules/player-keys-manager.js')).default,
@@ -20,6 +23,9 @@ export const Modules = {
     StorageModule: (await import('./modules/player-storage.js')).default
 }
 
+/**
+ * @ignore
+ */
 export const Util = {
     GameRound: (await import ('./util/game-round.js')).GameRound,
     Breakpoint: (await import ('./util/breakpoint.js')).Breakpoint
