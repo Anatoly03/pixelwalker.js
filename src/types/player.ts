@@ -4,12 +4,21 @@ import { Bit7, Magic, Boolean, Int32, Double, String } from "../types.js"
 import util from 'util'
 
 /**
- * Player Base
+ * @example
+ * ```ts
+ * const player = new PlayerBase({
+ *     cuid: 'abcdef',
+ *     username: 'USER'
+ * })
+ * ```
  */
 export class PlayerBase {
     public readonly cuid: string
     public readonly username: string
     
+    /**
+     * Create a new base instance of a Player.
+     */
     constructor(args: {
         cuid: string
         username: string
@@ -18,17 +27,21 @@ export class PlayerBase {
         this.username = args.username
     }
 
-    public toString() {
+    /**
+     * @returns Username of the player.
+     */
+    public toString(): string {
         return this.username
     }
-
-    // public [util.inspect.custom](): string {
-    //     return `${this.constructor.name} {\n  cuid: '${this.cuid}',\n  username: '${this.username}',\n  ...\n}`
-    // }
 }
 
 /**
- * Player in World
+ * ```ts
+ * const player = client.players.random()
+ * player.crown(true)
+ * player.edit(true)
+ * player.god(false)
+ * ```
  */
 export default class Player extends PlayerBase {
     protected readonly client: Client
@@ -52,6 +65,9 @@ export default class Player extends PlayerBase {
     public deaths: number
     public checkpoint: [number, number] | null
 
+    /**
+     * @ignore
+     */
     constructor(args: {
         client: Client
         id: number
@@ -98,56 +114,152 @@ export default class Player extends PlayerBase {
         return this.cuid == other.cuid
     }
 
+    /**
+     * @param {string} content The message to send to the user.
+     * @example
+     * ```ts
+     * user.pm('Help: !help !admin !ping')
+     * ```
+     */
     public async pm(content: string) {
-        // TODO add chat prefix
         this.client.say(`/pm #${this.id}` + (this.client.chatPrefix ? ' ' + this.client.chatPrefix : ''), content)
     }
 
+    /**
+     * @param {string} content 
+     * @example
+     * ```ts
+     * client.onCommand('deaths', ([player]) => {
+     *     player.respond(`Your deaths: ${player.deaths}`)
+     * })
+     * ```
+     * This example will print the following into the chat, if `JOHN` executes the command:
+     * ```
+     * JOHN: Your deaths: 123
+     * ```
+     */
     public async respond(content: string) {
-        // TODO add chat prefix
         this.client.say(`${this.username}:` + (this.client.chatPrefix ? ' ' + this.client.chatPrefix : ''), content)
     }
 
+    /**
+     * @param {string} reason 
+     * @example
+     * ```ts
+     * client.on('player:join', ([player]) => {
+     *     if (!player.username.includes('EVIL')) return
+     *     player.kick('I suspect you are evil.')
+     * })
+     * ```
+     */
     public async kick(reason: string = "Tsk Tsk Tsk") {
         this.client.say(`/kick #${this.id} ${reason}`, '')
     }
 
+    /**
+     * Modify a users' edit rights.
+     * @param {true | false} value 
+     * @example
+     * ```ts
+     * client.on('player:join', ([player]) => {
+     *     player.edit(true)
+     *     player.god(false)
+     * })
+     * ```
+     */
     public async edit(value: boolean) {
         this.client.say(`/${value ? 'giveedit' : 'takeedit'} #${this.id}`, '')
     }
 
+    /**
+     * Modify a users' god mode rights.
+     * @param {true | false} value 
+     * @example
+     * ```ts
+     * client.on('player:join', ([player]) => {
+     *     player.god(true)
+     * })
+     * ```
+     */
     public async god(value: boolean) {
         this.client.say(`/${value ? 'givegod' : 'takegod'} #${this.id}`, '')
     }
 
+    /**
+     * Modify a users' crown ownership. Note: At any point in time there can only be one player with the crown.
+     * @param {true | false} value 
+     * @example
+     * ```ts
+     * client.on('player:join', ([player]) => {
+     *     player.crown(true)
+     * })
+     * ```
+     */
     public async crown(value: boolean) {
         this.client.say(`/${value ? 'givecrown' : 'takecrown'} #${this.id}`, '')
     }
 
-    public async teleport(x: number, y:number): Promise<void>;
-    public async teleport(p: Player): Promise<void>;
+    /**
+     * 
+     * @param x x Coordinate of the player
+     * @param y y Coordinate of the player
+     * @example
+     * Bizarre Concept Idea: In this example, if a `player` places a checkpoint in the world, teleports the current `crowned` player to the position and gives the crown to the person who placed the checkpoint.
+     * ```ts
+     * client.on('player:block', ([player, [x, y, _], block]) => {
+     *     if (block.name !== 'checkpoint') return
+     *     const crowned = client.players.byCrown()
+     *     crowned?.teleport(x, y)
+     *     player.crown(true)
+     * })
+     * ```
+     */
+    public async teleport(x: number, y:number): Promise<void>
+
+    /**
+     * @param {Player} p 
+     * @example
+     * ```ts
+     * function swap_players(a: Player, b: Player) {
+     *     const pos = { x: a.x, y: b.y }
+     *     a.teleport(b)
+     *     b.teleport(pos.x, pos.y)
+     * }
+     * ```
+     */
+    public async teleport(p: Player): Promise<void>
+
     public async teleport(x: number | Player, y?: number) {
         if (typeof x == 'number' && typeof y == 'number')
             this.client.say(`/tp #${this.id} ${x} ${y}`, '')
         else if (x instanceof Player)
-            this.client.say(`/tp #${this.id} #${x.id}`, '')
+            this.client.say(`/tp #${this.id} ${x.x} ${x.y}`, '')
     }
 
+    /**
+     * @example
+     * ```ts
+     * player.reset()
+     * ```
+     */
     public async reset() {
         this.client.say(`/resetplayer #${this.id}`, '')
     }
-
-    // public [util.inspect.custom](): string {
-    //     return `${this.constructor.name} {\n  id: '${this.id}',\n  username: '${this.username}',\n  ...\n}`
-    // }
 }
 
 /**
- * Self Player
+ * ```
+ * client.on('start', () => {
+ *     client.self.set_god(true)
+ * })
+ * ```
  */
 export class SelfPlayer extends Player {
     private move_tick = 0
 
+    /**
+     * @ignore
+     */
     constructor(args: {
         client: Client
         id: number
@@ -171,8 +283,17 @@ export class SelfPlayer extends Player {
         }})
     }
 
+    /**
+     * 
+     * @param content 
+     */
     public say(content: string): void;
+
+    /**
+     * @ignore
+     */
     public say(preamble: string, content: string): void;
+
     public say(preamble: string, content?: string) {
         if (content == undefined) {
             return this.say(this.client.chatPrefix || '', preamble)

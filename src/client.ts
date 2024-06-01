@@ -450,26 +450,46 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this.world?.put_block(x, y, layer, block) || Promise.reject('The `client.world` object was not loaded.')
     }
 
-    public say(content: string): void;
-    public say(preamble: string, content: string): void;
+    /**
+     * @param {string} content Write to chat
+     */
+    public say(content: string): void
+
+    /**
+     * @ignore
+     */
+    public say(preamble: string, content: string): void
+
     public say(preamble: string, content?: string) {
         if (content == undefined)
             return this.say(this.chatPrefix || '', preamble)
         return this.self?.say(preamble, content)
     }
 
+    /**
+     * Wrapper for `client.self` methods
+     */
     public god(value: boolean, mod_mode: boolean) {
         return this.self?.[mod_mode ? 'set_mod' : 'set_god'](value)
     }
 
+    /**
+     * Wrapper for `client.self.face()` method
+     */
     public face(value: number) {
         return this.self?.set_face(value)
     }
 
+    /**
+     * Wrapper for `client.self.move()` method
+     */
     public move(x: number, y: number, xVel: number, yVel: number, xMod: number, yMod: number, horizontal: -1 | 0 | 1, vertical: -1 | 0 | 1, space_down: boolean, space_just_down: boolean) {
         return this.self?.move(x, y, xVel, yVel, xMod, yMod, horizontal, vertical, space_down, space_just_down)
     }
 
+    /**
+     * @todo
+     */
     public fill(xt: number, yt: number, fragment: Structure, args?: { animation?: (b: any) => any, ms?: number, write_empty?: boolean }) {
         return this.world?.paste(xt, yt, fragment, args)
     }
