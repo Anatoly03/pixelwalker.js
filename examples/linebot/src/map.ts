@@ -115,11 +115,28 @@ export function reset_everything() {
     PIECE_X = undefined
 }
 
+function get_random_weight_piece() {
+    const pieces = Object.keys(snapshots)
+        .map<[string, number]>(k => [k, snapshots[k].meta.frequency])
+        .sort(([_, a], [__, b]) => b - a)
+    const total = pieces.reduce((c, [_, w]) => c + w, 0)
+    let random = Math.random() * total
+    let index = 0
+    const piece = pieces.find(([_, w], i) => ++index && ((random -= w) < 0)) as [string, number]
+    return [piece, index] as [[string, number], number]
+}
+
 export function plan_to_queue() {
     const calculated_y_joint = QUEUE.map(([_, piece]) => piece.meta.right_y - piece.meta.left_y).reduce((p, c) => p += c, JOINT.y)
-    const maps = Object.keys(snapshots)
-    let random = Math.floor(Math.random() * maps.length)
-    let piece: Structure | undefined
+
+    const maps = Object
+        .keys(snapshots)
+        .sort((a, b) => snapshots[b].meta.frequency - snapshots[a].meta.frequency)
+    
+    // let random = Math.floor(Math.random() * maps.length)
+    // let piece: Structure | undefined
+    let [[piece_name, weight], random] = get_random_weight_piece()
+    let piece = snapshots[piece_name]
 
     for (let i = 0; i <= maps.length; i++) {
         random = (random + 1) % maps.length // Advance through maps till a proper one is found.
@@ -130,6 +147,8 @@ export function plan_to_queue() {
         piece = snapshots[random_piece]
         const piece_direction = piece.meta.right_y - piece.meta.left_y
 
+        process.stdout.write("Try: ")
+
         // Absolute no go
         if (calculated_y_joint - piece.meta.left_y + piece.height >= map.height - ABSOLUTE_VERTICAL_BORDER) continue
         if (calculated_y_joint - piece.meta.left_y <= 1 + ABSOLUTE_VERTICAL_BORDER) continue
@@ -137,6 +156,8 @@ export function plan_to_queue() {
         // Unwanted
         if (i < 20 && calculated_y_joint - piece.meta.left_y + piece.height > map.height - VERTICAL_BORDER && piece_direction >= 0) continue
         if (i < 20 && calculated_y_joint - piece.meta.left_y < VERTICAL_BORDER && piece_direction <= 0) continue
+
+        console.log(`I chose piece with weight ${piece.meta.frequency}`)
 
         return QUEUE.push([random_piece, piece])
     }
