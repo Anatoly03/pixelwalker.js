@@ -7,6 +7,7 @@ import path from 'node:path'
 export const WIDTH = 200
 export const HEIGHT = 50
 
+const snapshots: { [keys: string]: Structure } = {}
 const empty_map = new Structure(WIDTH, HEIGHT)
 const map = new Structure(WIDTH, HEIGHT)
 
@@ -27,6 +28,20 @@ let PIECE_X: number | undefined
 export let PLATFORM_SIZE = 40
 export let SIZE = 0
 export let SPEED = 300
+
+function create_snapshot(): number {
+    const files = fs.readdirSync(TILES_PATH)
+
+    for (const file of files) {
+        const value = fs.readFileSync(path.join(TILES_PATH, file)).toString()
+        const structure = Structure.fromString(value)
+        snapshots[file] = structure
+    }
+
+    return files.length
+}
+
+create_snapshot()
 
 export function create_empty_arena(): Promise<any>;
 export function create_empty_arena(platform_length: number): Promise<number[][]>
@@ -102,16 +117,17 @@ export function reset_everything() {
 
 export function plan_to_queue() {
     const calculated_y_joint = QUEUE.map(([_, piece]) => piece.meta.right_y - piece.meta.left_y).reduce((p, c) => p += c, JOINT.y)
-    const maps = fs.readdirSync(TILES_PATH)
+    const maps = Object.keys(snapshots)
     let random = Math.floor(Math.random() * maps.length)
-    let piece
+    let piece: Structure | undefined
 
     for (let i = 0; i <= maps.length; i++) {
         random = (random + 1) % maps.length // Advance through maps till a proper one is found.
 
         const random_piece = maps[random]
-        const value = fs.readFileSync(path.join(TILES_PATH, random_piece)).toString()
-        piece = Structure.fromString(value)
+        // const value = fs.readFileSync(path.join(TILES_PATH, random_piece)).toString()
+        // piece = Structure.fromString(value)
+        piece = snapshots[random_piece]
         const piece_direction = piece.meta.right_y - piece.meta.left_y
 
         // Absolute no go
@@ -124,6 +140,8 @@ export function plan_to_queue() {
 
         return QUEUE.push([random_piece, piece])
     }
+
+    if (!piece) throw new Error('Maps did not exists when planning to queue.')
 
     console.warn(`Problems finding proper piece: JOINT Y = ${JOINT.y}, MAP HEIGHT = ${map.height}, CALCULATED DELTA JOINT Y = ${calculated_y_joint}, PIECE LEFT = ${piece.meta.left_y}, PIECE HEIGHT = ${piece.height}, QUEUE LENGTH = ${QUEUE.length}`)
     console.error(`After ${maps.length} iterations could not find proper piece: Y_JOINT = ${calculated_y_joint}`)
@@ -227,6 +245,10 @@ export function set_max_size(x: number) {
 }
 
 export function module(client: Client) {
+    client.onCommand('reload', is_bot_admin, ([player]) => {
+        return `Updated ${create_snapshot()} tiles.`
+    })
+
     client.onCommand('*empty', is_bot_admin, ([player]) => {
         return create_empty_arena()
     })
@@ -238,11 +260,14 @@ export function module(client: Client) {
     client.onCommand('queue', is_bot_admin, ([player, _, name]) => {
         if (!name)
             return
+        if (!Object.keys(snapshots).includes(name))
+            create_snapshot()
         if (!fs.existsSync(path.join(TILES_PATH, name)))
             return
 
-        const value = fs.readFileSync(path.join(TILES_PATH, name)).toString()
-        const piece = Structure.fromString(value)
+        // const value = fs.readFileSync(path.join(TILES_PATH, name)).toString()
+        // const piece = Structure.fromString(value)
+        const piece = snapshots[name]
         QUEUE.push([name, piece])
 
         return player.pm('[BOT] Added to Queue.')
@@ -272,6 +297,8 @@ export function module(client: Client) {
         if (!name) return
 
         name = name + '.yaml'
+
+        // Do not use snapshot here
         
         if (!fs.existsSync(path.join(TILES_PATH, name)))
             return 'Not Found'
