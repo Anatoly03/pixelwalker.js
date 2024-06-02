@@ -17,6 +17,7 @@ export const VERTICAL_BORDER = 13
 export const ABSOLUTE_VERTICAL_BORDER = 7
 
 let FRAME = new Block('beveled_magenta')
+let DISPLAY_TILE: string | undefined
 
 export const JOINT = { x: 0, y: 0 }
 export const LEFT_JOINT = { x: 0, y: 0 }
@@ -132,7 +133,7 @@ export function plan_to_queue() {
     const maps = Object
         .keys(snapshots)
         .sort((a, b) => snapshots[b].meta.frequency - snapshots[a].meta.frequency)
-    
+
     // let random = Math.floor(Math.random() * maps.length)
     // let piece: Structure | undefined
     let [[piece_name, weight], random] = get_random_weight_piece()
@@ -170,13 +171,13 @@ export function plan_to_queue() {
 }
 
 /** Advance one "line" of a piece */
-export async function advance_one_piece(): Promise<boolean> { 
+export async function advance_one_piece(): Promise<boolean> {
     if (!CURRENT_TILE) {
         let _: any;
         [_, CURRENT_TILE] = QUEUE.shift() || [undefined, undefined]
         if (CURRENT_TILE == undefined)
             console.error('`advance_one_piece` was called on empty queue')
-            return true
+        return true
     }
 
     let piece = CURRENT_TILE,
@@ -223,7 +224,7 @@ export async function advance_one_piece(): Promise<boolean> {
         // }
 
         LEFT_JOINT.x++
-        SIZE --
+        SIZE--
     }
 
     await client.wait(SPEED)
@@ -298,7 +299,7 @@ export function module(client: Client) {
         if (BlockProperties[k] == Property.Solid || k == 'boost_up')
             FRAME = new Block(k as BlockIdentifier)
     })
-    
+
     // client.on('cmd:*build', ([player]) => {
     //     return build_platform(30)
     // })
@@ -317,12 +318,15 @@ export function module(client: Client) {
     client.onCommand('*display', is_bot_admin, async ([player, _, name]) => {
         if (!name) return
 
+        DISPLAY_TILE = name
         name = name + '.yaml'
 
         // Do not use snapshot here
-        
-        if (!fs.existsSync(path.join(TILES_PATH, name)))
+
+        if (!fs.existsSync(path.join(TILES_PATH, name))) {
+            DISPLAY_TILE = undefined
             return 'Not Found'
+        }
 
         const value = fs.readFileSync(path.join(TILES_PATH, name)).toString()
         const piece = Structure.fromString(value)
@@ -337,8 +341,31 @@ export function module(client: Client) {
         border_piece.paste(1, 1, piece)
 
         await create_empty_arena()
+        await client.fill(offsetx, offsety, border_piece)
 
-        return client.fill(offsetx, offsety, border_piece)
+        client.say('Tile: ' + DISPLAY_TILE)
+    })
+
+    client.onCommand('*tile', is_bot_admin, async ([player, _, key, value]) => {
+        if (!DISPLAY_TILE)
+            return 'Not displaying any tile.'
+
+        if (!key || !value) {
+            return client.say(JSON.stringify(snapshots[DISPLAY_TILE + '.yaml'].meta))
+        }
+
+        let v: string | number | boolean = value
+
+        if (value == 'true') v = true
+        else if (value == 'false') v = false
+        else if (!Number.isNaN(parseInt(value))) v = parseInt(value)
+        else v = value
+
+        snapshots[DISPLAY_TILE + '.yaml'].meta[key] = v
+
+        fs.writeFileSync(path.join(TILES_PATH, DISPLAY_TILE + '.yaml'), snapshots[DISPLAY_TILE + '.yaml'].toString())
+
+        return 'Saved'
     })
 
 
