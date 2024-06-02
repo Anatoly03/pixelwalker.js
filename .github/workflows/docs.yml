@@ -18,41 +18,23 @@ jobs:
       url: "${{ steps.deployment.outputs.page_url }}"
 
     runs-on: "ubuntu-latest"
+
     steps:
-      - id: "checkout"
-        name: "Check out Git repository"
-        uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
 
-      - id: "setup-pnpm"
-        name: "Set up pnpm"
-        uses: "pnpm/action-setup@v2"
+      - uses: actions/setup-node@v4
+
+      - name: "Building Documentation"
+        run: npm run docs
         with:
-          version: "8"
-          run_install: false
-
-      - id: "setup-node"
-        name: "Set up Node.js"
-        uses: "actions/setup-node@v3"
-        with:
-          node-version-file: ".nvmrc"
-          cache: "pnpm"
-
-      - id: "install-dependencies"
-        name: "Install Node.js dependencies"
-        run: |
-          set -euo pipefail
-          pnpm install --frozen-lockfile
-      - id: "build"
-        name: "Build documentation"
-        run: |
-          set -euo pipefail
-          pnpm run build:doc
+            path: "src/"
+      
       - id: "upload-documentation"
-        name: "Upload Pages artifact"
+        name: "Uploading Pages artifact"
         uses: "actions/upload-pages-artifact@v2"
         with:
-          path: "docs/"
+            path: "docs/"
 
       - id: "deployment"
-        name: "Deploy documentation to GitHub Pages"
-        uses: "actions/deploy-pages@v2"
+        name: "Deploy to GitHub Pages"
+        uses: "actions/deploy-pages@v4"
