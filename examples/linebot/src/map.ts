@@ -268,6 +268,32 @@ export function module(client: Client) {
         }
     })
 
+    client.onCommand('*display', is_bot_admin, async ([player, _, name]) => {
+        if (!name) return
+
+        name = name + '.yaml'
+        
+        if (!fs.existsSync(path.join(TILES_PATH, name)))
+            return 'Not Found'
+
+        const value = fs.readFileSync(path.join(TILES_PATH, name)).toString()
+        const piece = Structure.fromString(value)
+        const border_piece = new Structure(piece.width + 2, piece.height + 2)
+
+        piece.replace_all(new Block('basic_gray'), FRAME)
+        border_piece.clear(true)
+
+        const offsetx = TOP_LEFT.x + Math.floor((map.width - border_piece.width) / 2)
+        const offsety = TOP_LEFT.y + Math.floor((map.height - border_piece.height) / 2)
+
+        border_piece.paste(1, 1, piece)
+
+        await create_empty_arena()
+
+        return client.fill(offsetx, offsety, border_piece)
+    })
+
+
     // client.on('cmd:*procedure', async ([player]) => {
     //     await create_empty_arena()
     //     await build_platform(30)
