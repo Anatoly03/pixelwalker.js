@@ -1,11 +1,8 @@
 # https://gist.github.com/mikroskeem/fddaf7a4f80959d6e5f4711904885fae
 
 name: "Publish documentation"
-on: [push]
 
-strategy:
-  matrix:
-    node-version: ['21.4.0']
+on: [push]
 
 jobs:
   publish-documentation:
@@ -23,6 +20,8 @@ jobs:
       - uses: "actions/checkout@v4"
 
       - uses: actions/setup-node@v4
+        with:
+          node-version: '21.4.0'
 
       - name: "Building Documentation"
         run: npm run docs
