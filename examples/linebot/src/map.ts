@@ -368,6 +368,35 @@ export function module(client: Client) {
         return 'Saved'
     })
 
+    client.onCommand('*save', is_bot_admin, async ([player, _, key, value]) => {
+        function listen(): Promise<[number, number]> {
+            return new Promise((res, rej) => {
+                const timeout = setTimeout(rej, 3600)
+
+                client.on('player:block', ([pl, [x, y, _], block]) => {
+                    if (block.name !== 'checkpoint') return
+                    if (pl.id !== player.id) return
+                    clearTimeout(timeout)
+                    res([x, y])
+                })
+            })
+        }
+
+        let C1: [number, number],
+            C2: [number, number]
+        
+        try {
+            C1 = await listen()
+            C2 = await listen()
+
+            player.pm('Press Space to confirm')
+        } catch {
+            return 'Timed out!'
+        }
+
+        console.log(C1, C2)
+        return 'Works'
+    })
 
     // client.on('cmd:*procedure', async ([player]) => {
     //     await create_empty_arena()
