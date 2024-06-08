@@ -76,7 +76,7 @@ export function module(client: Client) {
             const walkable_positions = await create_empty_arena(30)
 
             reset_everything()
-            plan_to_queue()
+            // plan_to_queue()
             if (GAME_IN_DEBUG) return
 
             await client.wait(3000)
@@ -128,8 +128,10 @@ export function module(client: Client) {
             // }
         }
 
-        if (await advance_one_piece()) {
+        while (QUEUE.length < 2)
             plan_to_queue()
+
+        if (await advance_one_piece()) {
             TILES += 1
         }
 

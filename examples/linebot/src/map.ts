@@ -21,7 +21,7 @@ let DISPLAY_TILE: string | undefined
 
 export const JOINT = { x: 0, y: 0 }
 export const LEFT_JOINT = { x: 0, y: 0 }
-const QUEUE: [string, Structure][] = []
+export const QUEUE: [string, Structure][] = []
 const TILES_PATH = process.env.MAPS_PATH || 'maps'
 let CURRENT_TILE: Structure | undefined
 let PIECE_X: number | undefined
