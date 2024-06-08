@@ -12,6 +12,7 @@ const client = new Client({ token: process.env.TOKEN as string })
 export default client
 
 import * as Checkpoint from './checkpoint.js'
+import * as Fill from './fill.js'
 import * as History from './history.js'
 import * as Settings from './settings.js'
 
@@ -28,6 +29,7 @@ client
     .on('player:join', ([player]) => console.log(`${player.username} joined: ${player.cuid}`))
     .include(Client.HelpCommand('help'))
     .include(Checkpoint)
+    .include(Fill)
     .include(History)
     .include(Settings)
     .include(new Modules.BanModule('bans.yaml'))
