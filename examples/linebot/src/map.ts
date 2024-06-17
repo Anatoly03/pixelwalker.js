@@ -148,7 +148,7 @@ export function plan_to_queue() {
         piece = snapshots[random_piece]
         const piece_direction = piece.meta.right_y - piece.meta.left_y
 
-        process.stdout.write("Try: ")
+        // process.stdout.write("Try: ")
 
         // Absolute no go
         if (calculated_y_joint - piece.meta.left_y + piece.height >= map.height - ABSOLUTE_VERTICAL_BORDER) continue
@@ -158,7 +158,7 @@ export function plan_to_queue() {
         if (i < 20 && calculated_y_joint - piece.meta.left_y + piece.height > map.height - VERTICAL_BORDER && piece_direction >= 0) continue
         if (i < 20 && calculated_y_joint - piece.meta.left_y < VERTICAL_BORDER && piece_direction <= 0) continue
 
-        console.log(`I chose piece with weight ${piece.meta.frequency}`)
+        // console.log(`I chose piece with weight ${piece.meta.frequency}`)
 
         return QUEUE.push([random_piece, piece])
     }
@@ -167,7 +167,13 @@ export function plan_to_queue() {
 
     console.warn(`Problems finding proper piece: JOINT Y = ${JOINT.y}, MAP HEIGHT = ${map.height}, CALCULATED DELTA JOINT Y = ${calculated_y_joint}, PIECE LEFT = ${piece.meta.left_y}, PIECE HEIGHT = ${piece.height}, QUEUE LENGTH = ${QUEUE.length}`)
     console.error(`After ${maps.length} iterations could not find proper piece: Y_JOINT = ${calculated_y_joint}`)
-    return -1
+
+    client.say(`I am stuck... Please notify bot admin, that no of ${maps.length} pieces can be placed.`)
+    client.say(`At JointY=${JOINT.y}`)
+    
+    client.disconnect()
+    
+    throw new Error("Out of block space")
 }
 
 /** Advance one "line" of a piece */
@@ -203,6 +209,8 @@ export async function advance_one_piece(): Promise<boolean> {
 
     PIECE_X += 1
     SIZE += 1
+
+    console.log(SIZE, LEFT_JOINT.x, JOINT.x)
 
     while (SIZE > PLATFORM_SIZE) {
         let replace = empty_map.copy(LEFT_JOINT.x, 0, LEFT_JOINT.x, empty_map.height)
@@ -292,7 +300,7 @@ export function module(client: Client) {
         const piece = snapshots[name]
         QUEUE.push([name, piece])
 
-        return player.pm('[BOT] Added to Queue.')
+        return player.pm('[BOT] Queue Length: ' + QUEUE.length)
     })
 
     client.onCommand('frame', is_bot_admin, ([p, _, k]) => {
@@ -316,7 +324,24 @@ export function module(client: Client) {
     })
 
     client.onCommand('*display', is_bot_admin, async ([player, _, name]) => {
-        if (!name) return
+        const tile_names = fs.readdirSync(TILES_PATH).map(k => k.substring(0, k.length - 5))
+
+        if (!name) {
+            name = 'basic_down'
+        }
+
+        if (DISPLAY_TILE && name == 'next') {
+            const new_index = (tile_names.findIndex(k => k == DISPLAY_TILE) + 1) % tile_names.length
+            name = tile_names[new_index]
+        }
+
+        if (!tile_names.includes(name)) {
+            return 'Could not find. Did you mean any of ' + tile_names.filter(k => k.includes(name)).join(' ')
+        }
+
+        if (name == 'all') {
+            return fs.readdirSync(TILES_PATH).map(k => k.substring(0, k.length - 5)).join(' ')
+        }
 
         DISPLAY_TILE = name
         name = name + '.yaml'
@@ -368,36 +393,118 @@ export function module(client: Client) {
         return 'Saved'
     })
 
-    client.onCommand('*save', is_bot_admin, async ([player, _, key, value]) => {
-        function listen(): Promise<[number, number]> {
-            return new Promise((res, rej) => {
-                const timeout = setTimeout(rej, 3600)
+    client.onCommand('save', is_bot_admin, async ([player, _, x1, y1, x2, y2]) => {
+        // function listen(): Promise<[number, number]> {
+        //     return new Promise((res, rej) => {
+        //         const timeout = setTimeout(rej, 3600)
 
-                client.on('player:block', ([pl, [x, y, _], block]) => {
-                    if (block.name !== 'checkpoint') return
-                    if (pl.id !== player.id) return
-                    clearTimeout(timeout)
-                    res([x, y])
-                })
-            })
+        //         client.on('player:block', ([pl, [x, y, _], block]) => {
+        //             if (block.name !== 'checkpoint') return
+        //             if (pl.id !== player.id) return
+        //             clearTimeout(timeout)
+        //             res([x, y])
+        //         })
+        //     })
+        // }
+
+        if (!client.world) return
+
+        const struct = client.world.copy(parseInt(x1), parseInt(y1), parseInt(x2), parseInt(y2))
+
+        struct.meta = {
+            left_y: 0,
+            right_y: 0,
+            frequency: 100
         }
 
-        let C1: [number, number],
-            C2: [number, number]
+        fs.writeFileSync(TILES_PATH + '/save.yaml', struct.toString())
+
+        // let C1: [number, number],
+        //     C2: [number, number]
         
-        try {
-            C1 = await listen()
-            C2 = await listen()
+        // try {
+        //     C1 = await listen()
+        //     C2 = await listen()
 
-            player.pm('Press Space to confirm')
-        } catch {
-            return 'Timed out!'
-        }
+        //     player.pm('Press Space to confirm')
+        // } catch {
+        //     return 'Timed out!'
+        // }
 
-        console.log(C1, C2)
-        return 'Works'
+        // console.log(C1, C2)
+        return 'Saved'
     })
 
+    client.onCommand('*gallery', is_bot_admin, () => {
+        if (!client.world) return
+
+        const tiles = Object
+            .values(snapshots)
+            .map(piece => {
+                const border_piece = new Structure(piece.width + 2, piece.height + 2)
+
+                piece.replace_all(new Block('basic_gray'), FRAME)
+                border_piece.clear(false)
+                border_piece.paste(1, 1, piece)
+
+                return border_piece
+            })
+            .sort((a, b) => a.height - b.height)
+
+        let joint: number[] = []
+        let built: number[] = []
+
+        for (let i = 0; i < client.world.width; i++) {
+            joint.push(0)
+            built.push(0)
+        }
+
+        for (const tile of tiles) {
+            let rejoins = joint.map(() => 0)
+            let iters = 0
+            // let rejoins = joint.map((v, i) => built.reduce((a, b) => Math.min(a, b), client.world?.height || 200))
+            // let rejoins = joint.map((v, i) => v - tile.height)
+            let first = 0
+            let escape = true
+
+            while (escape) {
+                first = 0
+
+                for (let i = 0; i < rejoins.length; i++) {
+                    // if (iters > 2) console.log(i, first, rejoins[i], built[i])
+                    if (rejoins[i] < built[i])
+                        first = i + 1
+                    else if (i - first >= tile.width) {
+                        escape = false
+                        break
+                    }
+                }
+
+                rejoins = rejoins.map(v => v + 1)
+
+                // console.log(rejoins)
+
+                if (iters++ > 400) {
+                    // console.log(built)
+                    throw new Error('The algorithm hath malfunctioned...')
+                }
+            }
+
+            client.fill(first, rejoins[first], tile)
+            
+            built = built.map((v, i) => (i >= first && i < first + tile.width) ? (v + tile.height) : v)
+            
+            // console.log(first, rejoins[first])
+
+            // joint = rejoins
+
+            // console.log(joint, built)
+
+            // joint = joint.map(v => (v >= first && v < first + tile.width) ? (v + tile.height) : v)
+            // joint = rejoins.map(v => (v >= first && v < first + tile.width) ? (v + tile.height) : v)
+        }
+    })
+    
     // client.on('cmd:*procedure', async ([player]) => {
     //     await create_empty_arena()
     //     await build_platform(30)
