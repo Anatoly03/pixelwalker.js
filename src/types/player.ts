@@ -67,45 +67,32 @@ export default class Player extends PlayerBase {
     /**
      * @ignore
      */
-    constructor(args: {
+    constructor(args: Partial<Player> & {
         client: Client
-        id: number
-        cuid: string
-        username: string
-        face: number
-        isAdmin: boolean
-        x: number
-        y: number
-        god_mode?: boolean
-        mod_mode?: boolean
-        has_crown?: boolean
-        can_edit: boolean
-        can_god: boolean
-        win: boolean
-        coins: number
-        blue_coins: number
-        deaths: number
+        cuid: string,
+        username: string,
+        id: number,
     }) {
         super(args)
 
         this.client = args.client
 
         this.id = args.id
-        this.isAdmin = args.isAdmin
-        this.face = args.face
-        this.x = args.x
-        this.y = args.y
+        this.isAdmin = args.isAdmin || false
+        this.face = args.face || 0
+        this.x = args.x || 0
+        this.y = args.y || 0
 
         this.god_mode = args.god_mode || false
         this.mod_mode = args.mod_mode || false
         this.has_crown = args.has_crown || false
-        this.can_edit = args.can_edit
-        this.can_god = args.can_god
+        this.can_edit = args.can_edit || false
+        this.can_god = args.can_god || false
 
-        this.win = args.win
-        this.coins = args.coins
-        this.blue_coins = args.blue_coins
-        this.deaths = args.deaths
+        this.win = args.win || false
+        this.coins = args.coins || 0
+        this.blue_coins = args.blue_coins || 0
+        this.deaths = args.deaths || 0
         this.checkpoint = null
     }
 
