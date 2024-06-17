@@ -179,24 +179,3 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
     }
 }
 
-export function BasePlayerModule(players: PlayerArray<PlayerBase, true>) {
-    return (client: Client) => {
-        /**
-         * When a player joins, register the player into the constant players.
-         */
-        client.raw.on('playerJoined', async ([_id, cuid, username, _f, isAdmin]): Promise<void> => {
-            const exists = players.find(p => p.cuid == cuid)
-            const new_object = new PlayerBase({ cuid, username })
-
-            if (exists != undefined) {
-                if (exists.username != username)
-                    console.warn(`[WARN] During the runtime of the bot, the user ${exists.username} changed their username top ${username}`)
-                return
-            }
-
-            players.push(new_object)
-        })
-
-        return client
-    }
-}
