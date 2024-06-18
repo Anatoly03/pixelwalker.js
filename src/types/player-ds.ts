@@ -10,7 +10,7 @@ import util from 'util'
 //     'filter_mut' | 'remove_all' | 'immut' | 'toString' |
 //     'toArray'
 
-export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
+export class PlayerArray<P, Mut extends boolean> {
     #mut: Mut
 
     protected data: Array<P>
@@ -23,10 +23,9 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Get an empty array. 
      */
-    public none<P extends PlayerBase>(this: PlayerArray<P, Mut>) {
+    public none<P extends PlayerBase>() {
         return new PlayerArray([] as P[], false)
     }
-
 
     public is_mut(): this is PlayerArray<P, true> {
         return this.#mut
@@ -61,9 +60,9 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Returns a string representation of all players separated by a string, which defaults to a comma.
      */
-    public join(separator: string = ', ', startWith: string = '', endWith: string = ''): string {
+    public join(this: PlayerArray<{ username: string }, Mut>, separator: string = ', ', startWith: string = '', endWith: string = ''): string {
         for (let i = 0; i < this.length; i++)
-            startWith += (i == 0 ? '' : separator) + this.data[i].username
+            startWith += (i == 0 ? '' : separator) + this.data[i].username 
         return startWith + endWith
     }
 
@@ -97,7 +96,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
      * Determines wether a player object is in the array or not.
      */
     public includes(searchElement: P): boolean {
-        return this.data.find(p => p.cuid == searchElement.cuid) != undefined
+        return this.data.find(p => Object.entries(searchElement as Object).every(([k, v]) => (p as any)[k] == v)) != undefined
     }
 
     /**
@@ -135,7 +134,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Sort players with comparator lambda.
      */
-    public sort(compareFn: ((a: P, b: P) => number) = ((player1, player2) => parseInt(player1.username, 36) - parseInt(player2.username, 36))): this {
+    public sort(compareFn: ((a: P, b: P) => number) = ((player1, player2) => parseInt((player1 as any).username, 36) - parseInt((player2 as any).username, 36))): this {
         this.data.sort(compareFn)
         return this
     }
@@ -207,7 +206,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Get player by public cuid
      */
-    public byCuid(cuid: string) {
+    public byCuid(this: PlayerArray<{ cuid: string }, Mut>, cuid: string) {
         for (const p of this.data.values())
             if (p.cuid == cuid)
                 return p
@@ -216,10 +215,10 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Get player by username
      */
-    public byUsername(username: string): P | undefined {
+    public byUsername(this: PlayerArray<{ username: string }, Mut>, username: string): P | undefined {
         for (const p of this.data.values())
             if (p.username == username)
-                return p
+                return p as P
     }
 
     /**
@@ -267,7 +266,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Returns a string representation of the player array.
      */
-    public toString(keys: (keyof P)[] = ['username', 'cuid']): string {
+    public toString(keys: (keyof P)[] = (['username', 'cuid'] as any)): string {
         const mapper = (player: P) => keys.map((k, i) => i == 0 ? player[k] : `[${player[k]}]`).join('')
         return '[' + this.map(mapper).join(', ') + ']'
     }

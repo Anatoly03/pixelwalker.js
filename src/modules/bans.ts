@@ -45,14 +45,14 @@ export default class BannedPlayersManager extends PlayerStorage<BannedPlayer, Co
 
             to_ban = to_ban.toUpperCase()
 
-            const similar = Array.from(client.globalPlayers.values()).filter(p => p.username.includes(to_ban))
-            const to_ban_player = Array.from(client.globalPlayers.values()).find(p => to_ban == p.username)
+            const similar = Array.from(client.profiles.values()).filter(p => p.username.includes(to_ban))
+            const to_ban_player = Array.from(client.profiles.values()).find(p => to_ban == p.username)
 
             if (to_ban_player) {
-                this.push(new BannedPlayer({ ...to_ban_player, reason }))
+                this.push(new BannedPlayer({ ...to_ban_player, reason, cuid: to_ban_player.id }))
                 player.pm('Banned: ' + to_ban_player.username)
 
-                const bannedPlayer = client.players.find(v => v.cuid == to_ban_player.cuid && player.id != client.self?.id)
+                const bannedPlayer = client.players.find(v => v.cuid == to_ban_player.id && player.id != client.self?.id)
                 if (bannedPlayer) bannedPlayer.kick(reason)
 
                 return

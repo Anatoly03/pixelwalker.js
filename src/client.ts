@@ -19,11 +19,12 @@ import ChatModule from './modules/chat.js'
 import SystemMessageModule from './modules/system-command.js'
 import WorldManagerModule from './modules/world-manager.js'
 import StartModule from "./modules/start.js"
-import { GamePlayerModule, BasePlayerModule } from "./modules/player-manager.js"
+import { GamePlayerModule } from "./modules/player-manager.js"
 
 import BlockScheduler from './scheduler/scheduler-block.js'
 import { BlockMappings } from './data/mappings.js'
 import { PlayerArray, GamePlayerArray } from './types/player-ds.js'
+import { PublicProfile } from './types/player.profile.js'
 
 /**
  * @example Snake Tail
@@ -108,12 +109,11 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public chatPrefix: string | undefined
 
     readonly #players: GamePlayerArray<true>
-
-    readonly #globalPlayers: PlayerArray<PlayerBase, true>
+    readonly #profiles: PlayerArray<PublicProfile, true>
 
     /**
      * Create a new Client instance, by logging in with a token.
-     * @param {string} token The token which is used to sign into pocketbase.
+     * @param {{token:string}} args The object holding the token which is used to sign into pocketbase.
      * @example
      * This is a standart way of creating a new Client instance
      * ```ts
@@ -124,9 +124,20 @@ export default class Client extends EventEmitter<LibraryEvents> {
     constructor(args: { token: string });
 
     /**
+     * Create a new Client instance, by logging in with data defined in the 
+     * @param {NodeJS.ProcessEnv} args The constant `process.env`
+     * @example
+     * This is a standart way of creating a new Client instance
+     * ```ts
+     * import 'dotenv/config'
+     * const client = new Client({ token: process.env.TOKEN as string })
+     * ```
+     */
+    constructor(args: NodeJS.ProcessEnv);
+
+    /**
      * Create a new Client instance, by logging in with a username and a password.
-     * @param {string} user Username
-     * @param {string} pass Password
+     * @param {{user:string, pass:string}} args The object holding the username and password which are used to sign into pocketbase.
      * @example
      * ```ts
      * import 'dotenv/config'
@@ -142,7 +153,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.#socket = null
 
         this.#players = new GamePlayerArray<true>()
-        this.#globalPlayers = new PlayerArray<PlayerBase, true>()
+        this.#profiles = new PlayerArray<PublicProfile, true>()
 
         if (args.token) {
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
@@ -212,7 +223,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
         
         this.include(StartModule(this.#players))
         this.include(GamePlayerModule(this.#players))
-        this.include(BasePlayerModule(this.#globalPlayers))
 
         return this
     }
@@ -246,6 +256,13 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
 
         return false
+    }
+
+    /**
+     * 
+     */
+    public pocketbase() {
+        return this.#pocketbase
     }
 
     /**
@@ -301,8 +318,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * @todo @ignore
      */
-    get globalPlayers(): PlayerArray<PlayerBase, false> {
-        return this.#globalPlayers.immut()
+    get profiles(): PlayerArray<PublicProfile, false> {
+        return this.#profiles.immut()
     }
 
     /**
