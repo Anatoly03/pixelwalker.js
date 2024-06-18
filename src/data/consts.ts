@@ -44,7 +44,7 @@ export interface LibraryEvents {
 
 export interface RawGameEvents {
     '*':                        [any[]],
-    'init':                     [[number, string, string, number, boolean, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
+    'init':                     [[number, string, string, number, boolean, number, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
     'updateRights':             [[number, boolean, boolean]],
     'worldMetadata':            [[string, number, string]],
     'worldCleared':             [[]],
@@ -53,7 +53,7 @@ export interface RawGameEvents {
     'chatMessage':              [[number, string]],
     'oldChatMessages':          [any[]]
     'systemMessage':            [[string, string, boolean]],
-    'playerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, boolean, boolean, boolean, boolean, Buffer]],
+    'playerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, number, boolean, boolean, boolean, boolean, Buffer]],
     'playerLeft':               [[number]],
     'playerMoved':              [[number, number, number, number, number, number, number, -1 | 0 | 1, -1 | 0 | 1, boolean, boolean, number]],
     'playerTeleported':         [[number, number, number]],

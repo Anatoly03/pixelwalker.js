@@ -49,6 +49,8 @@ export default class Structure {
      * Initialise the world with values
      */
     public init(buffer: Buffer) {
+        if (!buffer) throw new Error('Expected a Buffer, got none.')
+
         let offset = 0
         offset = this.deserializeLayer(this.background, buffer, offset)
         offset = this.deserializeLayer(this.foreground, buffer, offset)
@@ -283,6 +285,7 @@ export default class Structure {
     private deserializeBlock(buffer: Buffer, offset: number): [Block, number] {
         const id = buffer.readInt32LE(offset)
         const block = new Block(id)
+        let length
 
         offset += 4
 
