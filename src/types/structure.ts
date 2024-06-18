@@ -63,6 +63,9 @@ export default class Structure {
      */
     public set(x: number, y: number, l: 0 | 1, id: number, args: any): [WorldPosition, Block] {
         const layer = l == 1 ? this.foreground : this.background
+    
+        if (!layer[x]) layer[x] = new Array(this.height)
+
         const block = layer[x][y] = new Block(id)
 
         if (SpecialBlockData[block.name])
