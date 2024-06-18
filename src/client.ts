@@ -254,6 +254,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
         return this
     }
 
+    public wait_block_queue(): Promise<any> {
+        return this.block_scheduler.wait_till_emptied()
+    }
+
     // TODO
     public block(x: number, y: number, layer: 0 | 1, block: number | null | keyof typeof BlockMappings, ...args: any[]): Promise<boolean>
     public block(x: number, y: number, layer: 0 | 1, block: Block): Promise<boolean>
