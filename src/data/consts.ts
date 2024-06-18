@@ -51,7 +51,7 @@ export interface RawGameEvents {
     'worldReloaded':            [[Buffer]],
     'placeBlock':               [[number, number, number, 0 | 1, number, ...any]],
     'chatMessage':              [[number, string]],
-    'oldChatMessages':          [any[]]
+    'oldChatMessages':          [[(string | number)[]]]
     'systemMessage':            [[string, string, boolean]],
     'playerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, number, boolean, boolean, boolean, boolean, Buffer]],
     'playerLeft':               [[number]],
