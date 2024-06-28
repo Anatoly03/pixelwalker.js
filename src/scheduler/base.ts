@@ -18,6 +18,7 @@ export default abstract class BaseScheduler<K extends string, V> {
     protected readonly client: Client
     protected queue: Map<K, SchedulerEntry<V>> = new Map()
     private tickets: Map<K, { res: (v: boolean) => void, rej: (v: any) => void }> = new Map()
+    private promises: Map<K, Promise<any>> = new Map()
     public running = false
 
     private lastTimeBusy = 0
@@ -121,18 +122,19 @@ export default abstract class BaseScheduler<K extends string, V> {
 
         this.queue.set(k, new SchedulerEntry(el, priority))
 
-        const promise = (res: (v: boolean) => void, rej: (v: any) => void) => {
+        const promise = new Promise((res: (v: boolean) => void, rej: (v: any) => void) => {
             if (!this.client.connected || !this.running) return res(false)
             if (!this.has(k)) return res(true)
 
             const res_wrapper = (v: boolean) => {
                 if (this.queue.size == 0) this.unbusy()
+                this.promises.delete(k)
                 res(v)
             }
 
             this.tickets.set(k, { res: res_wrapper, rej })
             // this.once(k, (() => res_wrapper(true)) as any)
-        }
+        })
 
         if (!this.busy) {
             // console.debug('Scheduler now busy.')
@@ -140,7 +142,8 @@ export default abstract class BaseScheduler<K extends string, V> {
             this.try_run_loop()
         }
 
-        return new Promise(promise)
+        this.promises.set(k, promise)
+        return promise
     }
 
 
@@ -151,10 +154,14 @@ export default abstract class BaseScheduler<K extends string, V> {
     public remove(k: K): boolean {
         this.queue.delete(k)
         // this.emit(k, [])
-        this.tickets.get(k)?.res(true)
+        this.tickets.get(k)?.res(false)
+        this.promises.delete(k)
         this.tickets.delete(k)
         if (this.queue.size == 0) return this.unbusy()
         return this.busy
     }
 
+    public wait_till_emptied() {
+        return Promise.all([...this.promises.values()])
+    }
 }
