@@ -59,6 +59,16 @@ export default class Client extends EventEmitter<LibraryEvents> {
     #pocketbase: PocketBase
 
     /**
+     * Client's API Connection target
+     */
+    #linkApiAccount = API_ACCOUNT_LINK
+
+    /**
+     * Client's Room Connection Target
+     */
+    #linkApiRoom = API_ROOM_LINK
+
+    /**
      * Socket that connects with the game
      */
     #socket: WebSocket | null
@@ -91,12 +101,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * If the client is connected, stores a reference to the player instance, which the client controls.
      */
-    public self: SelfPlayer | null = null
+    public self: SelfPlayer | undefined
 
     /**
      * @todo
      */
-    public world: World | null = null
+    public world: World | undefined
 
     /**
      * @ignore Command prefici which the bot respond to
@@ -108,7 +118,14 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public chatPrefix: string | undefined
 
+    /**
+     * @todo
+     */
     readonly #players: GamePlayerArray<true>
+
+    /**
+     * @todo
+     */
     readonly #profiles: PlayerArray<PublicProfile, true>
 
     /**
@@ -130,7 +147,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * This is a standart way of creating a new Client instance
      * ```ts
      * import 'dotenv/config'
-     * const client = new Client({ token: process.env.TOKEN as string })
+     * const client = new Client(process.env)
      * ```
      */
     constructor(args: NodeJS.ProcessEnv);
@@ -149,7 +166,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     constructor(args: { token?: string, user?: string, pass?: string }) {
         super()
 
-        this.#pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
+        this.#pocketbase = new PocketBase(`https://${this.#linkApiAccount}`)
         this.#socket = null
 
         this.#players = new GamePlayerArray<true>()
@@ -168,11 +185,28 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         this.block_scheduler = new BlockScheduler(this)
 
+        this.include(BotCommandModule(this.#command))
+        this.include(ChatModule)
+        this.include(SystemMessageModule)
+        this.include(WorldManagerModule)
+        
+        this.include(StartModule(this.#players))
+        this.include(GamePlayerModule(this.#players))
+
         // On process interrupt, gracefully disconnect.
         // DO NOT merge this into one function, otherwise it does not work.
         process.on('SIGINT', (signal) => this.disconnect())
         // Print unhandled promises after termination
         process.on("unhandledRejection", (error) => console.error(error));
+    }
+
+    /**
+     * Set local connection target to a different game server. 
+     */
+    public deroute(API_SERVER = '127.0.0.1:8090/api', GAME_SERVER = 'localhost:5148') {
+        this.#linkApiAccount = API_SERVER
+        this.#linkApiRoom = GAME_SERVER
+        return this
     }
 
     /**
@@ -202,7 +236,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         const { token } = await this.#pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
 
         try {
-            this.#socket = new WebSocket(`wss://${API_ROOM_LINK}/room/${token}`)
+            this.#socket = new WebSocket(`wss://${this.#linkApiRoom}/room/${token}`)
             this.#socket.binaryType = 'arraybuffer'
         } catch (e) {
             throw new Error('Socket failed to connect.')
@@ -215,14 +249,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.#isConnected = true
 
         this.block_scheduler.start()
-        
-        this.include(BotCommandModule(this.#command))
-        this.include(ChatModule)
-        this.include(SystemMessageModule)
-        this.include(WorldManagerModule)
-        
-        this.include(StartModule(this.#players))
-        this.include(GamePlayerModule(this.#players))
 
         return this
     }
