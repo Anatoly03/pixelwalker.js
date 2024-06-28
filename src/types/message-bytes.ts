@@ -1,8 +1,8 @@
-import { length7BitInt, write7BitInt } from "./math.js"
+import { length7BitInt, write7BitInt } from "../math.js"
 
 /**
  * @param {string} value 
- * @returns Buffer
+ * @returns {Buffer}
  */
 export function String(value: string): Buffer {
     const stringByteLen = Buffer.byteLength(value)
@@ -17,7 +17,7 @@ export function String(value: string): Buffer {
 
 /**
  * @param {number} value 
- * @returns Buffer
+ * @returns {Buffer}
  */
 export function Byte(value: number): Buffer {
     const buf = Buffer.from([1, 0])
@@ -27,7 +27,7 @@ export function Byte(value: number): Buffer {
 
 /**
  * @param {number} value 
- * @returns Buffer
+ * @returns {Buffer}
  */
 export function Int16(value: number): Buffer {
     const buf = Buffer.from([2, 0, 0])
@@ -37,7 +37,7 @@ export function Int16(value: number): Buffer {
 
 /**
  * @param {number} value 
- * @returns Buffer
+ * @returns {Buffer}
  */
 export function Int32(value: number): Buffer {
     const buf = Buffer.from([3, 0, 0, 0, 0])
@@ -47,7 +47,7 @@ export function Int32(value: number): Buffer {
 
 /**
  * @param {bigint} value 
- * @returns Buffer
+ * @returns {Buffer}
  */
 export function Int64(value: bigint): Buffer {
     const buf = Buffer.from([4, 0, 0, 0, 0, 0, 0, 0, 0])
@@ -57,7 +57,7 @@ export function Int64(value: bigint): Buffer {
 
 /**
  * @param {number} value 
- * @returns Buffer
+ * @returns {Buffer}
  */
 export function Float(value: number): Buffer {
     const buf = Buffer.from([5, 0, 0, 0, 0])
@@ -67,7 +67,7 @@ export function Float(value: number): Buffer {
 
 /**
  * @param {number} value 
- * @returns Buffer
+ * @returns {Buffer}
  */
 export function Double(value: number): Buffer {
     const buf = Buffer.from([6, 0, 0, 0, 0, 0, 0, 0, 0])
@@ -77,7 +77,7 @@ export function Double(value: number): Buffer {
 
 /**
  * @param {boolean} value 
- * @returns Buffer
+ * @returns {Buffer}
  */
 export function Boolean(value: boolean): Buffer {
     return Buffer.from([7, value ? 1 : 0])
@@ -88,7 +88,7 @@ export function Boolean(value: boolean): Buffer {
 
 /**
  * @param {Uint8Array} value 
- * @returns Buffer
+ * @returns {Buffer}
  */
 export function ByteArray(value: any): Buffer {
     // TODO implement
@@ -101,7 +101,7 @@ export function ByteArray(value: any): Buffer {
 
 /**
  * @param {number} value 
- * @returns Buffer
+ * @returns {Buffer}
  */
 export function Magic(value: number): Buffer {
     return Buffer.from([value])
@@ -109,7 +109,7 @@ export function Magic(value: number): Buffer {
 
 /**
  * @param {number} value 
- * @returns Buffer
+ * @returns {Buffer}
  */
 export function Bit7(value: number): Buffer {
     const buf = Buffer.alloc(length7BitInt(value))

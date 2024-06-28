@@ -8,7 +8,7 @@ process.on('SIGINT', () => {
     })    
 })
 
-const client = new Client({ token: process.env.TOKEN })
+const client = new Client({ token: process.env.TOKEN as string })
 export default client
 
 import * as Map from './map.js'
@@ -26,9 +26,9 @@ client
     .once('start', ([self]) => self.set_god(true)) // Self should not be part of players in game.
     .on('player:join', ([player]) => console.log(`@ ${player.username} → ${player.cuid}`))
     .setChatPrefix('[BOT]')
-    .registerHelpCommand('help')
+    .include(Client.HelpCommand('help'))
     .include(Map)
     .include(Game)
     .include(new Modules.BanModule('bans.yaml', is_bot_admin))
     .include(storedPlayers)
-    .connect(process.env.WORLD_ID)
+    .connect(process.env.WORLD_ID as string)

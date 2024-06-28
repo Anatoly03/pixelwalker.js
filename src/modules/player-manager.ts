@@ -1,9 +1,9 @@
 import Client from "../client"
 import { BlockMappingsReverse } from "../data/mappings.js"
-import { PlayerArray, PlayerMap } from "../types/player-ds"
+import { PlayerArray, GamePlayerArray } from "../types/player-ds"
 import Player, { PlayerBase } from "../types/player.js"
 
-export function GamePlayerModule(players: PlayerMap<true>) {
+export function GamePlayerModule(players: GamePlayerArray<true>) {
     return (client: Client) => {
         /**
          * On player join, create a player object with data
@@ -117,6 +117,9 @@ export function GamePlayerModule(players: PlayerMap<true>) {
         client.raw.on('playerTouchBlock', async ([id, x, y, bid]) => {
             const player = players.byId<true>(id)
             const block_name = BlockMappingsReverse[bid]
+
+            if (!block_name)
+                return console.warn('[WARN] Unknown block id: ' + bid)
             
             if (block_name.startsWith('key_'))
                 return client.emit('world:key', [player, block_name.substring(4)])
@@ -176,24 +179,3 @@ export function GamePlayerModule(players: PlayerMap<true>) {
     }
 }
 
-export function BasePlayerModule(players: PlayerArray<PlayerBase, true>) {
-    return (client: Client) => {
-        /**
-         * When a player joins, register the player into the constant players.
-         */
-        client.raw.on('playerJoined', async ([_id, cuid, username, _f, isAdmin]): Promise<void> => {
-            const exists = players.find(p => p.cuid == cuid)
-            const new_object = new PlayerBase({ cuid, username })
-
-            if (exists != undefined) {
-                if (exists.username != username)
-                    console.warn(`[WARN] During the runtime of the bot, the user ${exists.username} changed their username top ${username}`)
-                return
-            }
-
-            players.push(new_object)
-        })
-
-        return client
-    }
-}

@@ -1,0 +1,17 @@
+file-version: 0
+meta:
+  left_y: 4
+  right_y: 1
+  frequency: 500
+width: 14
+height: 5
+palette:
+  - empty
+  - basic_gray
+  - gravity_left
+layers:
+  foreground: "0 0 0 0 1 0 0 0 2 1 0 0 0 2 1 0 0 0 2 1 0 0 2 1 0 0 0 2 1 0 0 0 0 1
+    0 0 2 1 0 0 0 2 1 0 0 0 2 1 0 0 2 1 0 0 0 2 1 0 0 0 2 1 0 0 0 0 1 0 0 0 "
+  background: "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+  data: []

@@ -1,0 +1,40 @@
+# https://gist.github.com/mikroskeem/fddaf7a4f80959d6e5f4711904885fae
+
+name: "Publish documentation"
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  publish-documentation:
+    permissions:
+      id-token: "write"
+      pages: "write"
+
+    environment:
+      name: "github-pages"
+      url: "${{ steps.deployment.outputs.page_url }}"
+
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - uses: "actions/checkout@v4"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '21.4.0'
+
+      - name: "Building Documentation"
+        run: npm run docs
+      
+      - id: "upload-documentation"
+        name: "Uploading Pages artifact"
+        uses: "actions/upload-pages-artifact@v2"
+        with:
+            path: "docs/"
+
+      - id: "deployment"
+        name: "Deploy to GitHub Pages"
+        uses: "actions/deploy-pages@v4"

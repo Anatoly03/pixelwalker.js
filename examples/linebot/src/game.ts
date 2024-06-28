@@ -1,6 +1,6 @@
 
 import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
-import { create_empty_arena, advance_one_piece, plan_to_queue, set_max_size, reset_everything, JOINT, LEFT_JOINT, TOP_LEFT, WIDTH, HORIZONTAL_BORDER, PLATFORM_SIZE, set_speed, SPEED } from './map.js'
+import { create_empty_arena, advance_one_piece, plan_to_queue, set_max_size, reset_everything, JOINT, LEFT_JOINT, TOP_LEFT, WIDTH, HORIZONTAL_BORDER, PLATFORM_SIZE, set_speed, SPEED, QUEUE } from './map.js'
 import { is_bot_admin, storedPlayers } from './line.js'
 import { StoredPlayer } from './storage.js'
 
@@ -76,7 +76,7 @@ export function module(client: Client) {
             const walkable_positions = await create_empty_arena(30)
 
             reset_everything()
-            plan_to_queue()
+            // plan_to_queue()
             if (GAME_IN_DEBUG) return
 
             await client.wait(3000)
@@ -128,8 +128,10 @@ export function module(client: Client) {
             // }
         }
 
-        if (await advance_one_piece()) {
+        while (QUEUE.length < 2)
             plan_to_queue()
+
+        if (await advance_one_piece()) {
             TILES += 1
         }
 
