@@ -64,7 +64,7 @@ export default class World extends Structure {
     }
 
     public put_block(x: number, y: number, layer: 0 | 1, block: Block): Promise<boolean> {
-        if (this?.[layer == 1 ? 'foreground' : 'background'][x][y]?.isSameAs(block))
+        if (this?.[layer == 1 ? 'foreground' : 'background']?.[x]?.[y]?.isSameAs(block))
             return Promise.resolve(true)
         return this.client.block_scheduler.add(`${x}.${y}.${layer}`, block)
     }

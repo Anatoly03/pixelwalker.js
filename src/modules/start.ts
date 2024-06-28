@@ -10,7 +10,7 @@ export default function StartModule(players: PlayerMap<true>) {
         /**
          * On init, set everything up
          */
-        client.raw.once('init', async ([id, cuid, username, face, isAdmin, x, y, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
+        client.raw.once('init', async ([id, cuid, username, face, isAdmin, x, y, name_color, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
             await client.send(Magic(0x6B), Bit7(MessageType['init']))
 
             client.world = new World({

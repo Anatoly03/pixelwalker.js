@@ -9,7 +9,7 @@ export function GamePlayerModule(players: PlayerMap<true>) {
          * On player join, create a player object with data
          * and emit `player:join` with said object.
          */
-        client.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, can_edit, can_god, x, y, coins, blue_coins, deaths, god_mode, mod_mode, has_crown, win, switches]) => {
+        client.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, can_edit, can_god, x, y, color, coins, blue_coins, deaths, god_mode, mod_mode, has_crown, win, switches]) => {
             const data = {
                 client,
                 id,

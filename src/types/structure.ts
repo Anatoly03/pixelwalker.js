@@ -49,6 +49,8 @@ export default class Structure {
      * Initialise the world with values
      */
     public init(buffer: Buffer) {
+        if (!buffer) throw new Error('Expected a Buffer, got none.')
+
         let offset = 0
         offset = this.deserializeLayer(this.background, buffer, offset)
         offset = this.deserializeLayer(this.foreground, buffer, offset)
@@ -63,6 +65,9 @@ export default class Structure {
      */
     public set(x: number, y: number, l: 0 | 1, id: number, args: any): [WorldPosition, Block] {
         const layer = l == 1 ? this.foreground : this.background
+    
+        if (!layer[x]) layer[x] = new Array(this.height)
+
         const block = layer[x][y] = new Block(id)
 
         if (SpecialBlockData[block.name])
@@ -280,6 +285,7 @@ export default class Structure {
     private deserializeBlock(buffer: Buffer, offset: number): [Block, number] {
         const id = buffer.readInt32LE(offset)
         const block = new Block(id)
+        let length
 
         offset += 4
 

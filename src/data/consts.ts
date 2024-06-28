@@ -44,15 +44,16 @@ export interface LibraryEvents {
 
 export interface RawGameEvents {
     '*':                        [any[]],
-    'init':                     [[number, string, string, number, boolean, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
+    'init':                     [[number, string, string, number, boolean, number, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
     'updateRights':             [[number, boolean, boolean]],
     'worldMetadata':            [[string, number, string]],
     'worldCleared':             [[]],
     'worldReloaded':            [[Buffer]],
     'placeBlock':               [[number, number, number, 0 | 1, number, ...any]],
     'chatMessage':              [[number, string]],
+    'oldChatMessages':          [[(string | number)[]]]
     'systemMessage':            [[string, string, boolean]],
-    'playerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, boolean, boolean, boolean, boolean, Buffer]],
+    'playerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, number, boolean, boolean, boolean, boolean, Buffer]],
     'playerLeft':               [[number]],
     'playerMoved':              [[number, number, number, number, number, number, number, -1 | 0 | 1, -1 | 0 | 1, boolean, boolean, number]],
     'playerTeleported':         [[number, number, number]],
@@ -83,28 +84,29 @@ export const MessageType = {
     'worldReloaded':            4,
     'placeBlock':               5,
     'chatMessage':              6,
-    'systemMessage':            7,
-    'playerJoined':             8,
-    'playerLeft':               9,
-    'playerMoved':              10,
-    'playerTeleported':         11,
-    'playerFace':               12,
-    'playerGodMode':            13,
-    'playerModMode':            14,
+    'oldChatMessages':          7,
+    'systemMessage':            8,
+    'playerJoined':             9,
+    'playerLeft':               10,
+    'playerMoved':              11,
+    'playerTeleported':         12,
+    'playerFace':               13,
+    'playerGodMode':            14,
+    'playerModMode':            15,
     // 'playerCheckpoint':         15,
-    'playerRespawn':            15,
-    'playerReset':              16,
-    'playerTouchBlock':         17,
+    'playerRespawn':            16,
+    'playerReset':              17,
+    'playerTouchBlock':         18,
     // 'crownTouched':             18,
-    'playerCounter':            18,
+    'playerCounter':            19,
     // 'keyPressed':               19,
     // 'playerStatsChanged':       20,
     // 'playerWin':                21,
-    'localSwitchChange':        19,
-    'localSwitchReset':         20,
-    'globalSwitchChange':       21,
-    'globalSwitchReset':        22,
-    'chatPrivateMessage':       23
+    'localSwitchChange':        20,
+    'localSwitchReset':         21,
+    'globalSwitchChange':       22,
+    'globalSwitchReset':        23,
+    'chatPrivateMessage':       24
 }
 
 export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
@@ -118,6 +120,7 @@ export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
 
     'portal':                   [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
     'portal_invisible':         [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
+    'world_portal':             [HeaderTypes.String],
 
     'spikes':                   [HeaderTypes.Int32],
 
