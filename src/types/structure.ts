@@ -5,7 +5,7 @@ import { HeaderTypes, SpecialBlockData } from "../data/consts.js"
 import { BlockMappings, BlockMappingsReverse } from '../data/mappings.js'
 import { get2dArray, read7BitInt } from "../math.js"
 import { Decorations, SolidBlocks } from "../data/block_properties.js"
-import palette_fix from '../data/palette_fix.js'
+import Client from '../client.js'
 
 /**
  * A World is an offline-saved chunk of two dimensional
@@ -235,7 +235,7 @@ export default class Structure {
 
         world.meta = value.meta
 
-        const palette: (keyof typeof BlockMappings)[] = value.palette.map((name: keyof typeof BlockMappings) => (palette_fix[name as keyof typeof palette_fix]) ?? name);
+        const palette: (keyof typeof BlockMappings)[] = value.palette.map((name: keyof typeof BlockMappings) => (Client.PaletteFix[name as keyof typeof Client.PaletteFix]) ?? name);
         const foreground: number[] = value.layers.foreground.split(' ').map((v: string) => parseInt(v, 36))
         const background: number[] = value.layers.background.split(' ').map((v: string) => parseInt(v, 36))
         const block_data: any[][] = value.layers.data

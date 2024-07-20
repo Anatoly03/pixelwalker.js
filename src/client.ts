@@ -22,10 +22,11 @@ import StartModule from "./modules/start.js"
 import { GamePlayerModule } from "./modules/player-manager.js"
 
 import BlockScheduler from './scheduler/scheduler-block.js'
-import { BlockMappings } from './data/mappings.js'
+import { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
 import { PlayerArray, GamePlayerArray } from './types/player-ds.js'
 import { PublicProfile } from './types/player.profile.js'
 import { MessageTypes } from './data/message_types.js'
+import PaletteFix from './data/palette_fix.js'
 
 /**
  * @example Snake Tail
@@ -50,22 +51,17 @@ import { MessageTypes } from './data/message_types.js'
  */
 export default class Client extends EventEmitter<LibraryEvents> {
     /**
-     * Get an array of message types sequenced integer → message name
+     * Get an array of message typed sequenced integer → message name. Note,
+     * that the array below is not full, 
      * 
      * @example
      * 
      * ```ts
      * import Client from 'pixelwalker.js'
-     * 
-     * console.log(Client.MessageTypes); 
-     * ```
-     * 
-     * Which will print out the following in version
-     * ```json
-     * ["PlayerInit","UpdateRights","WorldMetadata","WorldCleared","WorldReloaded","WorldBlockPlaced","ChatMessage","OldChatMessages","SystemMessage","PlayerJoined","PlayerLeft","PlayerMoved","PlayerTeleported","PlayerFace","PlayerGodMode","PlayerModMode","PlayerRespawn","PlayerReset","PlayerTouchBlock","PlayerTouchPlayer","PlayerEffect","PlayerRemoveEffect","PlayerResetEffects","PlayerTeam","PlayerCounters","PlayerLocalSwitchChanged","PlayerLocalSwitchReset","GlobalSwitchChanged","GlobalSwitchReset","PlayerPrivateMessage"]
+     * console.log(Client.MessageTypes); // ["PlayerInit", "UpdateRights", ...]
      * ```
      */
-    static MessageTypes: typeof MessageTypes = MessageTypes;
+    static MessageTypes = MessageTypes;
 
     /**
      * Get the id for the message. This can then be used with `Magic` to send the proper event header.
@@ -74,7 +70,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * 
      * ```ts
      * import Client from 'pixelwalker.js'
-     * 
      * client.send(Client.MessageId('PlayerInit'));
      * ```
      */
@@ -83,11 +78,41 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /**
-     * 
+     * The list of all current block names (referred to as palette)
+     * and their respective block id's.
      */
+    static BlockMappings = BlockMappings
 
     /**
-     * Connection State Marker
+     * The list of all block id's and their respective palette.
+     */
+    static BlockMappingsReverse = BlockMappingsReverse
+
+    /**
+     * This stores a map of palette fixes for minor changes in
+     * the format where old palette names are keys and their new names
+     * are stores as a value. PixelWalker tends to name package names
+     * in the format [package name] [block name], so `coin` was renamed
+     * to `coin_gold` in v1.0.10 alpha. This function is primarily used
+     * to fix palette names in the Structure file and to maintain old
+     * code, which uses older naming styles.
+     * 
+     * @example 
+     * 
+     * Here is an example pattern with which you can convert any, even
+     * out of date block names to a usable block id.
+     * 
+     * ```ts
+     * function blockId(block_name: string): number {
+     *     return Client.BlockMappings[Client.PaletteFix[block_name as keyof typeof Client.PaletteFix] ?? block_name];
+     * }
+     * ```
+     */
+    static PaletteFix = PaletteFix
+
+    /**
+     * Connection State Marker. This is set to true if an active client
+     * is connected.
      */
     #isConnected = false
 
@@ -173,10 +198,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * This is a standart way of creating a new Client instance
      * ```ts
      * import 'dotenv/config'
-     * const client = new Client({ token: process.env.TOKEN as string })
+     * const client = Client.new({ token: process.env.TOKEN as string })
      * ```
      */
-    constructor(args: { token: string });
+    static async new(args: { token: string }): Promise<Client>;
 
     /**
      * Create a new Client instance, by logging in with data defined in the 
@@ -185,10 +210,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * This is a standart way of creating a new Client instance
      * ```ts
      * import 'dotenv/config'
-     * const client = new Client(process.env)
+     * const client = Client.new(process.env)
      * ```
      */
-    constructor(args: NodeJS.ProcessEnv);
+    static new(args: NodeJS.ProcessEnv): Promise<Client>;
 
     /**
      * Create a new Client instance, by logging in with a username and a password.
@@ -196,12 +221,25 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * @example
      * ```ts
      * import 'dotenv/config'
-     * const client = new Client({ user: 'user@example.com', pass: 'PixieWalkie' })
+     * const client = Client.new({ user: 'user@example.com', pass: 'PixieWalkie' })
      * ```
      */
-    constructor(args: { user: string, pass: string });
+    static new(args: { user: string, pass: string }): Promise<Client>;
 
-    constructor(args: { token?: string, user?: string, pass?: string }) {
+    static async new(args: { token: string } | { user: string, pass: string }): Promise<Client> {
+        return new Client(args);
+    }
+
+    /**
+     * @deprecated
+     * 
+     * Use the structure `Client.new` instead of `new Client()`. The reason
+     * for this change is to allow login with username and password, which
+     * requires the constructor to be asynchronous.
+     * 
+     * The constructor will soon be privatised.
+     */
+    public constructor(args: NodeJS.ProcessEnv | { token?: string, user?: string, pass?: string }) {
         super()
 
         this.#pocketbase = new PocketBase(`https://${this.#linkApiAccount}`)
