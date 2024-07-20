@@ -9,7 +9,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
          * On player join, create a player object with data
          * and emit `player:join` with said object.
          */
-        client.raw.on('playerJoined', async ([id, cuid, username, face, isAdmin, can_edit, can_god, x, y, color, coins, blue_coins, deaths, god_mode, mod_mode, has_crown, win, switches]) => {
+        client.raw.on('PlayerJoined', async ([id, cuid, username, face, isAdmin, can_edit, can_god, x, y, color, coins, blue_coins, deaths, god_mode, mod_mode, has_crown, win, switches]) => {
             const data = {
                 client,
                 id,
@@ -39,7 +39,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
         /**
          * Update player rights.
          */
-        client.raw.on('updateRights', async ([id, edit, god]) => {
+        client.raw.on('UpdateRights', async ([id, edit, god]) => {
             const player = players.byId<true>(id)
             player.can_edit = edit
             player.can_god = god
@@ -49,7 +49,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
          * On player leave, send the object of the player
          * and destroy it.
          */
-        client.raw.on('playerLeft', async ([id]) => {
+        client.raw.on('PlayerLeft', async ([id]) => {
             const removedPlayers = players.remove_all(p => p.id == id)
             removedPlayers.forEach(player => client.emit('player:leave', [player]))
         })
@@ -58,7 +58,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
         /**
          * TODO Player movement
          */
-        client.raw.on('playerMoved', async ([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]) => {
+        client.raw.on('PlayerMoved', async ([id, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]) => {
             const player = players.byId(id)
             if (!player) return
 
@@ -72,7 +72,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
         /**
          * Teleport player and reset movement
          */
-        client.raw.on('playerTeleported', async ([id, x, y]) => {
+        client.raw.on('PlayerTeleported', async ([id, x, y]) => {
             const player = players.byId<true>(id)
 
             player.x = x / 16
@@ -84,7 +84,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
         /**
          * When player changes face, update.
          */
-        client.raw.on('playerFace', async ([id, face]) => {
+        client.raw.on('PlayerFace', async ([id, face]) => {
             const player = players.byId<true>(id)
             const old_face = player.face
             player.face = face
@@ -94,7 +94,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
         /**
          * TODO When player changes god mode, update.
          */
-        client.raw.on('playerGodMode', async ([id, god_mode]) => {
+        client.raw.on('PlayerGodMode', async ([id, god_mode]) => {
             const player = players.byId<true>(id)
             const old_mode = player.god_mode
             player.god_mode = god_mode
@@ -104,7 +104,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
         /**
          * TODO When player changes mod mode, update.
          */
-        client.raw.on('playerModMode', async ([id, mod_mode]) => {
+        client.raw.on('PlayerModMode', async ([id, mod_mode]) => {
             const player = players.byId<true>(id)
             const old_mode = player.mod_mode
             player.mod_mode = mod_mode
@@ -114,7 +114,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
         /**
          * TODO
          */
-        client.raw.on('playerTouchBlock', async ([id, x, y, bid]) => {
+        client.raw.on('PlayerTouchBlock', async ([id, x, y, bid]) => {
             const player = players.byId<true>(id)
             const block_name = BlockMappingsReverse[bid]
 
@@ -144,7 +144,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
         /**
          * TODO
          */
-        client.raw.on('playerCounter', async ([id, gold_coins, blue_coins, death_count]) => {
+        client.raw.on('PlayerCounters', async ([id, gold_coins, blue_coins, death_count]) => {
             const player = players.byId<true>(id)
 
             const old_coins = player.coins
@@ -160,7 +160,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
             if (old_death_count < death_count) client.emit('player:death', [player, old_death_count])
         })
 
-        client.raw.on('playerReset', ([id, x, y]) => {
+        client.raw.on('PlayerReset', ([id, x, y]) => {
             const player = players.byId<true>(id)
             player.x = x / 16
             player.y = y / 16
@@ -168,7 +168,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
             client.emit('player:reset', [player])
         })
 
-        client.raw.on('playerRespawn', ([id, x, y]) => {
+        client.raw.on('PlayerRespawn', ([id, x, y]) => {
             const player = players.byId<true>(id)
             player.x = x / 16
             player.y = y / 16

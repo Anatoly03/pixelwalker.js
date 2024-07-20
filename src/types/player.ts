@@ -1,5 +1,4 @@
 import Client from "../client.js"
-import { MessageType } from "../data/consts.js"
 import { Bit7, Magic, Boolean, Int32, Double, String } from "./message-bytes.js"
 
 /**
@@ -108,7 +107,7 @@ export default class Player extends PlayerBase {
      * ```
      */
     public async pm(content: string) {
-        this.client.say(`/pm #${this.id}` + (this.client.chatPrefix ? ' ' + this.client.chatPrefix : ''), content)
+        this.client.say(`/pm #${this.id} ${this.client.chatPrefix ?? ''} ${content}`)
     }
 
     /**
@@ -125,7 +124,7 @@ export default class Player extends PlayerBase {
      * ```
      */
     public async respond(content: string) {
-        this.client.say(`${this.username}:` + (this.client.chatPrefix ? ' ' + this.client.chatPrefix : ''), content)
+        this.client.say(`${this.username}: ${content}`)
     }
 
     /**
@@ -139,7 +138,7 @@ export default class Player extends PlayerBase {
      * ```
      */
     public async kick(reason: string = "Tsk Tsk Tsk") {
-        this.client.say(`/kick #${this.id} ${reason}`, '')
+        this.client.say(`/kick #${this.id} ${reason}`)
     }
 
     /**
@@ -153,8 +152,8 @@ export default class Player extends PlayerBase {
      * })
      * ```
      */
-    public async edit(value: boolean) {
-        this.client.say(`/${value ? 'giveedit' : 'takeedit'} #${this.id}`, '')
+    public async edit_rights(value: boolean) {
+        this.client.say(`/${value ? 'giveedit' : 'takeedit'} #${this.id}`)
     }
 
     /**
@@ -167,8 +166,22 @@ export default class Player extends PlayerBase {
      * })
      * ```
      */
-    public async god(value: boolean) {
-        this.client.say(`/${value ? 'givegod' : 'takegod'} #${this.id}`, '')
+    public async god_rights(value: boolean) {
+        this.client.say(`/${value ? 'givegod' : 'takegod'} #${this.id}`)
+    }
+
+    /**
+     * Force a user into god mode.
+     * @param {true | false} value 
+     * @example
+     * ```ts
+     * client.onCommand('afk', ([player]) => {
+     *     player.force_god(true)
+     * })
+     * ```
+     */
+    public async force_god(value: boolean) {
+        this.client.say(`/forcegod #${this.id} ${value ? 'true' : 'false'}`)
     }
 
     /**
@@ -182,7 +195,7 @@ export default class Player extends PlayerBase {
      * ```
      */
     public async crown(value: boolean) {
-        this.client.say(`/${value ? 'givecrown' : 'takecrown'} #${this.id}`, '')
+        this.client.say(`/${value ? 'givecrown' : 'takecrown'} #${this.id}`)
     }
 
     /**
@@ -217,9 +230,9 @@ export default class Player extends PlayerBase {
 
     public async teleport(x: number | Player, y?: number) {
         if (typeof x == 'number' && typeof y == 'number')
-            this.client.say(`/tp #${this.id} ${x} ${y}`, '')
+            this.client.say(`/tp #${this.id} ${x} ${y}`)
         else if (x instanceof Player)
-            this.client.say(`/tp #${this.id} ${x.x} ${x.y}`, '')
+            this.client.say(`/tp #${this.id} ${x.x} ${x.y}`)
     }
 
     /**
@@ -229,7 +242,7 @@ export default class Player extends PlayerBase {
      * ```
      */
     public async reset() {
-        this.client.say(`/resetplayer #${this.id}`, '')
+        this.client.say(`/resetplayer #${this.id}`)
     }
 }
 
@@ -273,52 +286,25 @@ export class SelfPlayer extends Player {
      * 
      * @param content 
      */
-    public say(content: string): void;
-
-    /**
-     * @ignore
-     */
-    public say(preamble: string, content: string): void;
-
-    public say(preamble: string, content?: string) {
-        if (content == undefined) {
-            return this.say(this.client.chatPrefix || '', preamble)
-        }
-
-        preamble += ' '
-
-        const MESSAGE_SIZE = 120
-        const CONTENT_ALLOWED_SIZE = MESSAGE_SIZE - preamble.length - (preamble.length > 0 ? 1 : 0)
-
-        if (preamble.length > MESSAGE_SIZE)
-            throw new Error('Chat preamble is larger than message size. Bad.')
-
-        // TODO regex?
-        if (content.length > CONTENT_ALLOWED_SIZE) {
-            const separator = content.substring(0, CONTENT_ALLOWED_SIZE).lastIndexOf(' ') || CONTENT_ALLOWED_SIZE
-            this.say(preamble, content.substring(0, separator))
-            this.say(preamble, content.substring(separator, content.length))
-            return
-        }
-
-        return this.client.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String(preamble + ' ' + content))
+    public say(content: string) {
+        return this.client.say(content)
     }
 
     public set_god(value: boolean) {
-        return this.client.send(Magic(0x6B), Bit7(MessageType['playerGodMode']), Boolean(value))
+        return this.client.send(Magic(0x6B), Bit7(Client.MessageId('PlayerGodMode')), Boolean(value))
     }
 
     public set_mod(value: boolean) {
-        return this.client.send(Magic(0x6B), Bit7(MessageType['playerModMode']), Boolean(value))
+        return this.client.send(Magic(0x6B), Bit7(Client.MessageId('PlayerModMode')), Boolean(value))
     }
 
     public set_face(value: number) {
-        return this.client.send(Magic(0x6B), Bit7(MessageType['playerFace']), Int32(value))
+        return this.client.send(Magic(0x6B), Bit7(Client.MessageId('PlayerFace')), Int32(value))
     }
 
     public move(x: number, y: number, xVel: number, yVel: number, xMod: number, yMod: number, horizontal: -1 | 0 | 1, vertical: -1 | 0 | 1, space_down: boolean, space_just_down: boolean) {
         return this.client.send(
-            Magic(0x6B), Bit7(MessageType['playerMoved']),
+            Magic(0x6B), Bit7(Client.MessageId('PlayerMoved')),
             Double(x), Double(y),
             Double(xVel), Double(yVel),
             Double(xMod), Double(yMod),

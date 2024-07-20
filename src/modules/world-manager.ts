@@ -8,7 +8,7 @@ export default function Module(client: Client): Client {
     /**
      * TODO
      */
-    client.raw.on('placeBlock', async ([id, x, y, layer, bid, ...args]) => {
+    client.raw.on('WorldBlockPlaced', async ([id, x, y, layer, bid, ...args]) => {
         const player = client.players.byId<true>(id)
         if (!player || !client.world) return
         const [position, block] = client.world.set(x, y, layer, bid, args)
@@ -20,7 +20,7 @@ export default function Module(client: Client): Client {
      * Update world metadata
      * // TODO Emit events?
      */ 
-    client.raw.on('worldMetadata', async ([title, plays, owner]) => {
+    client.raw.on('WorldMetadata', async ([title, plays, owner]) => {
         if (!client.world) return
         client.world.title = title
         client.world.owner = owner
@@ -30,7 +30,7 @@ export default function Module(client: Client): Client {
     /**
      * TODO
      */
-    client.raw.on('worldCleared', async ([]) => {
+    client.raw.on('WorldCleared', async () => {
         if (!client.world) return
         client.world.clear(true)
         client.emit('world:clear', [])
@@ -39,7 +39,7 @@ export default function Module(client: Client): Client {
     /**
      * Reload world with new buffer.
      */
-    client.raw.on('worldReloaded', async ([buffer]) => {
+    client.raw.on('WorldReloaded', async ([buffer]) => {
         if (!client.world) return
         client.world.init(buffer)
     })

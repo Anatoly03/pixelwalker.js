@@ -12,7 +12,7 @@ export default function Module(client: Client): Client {
     /**
      * When receiving a system message, parse and emit.
      */
-    client.raw.on('systemMessage', async ([title, message, b]) => {
+    client.raw.on('SystemMessage', async ([title, message, b]) => {
         let event: keyof typeof SystemMessageFormat
         for (event in SystemMessageFormat) {
             const matches_title = title.match(transform(SystemMessageFormat[event][0])),

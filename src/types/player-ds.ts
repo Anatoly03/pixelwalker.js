@@ -345,7 +345,7 @@ export class GamePlayerArray<Mut extends boolean = false> extends PlayerArray<Pl
      * Give all players rights to edit or take
      */
     public edit(state: boolean): this {
-        this.data.forEach(player => player.edit(state))
+        this.data.forEach(player => player.edit_rights(state))
         return this
     }
 
@@ -353,7 +353,7 @@ export class GamePlayerArray<Mut extends boolean = false> extends PlayerArray<Pl
      * Give all players rights to god mode or take
      */
     public god(state: boolean): this {
-        this.data.forEach(player => player.god(state))
+        this.data.forEach(player => player.god_rights(state))
         return this
     }
 

@@ -36,8 +36,8 @@ export default function BotCommandModule(command: EventEmitter<{[keys: string]: 
             command.emit(cmd, args)
         }
 
-        client.raw.on('chatMessage', ([id, message]) => handle_command(id, message))
-        client.raw.on('chatPrivateMessage', ([id, message]) => handle_command(id, message))
+        client.raw.on('ChatMessage', ([id, message]) => handle_command(id, message))
+        client.raw.on('PlayerPrivateMessage', ([id, message]) => handle_command(id, message))
 
         return client
     }

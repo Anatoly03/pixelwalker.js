@@ -22,8 +22,10 @@ export function is_bot_admin(player: Player) {
 
 export const storedPlayers = new StoredPlayerManager('players.yaml', StoredPlayer)
 
+// client.raw.on('*', console.log)
+
 client
-    .on('player:join', ([p]) => p.god(true)) // Give everyone god mode
+    .on('player:join', ([p]) => p.god_rights(true)) // Give everyone god mode
     .once('start', ([self]) => self.set_god(true)) // Self should not be part of players in game.
     .on('player:join', ([player]) => console.log(`${player.username} joined: ${player.cuid}`))
     .include(Client.HelpCommand('help'))

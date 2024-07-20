@@ -34,15 +34,15 @@ export default function Module (callback: (v: EventEmitter<KeyEvents>) => EventE
     let players = new Map<number, LocalPlayer>()
 
     function Module (client: Client): Client {
-        client.raw.on('playerJoined', ([pid]) => {
+        client.raw.on('PlayerJoined', ([pid]) => {
             return players.set(pid, new LocalPlayer(pid))
         })
 
-        client.raw.on('playerLeft', ([pid]) => {
+        client.raw.on('PlayerLeft', ([pid]) => {
             return players.delete(pid)
         })
 
-        client.raw.on('playerMoved', ([pid, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]) => {
+        client.raw.on('PlayerMoved', ([pid, x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id]) => {
             let local_player = players.get(pid) as LocalPlayer
             const player = client.players.byId<true>(pid)
 

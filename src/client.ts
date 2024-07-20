@@ -6,8 +6,8 @@ import { EventEmitter } from 'events'
 import RoomTypes from './data/room_types.js'
 
 import { read7BitInt, deserialise } from './math.js'
-import { MessageType, API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents, SystemMessageEvents } from './data/consts.js'
-import { Magic } from './types/message-bytes.js'
+import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, SystemMessageEvents, RawGameEvents } from './data/consts.js'
+import { Bit7, Magic, String } from './types/message-bytes.js'
 import Block, { BlockIdentifier } from './types/block.js'
 import Player, { PlayerBase, SelfPlayer } from './types/player.js'
 
@@ -25,6 +25,7 @@ import BlockScheduler from './scheduler/scheduler-block.js'
 import { BlockMappings } from './data/mappings.js'
 import { PlayerArray, GamePlayerArray } from './types/player-ds.js'
 import { PublicProfile } from './types/player.profile.js'
+import { MessageTypes } from './data/message_types.js'
 
 /**
  * @example Snake Tail
@@ -48,6 +49,43 @@ import { PublicProfile } from './types/player.profile.js'
  * ```
  */
 export default class Client extends EventEmitter<LibraryEvents> {
+    /**
+     * Get an array of message types sequenced integer → message name
+     * 
+     * @example
+     * 
+     * ```ts
+     * import Client from 'pixelwalker.js'
+     * 
+     * console.log(Client.MessageTypes); 
+     * ```
+     * 
+     * Which will print out the following in version
+     * ```json
+     * ["PlayerInit","UpdateRights","WorldMetadata","WorldCleared","WorldReloaded","WorldBlockPlaced","ChatMessage","OldChatMessages","SystemMessage","PlayerJoined","PlayerLeft","PlayerMoved","PlayerTeleported","PlayerFace","PlayerGodMode","PlayerModMode","PlayerRespawn","PlayerReset","PlayerTouchBlock","PlayerTouchPlayer","PlayerEffect","PlayerRemoveEffect","PlayerResetEffects","PlayerTeam","PlayerCounters","PlayerLocalSwitchChanged","PlayerLocalSwitchReset","GlobalSwitchChanged","GlobalSwitchReset","PlayerPrivateMessage"]
+     * ```
+     */
+    static MessageTypes: typeof MessageTypes = MessageTypes;
+
+    /**
+     * Get the id for the message. This can then be used with `Magic` to send the proper event header.
+     * 
+     * @example
+     * 
+     * ```ts
+     * import Client from 'pixelwalker.js'
+     * 
+     * client.send(Client.MessageId('PlayerInit'));
+     * ```
+     */
+    static MessageId<Index extends number, MessageType extends (typeof MessageTypes)[Index]>(messageName: MessageType): Index {
+        return this.MessageTypes.findIndex(m => m === messageName)! as Index;
+    }
+
+    /**
+     * 
+     */
+
     /**
      * Connection State Marker
      */
@@ -76,7 +114,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * All registered commands.
      */
-    #command: EventEmitter<{[keys: string]: [[Player, ...string[]]]}> = new EventEmitter()
+    #command: EventEmitter<{ [keys: string]: [[Player, ...string[]]] }> = new EventEmitter()
 
     /**
      * All registered command permissions
@@ -84,7 +122,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     #command_permissions: [string, (p: Player) => boolean][] = []
 
     /**
-     * @todo @ignore
+     * @todo @ignore { [keys: (typeof MessageTypes)[number] | '*']: (string | number | boolean | Uint8Array)[] }
      */
     public readonly raw: EventEmitter<RawGameEvents> = new EventEmitter()
 
@@ -97,7 +135,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * @ignore
      */
     public readonly block_scheduler: BlockScheduler
-    
+
     /**
      * If the client is connected, stores a reference to the player instance, which the client controls.
      */
@@ -189,7 +227,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.include(ChatModule)
         this.include(SystemMessageModule)
         this.include(WorldManagerModule)
-        
+
         this.include(StartModule(this.#players))
         this.include(GamePlayerModule(this.#players))
 
@@ -266,7 +304,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         if (buffer[0] == 0x6B) { // 107
             let [event_id, offset] = read7BitInt(buffer, 1)
-            const event_name = Object.entries(MessageType).find((k) => k[1] == event_id)?.[0] as keyof RawGameEvents
+            const event_name = MessageTypes[event_id] as keyof RawGameEvents
             const data = deserialise(buffer, offset)
 
             if (event_name == undefined) {
@@ -359,18 +397,18 @@ export default class Client extends EventEmitter<LibraryEvents> {
             return callback(this) || this
         else
             return callback.module(this)
-            // return this.include(() =>callback.module(this))
+        // return this.include(() =>callback.module(this))
     }
 
     /**
      * Send raw bytes to server
      * @example
      * ```ts
-     * import { MessageType, Type } from "pixelwalker.js"
+     * import { MessageTypes, Type } from "pixelwalker.js"
      * const { Bit7, Magic, Boolean, Int32, Double, String } = Type
      * 
-     * client.send(Magic(0x6B), Bit7(MessageType['chatMessage']), String('Hello, World!'))
-     * client.send(Magic(0x6B), Bit7(MessageType['playerGodMode']), Boolean(true))
+     * client.send(Magic(0x6B), Bit7(MessageTypes['chatMessage']), String('Hello, World!'))
+     * client.send(Magic(0x6B), Bit7(MessageTypes['playerGodMode']), Boolean(true))
      * ```
      */
     public send(...args: Buffer[]): Promise<any | undefined> {
@@ -500,17 +538,26 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * @param {string} content Write to chat
      */
-    public say(content: string): void
+    public say(content: string) {
+        if (content.startsWith('/')) {
+            return this.send(Magic(0x6B), Bit7(Client.MessageId('ChatMessage')), String(content))
+        }
 
-    /**
-     * @ignore
-     */
-    public say(preamble: string, content: string): void
+        let preamble = this.chatPrefix ? (this.chatPrefix + ' ') : ''
 
-    public say(preamble: string, content?: string) {
-        if (content == undefined)
-            return this.say(this.chatPrefix || '', preamble)
-        return this.self?.say(preamble, content)
+        const MESSAGE_SIZE = 120
+        const CONTENT_ALLOWED_SIZE = MESSAGE_SIZE - preamble.length - (preamble.length > 0 ? 1 : 0)
+
+        if (preamble.length > MESSAGE_SIZE)
+            throw new Error('Chat preamble is larger than message size.')
+
+        for (let i = 0; i < content.length; i += CONTENT_ALLOWED_SIZE) {
+            const chunk = content.substring(CONTENT_ALLOWED_SIZE * i, Math.min(CONTENT_ALLOWED_SIZE * (i + 1), content.length))
+            const separation_index = chunk.lastIndexOf(' ') // TODO regex
+            if (chunk.trim().length == 0) return
+            console.log(`Chunk ${i}/${content.length}: '${chunk}'`)
+            this.send(Magic(0x6B), Bit7(Client.MessageId('ChatMessage')), String(preamble + chunk))
+        }
     }
 
     /**
