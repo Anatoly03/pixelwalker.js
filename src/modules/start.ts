@@ -1,17 +1,16 @@
 import Client from "../client.js"
-import { MessageType } from "../data/consts.js"
-import { Magic, Bit7 } from "../types.js"
-import { PlayerMap } from "../types/player-ds.js"
+import { Magic, Bit7 } from "../types/message-bytes.js"
+import { GamePlayerArray } from "../types/player-ds.js"
 import Player, { PlayerBase, SelfPlayer } from "../types/player.js"
 import World from "../types/world.js"
 
-export default function StartModule(players: PlayerMap<true>) {
+export default function StartModule(players: GamePlayerArray<true>) {
     return (client: Client) => {
         /**
          * On init, set everything up
          */
-        client.raw.once('init', async ([id, cuid, username, face, isAdmin, x, y, name_color, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
-            await client.send(Magic(0x6B), Bit7(MessageType['init']))
+        client.raw.once('PlayerInit', async ([id, cuid, username, face, isAdmin, x, y, name_color, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
+            await client.send(Magic(0x6B), Bit7(Client.MessageId('PlayerInit')))
 
             client.world = new World({
                 width, height, client, title, plays, owner

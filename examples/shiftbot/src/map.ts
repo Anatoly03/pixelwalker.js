@@ -124,7 +124,7 @@ export async function create_win_zone() {
     // Close Map Door
     await client.world?.paste(TOP_LEFT.x, TOP_LEFT.y, map, { animation: Animation.RANDOM, write_empty: true })
     // Create Win Zone
-    await client.block(TOP_LEFT.x + 26, TOP_LEFT.y + map.height - 2, 1, 'crown')
+    await client.block(TOP_LEFT.x + 26, TOP_LEFT.y + map.height - 2, 1, 'crown_gold')
     await client.block(TOP_LEFT.x + 28, TOP_LEFT.y + map.height - 2, 1, 0)
     return client.block(TOP_LEFT.x + 29, TOP_LEFT.y + map.height - 2, 1, 'hazard_stripes')
 }

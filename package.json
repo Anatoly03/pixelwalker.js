@@ -1,11 +1,12 @@
 {
   "name": "pixelwalker.js",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "description": "PixelWalker.JS API Bindings",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "docs": "npx typedoc src",
     "test": "jest --verbose ./test"
   },
   "keywords": [],
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/ws": "^8.5.10",
-    "jest": "^29.7.0"
+    "jest": "^29.7.0",
+    "typedoc": "^0.25.13"
   }
 }

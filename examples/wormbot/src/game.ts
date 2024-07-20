@@ -51,13 +51,13 @@ export function module(client: Client) {
 
         if (!STRUCTURE) return
 
-        const [[x, y]] = STRUCTURE.list('crown')
+        const [[x, y]] = STRUCTURE.list('crown_gold')
 
         if (player) return player.teleport(TOP_LEFT.x + x, TOP_LEFT.y + y)
     }
 
     function push_worm(x?: number, y?: number) {
-        const [CROWN_COORDINATE] = STRUCTURE?.list('crown') as [number, number, number][] || [10, 10]
+        const [CROWN_COORDINATE] = STRUCTURE?.list('crown_gold') as [number, number, number][] || [10, 10]
 
         if (WORM.length == 0) {
             [x, y] = CROWN_COORDINATE
@@ -94,7 +94,7 @@ export function module(client: Client) {
         if (!w) return Promise.resolve(true)
         if (WORM.findIndex(([x, y]) => w[0] == x && w[1] == y) != -1) return Promise.resolve(true) // The Worm is very huge, it spans over the entire field and became a modulo.
 
-        const [CROWN_COORDINATE] = STRUCTURE?.list('crown') as [number, number, number][] || [10, 10]
+        const [CROWN_COORDINATE] = STRUCTURE?.list('crown_gold') as [number, number, number][] || [10, 10]
         const [x, y] = w
 
         if (x < 1 || y < 1 || x > width - 2 || y > height - 2) return Promise.resolve(true) // Outside
@@ -184,6 +184,10 @@ export function module(client: Client) {
                 p.teleport(TOP_LEFT.x + x, TOP_LEFT.y + y)
             })
 
+            client.players
+                .filter(p => !gameRound.players.find(q => q.id == p.id))
+                .forEach(p => teleport_non_player(p))
+
             await client.wait(2000)
 
             console.log('Active in Round: ' + gameRound.players.map(p => p.username).join(' '))
@@ -221,7 +225,7 @@ export function module(client: Client) {
             await (() => {
                 const x = Math.floor(Math.random() * (width - 2)) + 1,
                     y = Math.floor(Math.random() * (height - 2)) + 1,
-                    [CROWN_COORDINATE] = STRUCTURE?.list('crown') as [number, number, number][] || [10, 10],
+                    [CROWN_COORDINATE] = STRUCTURE?.list('crown_gold') as [number, number, number][] || [10, 10],
                     block = OBSTACLE_BLOCKS[Math.floor(OBSTACLE_BLOCKS.length * Math.random())]
 
                 if (gameRound.players.some(v => (v.x - (TOP_LEFT.x + x)) ** 2 + (v.y - (TOP_LEFT.y + y)) ** 2 < 6 ** 2)) return
@@ -235,6 +239,24 @@ export function module(client: Client) {
         await client.wait(WORM_SPEED)
 
         TICK += 1
+    })
+
+
+    async function teleport_non_player(player: Player) {
+        if (gameRound.players.map(p => p.id).includes(player.id)) return
+
+        if (player.x > TOP_LEFT.x && player.y > TOP_LEFT.y && player.x < TOP_LEFT.x + width - 1 && player.y < TOP_LEFT.y + height - 1) {
+            player.teleport(TOP_LEFT.x + Math.floor(width / 2), TOP_LEFT.y + height)
+            // player.pm('[BOT] While not actively participating in game, do not annoy those who are.')
+        }
+    }
+
+    client.raw.on('playerMoved', async ([pid]) => {
+        if (!GAME_IS_RUNNING) return
+        const player = client.players.byId(pid)
+        if (!player) return
+        if (player.username == 'ANATOLY') return
+        teleport_non_player(player)
     })
 
     client.onCommand('start', is_bot_admin, () => {

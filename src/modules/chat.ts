@@ -8,7 +8,7 @@ export default function Module(client: Client): Client {
     /**
      * When receiving a chat message, emit.
      */
-    client.raw.on('chatMessage', async ([id, message]) => {
+    client.raw.on('ChatMessage', async ([id, message]) => {
         const player = client.players.byId<true>(id)
         // if (!player) return
         client.emit('chat', [player, message])
@@ -17,7 +17,7 @@ export default function Module(client: Client): Client {
     /**
      * When receiving a private message, emit.
      */
-    client.raw.on('chatPrivateMessage', async ([id, message]) => {
+    client.raw.on('PlayerPrivateMessage', async ([id, message]) => {
         const player = client.players.byId<true>(id)
         // if (!player) return
         client.emit('chat:pm', [player, message])

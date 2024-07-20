@@ -202,6 +202,13 @@ export default class PlayerStorage<P extends PlayerBase, K extends PlayerBase = 
     }
 
     /**
+     * Shuffle array
+     */
+    public shuffle() {
+        return this.sort(() => Math.random() - 0.5)
+    }
+
+    /**
      * Sort by attribute or mapping of players
      */
     public sortBy<Z extends string | number | boolean>(callback: (p: P) => Z) {

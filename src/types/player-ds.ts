@@ -10,7 +10,7 @@ import util from 'util'
 //     'filter_mut' | 'remove_all' | 'immut' | 'toString' |
 //     'toArray'
 
-export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
+export class PlayerArray<P, Mut extends boolean> {
     #mut: Mut
 
     protected data: Array<P>
@@ -23,10 +23,9 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Get an empty array. 
      */
-    public none<P extends PlayerBase>(this: PlayerArray<P, Mut>) {
+    public none<P extends PlayerBase>() {
         return new PlayerArray([] as P[], false)
     }
-
 
     public is_mut(): this is PlayerArray<P, true> {
         return this.#mut
@@ -61,9 +60,9 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Returns a string representation of all players separated by a string, which defaults to a comma.
      */
-    public join(separator: string = ', ', startWith: string = '', endWith: string = ''): string {
+    public join(this: PlayerArray<{ username: string }, Mut>, separator: string = ', ', startWith: string = '', endWith: string = ''): string {
         for (let i = 0; i < this.length; i++)
-            startWith += (i == 0 ? '' : separator) + this.data[i].username
+            startWith += (i == 0 ? '' : separator) + this.data[i].username 
         return startWith + endWith
     }
 
@@ -80,7 +79,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Filter by keeping only players that satisfy the predicate. Returns an mutable array copy.
      */
-    public filter(predicate: (value: P, index: number, array: P[]) => boolean) {
+    public filter(predicate: (value: P, index: number) => boolean) {
         return new PlayerArray(this.data.filter(predicate), false)
     }
 
@@ -96,21 +95,21 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Determines wether a player object is in the array or not.
      */
-    public includes(searchElement: P) {
-        return this.data.includes(searchElement)
+    public includes(searchElement: P): boolean {
+        return this.data.find(p => Object.entries(searchElement as Object).every(([k, v]) => (p as any)[k] == v)) != undefined
     }
 
     /**
      * Accumulates a result over all player entries and returns.
      */
-    public reduce<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number, array: P[]) => Z, initialValue: Z): Z {
+    public reduce<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number) => Z, initialValue: Z): Z {
         return this.data.reduce<Z>(callback, initialValue)
     }
 
     /**
      * Accumulates a result over all player entries and returns, starting from the right.
      */
-    public reduceRight<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number, array: P[]) => Z, initialValue: Z): Z {
+    public reduceRight<Z>(callback: (previousValue: Z, currentValue: P, currentIndex: number) => Z, initialValue: Z): Z {
         return this.data.reduceRight<Z>(callback, initialValue)
     }
 
@@ -135,18 +134,32 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Sort players with comparator lambda.
      */
-    public sort(compareFn: ((a: P, b: P) => number) = ((player1, player2) => parseInt(player1.username, 36) - parseInt(player2.username, 36))) {
+    public sort(compareFn: ((a: P, b: P) => number) = ((player1, player2) => parseInt((player1 as any).username, 36) - parseInt((player2 as any).username, 36))): this {
         this.data.sort(compareFn)
         return this
     }
 
     /**
+     * Shuffle the array with a random order.
+     * 
+     * @example Shuffled order of player turns for all players without god mode
+     * ```ts
+     * client.players
+     *     .filter(p => !p.god)
+     *     .shuffle()
+     * ```
+     */
+    public shuffle(): this {
+        return this.sort(() => Math.random() - .5)
+    }
+
+    /**
      * Sort by attribute or mapping of players
      */
-    public sortBy<Z extends string | number | boolean>(callback: (p: P) => Z) {
+    public sortBy(callback: (p: P) => keyof P) {
         this.data.sort((p1, p2) => {
-            const m1 = callback(p1),
-                m2 = callback(p2)
+            const m1 = callback(p1) as any,
+                m2 = callback(p2) as any
 
             if (Number.isInteger(m1))
                 return m1 as number - (m2 as number)
@@ -193,7 +206,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Get player by public cuid
      */
-    public byCuid(cuid: string) {
+    public byCuid(this: PlayerArray<{ cuid: string }, Mut>, cuid: string) {
         for (const p of this.data.values())
             if (p.cuid == cuid)
                 return p
@@ -202,10 +215,10 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Get player by username
      */
-    public byUsername(username: string): P | undefined {
+    public byUsername(this: PlayerArray<{ username: string }, Mut>, username: string): P | undefined {
         for (const p of this.data.values())
             if (p.username == username)
-                return p
+                return p as P
     }
 
     /**
@@ -227,7 +240,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Mutable Filter
      */
-    public filter_mut(this: PlayerArray<P, true>, predicate: (value: P, index: number, array: P[]) => boolean): this {
+    public filter_mut(this: PlayerArray<P, true>, predicate: (value: P, index: number) => boolean): this {
         this.data = this.data.filter(predicate)
         return this as this
     }
@@ -235,9 +248,10 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Remove players by trait and return all removed results.
      */
-    public remove_all(this: PlayerArray<P, true>, predicate: (value: P, index: number, array: P[]) => boolean) {
-        this.filter_mut((v, i, a) => !predicate(v, i, a))
-        return this.filter(predicate)
+    public remove_all(this: PlayerArray<P, true>, predicate: (value: P, index: number) => boolean) {
+        const filtered = this.filter(predicate)
+        this.filter_mut((v, i) => !predicate(v, i))
+        return filtered
     }
 
     /**
@@ -252,7 +266,7 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     /**
      * Returns a string representation of the player array.
      */
-    public toString(keys: (keyof P)[] = ['username', 'cuid']): string {
+    public toString(keys: (keyof P)[] = (['username', 'cuid'] as any)): string {
         const mapper = (player: P) => keys.map((k, i) => i == 0 ? player[k] : `[${player[k]}]`).join('')
         return '[' + this.map(mapper).join(', ') + ']'
     }
@@ -274,9 +288,9 @@ export class PlayerArray<P extends PlayerBase, Mut extends boolean> {
     }
 }
 
-export class PlayerMap<Mut extends boolean = false> extends PlayerArray<Player, Mut> {
-    public override filter(predicate: (value: Player, index: number, array: Player[]) => boolean) {
-        return new PlayerMap(this.data.filter(predicate), false)
+export class GamePlayerArray<Mut extends boolean = false> extends PlayerArray<Player, Mut> {
+    public override filter(predicate: (value: Player, index: number) => boolean) {
+        return new GamePlayerArray(this.data.filter(predicate), false)
     }
 
     /**
@@ -288,6 +302,10 @@ export class PlayerMap<Mut extends boolean = false> extends PlayerArray<Player, 
         if (username.startsWith('#'))
             return this.byId(parseInt(username.substring(1)))
         return super.byUsername(username)
+    }
+
+    public override includes(searchElement: Player): boolean {
+        return this.data.find(p => p.id == searchElement.id) != undefined
     }
 
     /**
@@ -327,7 +345,7 @@ export class PlayerMap<Mut extends boolean = false> extends PlayerArray<Player, 
      * Give all players rights to edit or take
      */
     public edit(state: boolean): this {
-        this.data.forEach(player => player.edit(state))
+        this.data.forEach(player => player.edit_rights(state))
         return this
     }
 
@@ -335,7 +353,7 @@ export class PlayerMap<Mut extends boolean = false> extends PlayerArray<Player, 
      * Give all players rights to god mode or take
      */
     public god(state: boolean): this {
-        this.data.forEach(player => player.god(state))
+        this.data.forEach(player => player.god_rights(state))
         return this
     }
 

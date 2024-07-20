@@ -1,6 +1,6 @@
 import Client from "../client"
-import { HeaderTypes, MessageType, SpecialBlockData } from "../data/consts.js"
-import { Bit7, Boolean, Byte, Int32, Magic } from "../types.js"
+import { HeaderTypes, SpecialBlockData } from "../data/consts.js"
+import { Bit7, Boolean, Byte, Int32, Magic } from "../types/message-bytes.js"
 import Block from "../types/block.js"
 import BaseScheduler from "./base.js"
 
@@ -15,7 +15,7 @@ export default class BlockScheduler extends BaseScheduler<BlockCoordinate, Block
     constructor(client: Client) {
         super(client)
 
-        client.raw.on('placeBlock', ([_, x, y, layer, bid, ...data]) => {
+        client.raw.on('WorldBlockPlaced', ([_, x, y, layer, bid, ...data]) => {
             this.remove(`${x}.${y}.${layer}`)
         })
 
@@ -25,7 +25,7 @@ export default class BlockScheduler extends BaseScheduler<BlockCoordinate, Block
     protected async try_send(pos: `${number}.${number}.0` | `${number}.${number}.1`, block: Block): Promise<void> {
         const [x, y, layer] = pos.split('.').map(v => parseInt(v))
 
-        const buffer: Buffer[] = [Magic(0x6B), Bit7(MessageType['placeBlock']), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
+        const buffer: Buffer[] = [Magic(0x6B), Bit7(Client.MessageId('WorldBlockPlaced')), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
         const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
 
         for (let i = 0; i < arg_types.length; i++) {

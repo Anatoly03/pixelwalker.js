@@ -1,6 +1,6 @@
 import Block, { WorldPosition } from "./block"
 
-// export type AnimatorLambda = (to_be_placed: [WorldPosition, Block][]) => Generator<[WorldPosition, Block] | undefined, boolean, unknown>
+// export type AnimationType = (to_be_placed: [WorldPosition, Block][]) => Generator<[WorldPosition, Block] | undefined, boolean, unknown>
 
 /**
  * First in first out (default order)

@@ -2,6 +2,7 @@ file-version: 0
 meta:
   left_y: 3
   right_y: 0
+  frequency: 100
 width: 4
 height: 4
 palette:
