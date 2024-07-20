@@ -1,6 +1,7 @@
 
 import { SpecialBlockData } from "../data/consts.js"
 import { BlockMappings, BlockMappingsReverse } from "../data/mappings.js"
+import palette_fix from '../data/palette_fix.js'
 
 export type WorldPosition = [number, number, 0 | 1]
 export type BlockIdentifier = keyof typeof BlockMappings | Block | number | null
@@ -14,7 +15,7 @@ export default class Block {
 
         switch (typeof id) {
             case 'string': // as type `keyof typeof BlockMappings`
-                id = BlockMappings[id]
+                id = BlockMappings[(palette_fix[id as keyof typeof palette_fix]) ?? id]
             case 'number':
                 this.id = id
                 break
