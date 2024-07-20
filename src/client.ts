@@ -6,7 +6,7 @@ import { EventEmitter } from 'events'
 import RoomTypes from './data/room_types.js'
 
 import { read7BitInt, deserialise } from './math.js'
-import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, SystemMessageEvents, RawGameEvents } from './data/consts.js'
+import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
 import { Bit7, Magic, String } from './types/message-bytes.js'
 import Block, { BlockIdentifier } from './types/block.js'
 import Player, { PlayerBase, SelfPlayer } from './types/player.js'
@@ -154,7 +154,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * @ignore @todo
      */
-    public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
+    // public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
 
     /**
      * @ignore
