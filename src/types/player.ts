@@ -107,7 +107,7 @@ export default class Player extends PlayerBase {
      * ```
      */
     public async pm(content: string) {
-        this.client.say(`/pm #${this.id} ${this.client.chatPrefix ?? ''} ${content}`)
+        this.client.say(`/pm #${this.id} ${content}`)
     }
 
     /**

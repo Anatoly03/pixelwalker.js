@@ -177,9 +177,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public cmdPrefix: string[] = ['!', '.']
 
     /**
-     * @ignore Stores the chat prefix which the bot uses to append to messages.
+     * Stores the chat prefix which the bot uses to append to messages.
      */
-    public chatPrefix: string | undefined
+    #chatPrefix = ''
 
     /**
      * @todo
@@ -537,7 +537,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * ```
      */
     setChatPrefix(prefix: string): this {
-        this.chatPrefix = prefix
+        this.#chatPrefix = prefix
         return this
     }
 
@@ -577,14 +577,28 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * @param {string} content Write to chat
      */
     public say(content: string) {
-        if (content.startsWith('/')) {
+        const isPrivateMessage = content.startsWith('/pm')
+
+        if (content.startsWith('/') && !isPrivateMessage) {
             return this.send(Magic(0x6B), Bit7(Client.MessageId('ChatMessage')), String(content))
         }
 
-        let preamble = this.chatPrefix ? (this.chatPrefix + ' ') : ''
+        let privateMessageHeader = /^\/pm\s+([\w\d]+|\#\d+)\s+(.+)$/i.exec(content)
+        let preamble = ''
 
-        const MESSAGE_SIZE = 120
-        const CONTENT_ALLOWED_SIZE = MESSAGE_SIZE - preamble.length - (preamble.length > 0 ? 1 : 0)
+        if (isPrivateMessage) {
+            preamble += `/pm ${privateMessageHeader![1]} `
+            content = privateMessageHeader![2] // Note that we cut the header from the content
+        }
+
+        if (this.#chatPrefix) {
+            preamble += `${this.#chatPrefix} `
+        }
+
+        console.log(preamble, content)
+
+        const MESSAGE_SIZE = 120;
+        const CONTENT_ALLOWED_SIZE = MESSAGE_SIZE - preamble.length - (preamble.length > 0 ? 1 : 0);
 
         if (preamble.length > MESSAGE_SIZE)
             throw new Error('Chat preamble is larger than message size.')
