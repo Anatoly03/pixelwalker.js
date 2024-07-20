@@ -22,7 +22,13 @@ export function is_bot_admin(player: Player) {
 
 export const storedPlayers = new StoredPlayerManager('players.yaml', StoredPlayer)
 
-// client.raw.on('*', console.log)
+client.raw.on('*', ([ev, ...args]) => {
+    if (ev === 'PlayerMoved') return;
+    if (ev === 'PlayerGodMode') return;
+    if (ev === 'PlayerTouchPlayer') return;
+    // if (ev === 'WorldBlockPlaced') return;
+    // console.log(ev, args);
+})
 
 client
     .on('player:join', ([p]) => p.god_rights(true)) // Give everyone god mode

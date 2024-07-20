@@ -1,5 +1,6 @@
 import Block, { WorldPosition } from "../types/block"
 import Player, { SelfPlayer } from "../types/player"
+import { MessageTypes } from "./message_types"
 
 export const API_ACCOUNT_LINK = 'api.pixelwalker.net'
 export const API_ROOM_LINK = 'game.pixelwalker.net'
@@ -43,7 +44,7 @@ export interface LibraryEvents {
 }
 
 export interface RawGameEvents {
-    '*':                        [any[]],
+    '*':                        [[((typeof MessageTypes)[number]), ...any[]]],
     'PlayerInit':               [[number, string, string, number, boolean, number, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
     'UpdateRights':             [[number, boolean, boolean]],
     'WorldMetadata':            [[string, number, string]],
@@ -53,7 +54,7 @@ export interface RawGameEvents {
     'ChatMessage':              [[number, string]],
     'OldChatMessages':          any[],
     'SystemMessage':            [[string, string, boolean]],
-    'PlayerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, number, boolean, boolean, boolean, boolean, Buffer]],
+    'PlayerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, number, Uint8Array, boolean, boolean, boolean, boolean, number, Buffer]],
     'PlayerLeft':               [[number]],
     'PlayerMoved':              [[number, number, number, number, number, number, number, -1 | 0 | 1, -1 | 0 | 1, boolean, boolean, number]],
     'PlayerTeleported':         [[number, number, number]],
@@ -63,11 +64,11 @@ export interface RawGameEvents {
     'PlayerRespawn':            [[number, number, number]],
     'PlayerReset':              [[number, number, number]],
     'PlayerTouchBlock':         [[number, number, number, number]],
-    'PlayerTouchPlayer':        any[],
+    'PlayerTouchPlayer':        [[number, number, 0 | 1]],
     'PlayerEffect':             any[],
-    'PlayerRemoveEffect':       any[], 
-    'PlayerResetEffects':       any[],
-    'PlayerTeam':               any[],
+    'PlayerRemoveEffect':       [[number, number]], 
+    'PlayerResetEffects':       [[number]],
+    'PlayerTeam':               [[number, number]],
     'PlayerCounters':           [number[]],
     'PlayerLocalSwitchChanged': [[number, number, number]],
     'PlayerLocalSwitchReset':   [[number, number]],
@@ -76,65 +77,47 @@ export interface RawGameEvents {
     'PlayerPrivateMessage':     [[number, string]],
 }
 
-// export const MessageType = {
-//     'init':                     0,
-//     'updateRights':             1,
-//     'worldMetadata':            2,
-//     'worldCleared':             3,
-//     'worldReloaded':            4,
-//     'placeBlock':               5,
-//     'chatMessage':              6,
-//     'oldChatMessages':          7,
-//     'systemMessage':            8,
-//     'playerJoined':             9,
-//     'playerLeft':               10,
-//     'playerMoved':              11,
-//     'playerTeleported':         12,
-//     'playerFace':               13,
-//     'playerGodMode':            14,
-//     'playerModMode':            15,
-//     // 'playerCheckpoint':         15,
-//     'playerRespawn':            16,
-//     'playerReset':              17,
-//     'playerTouchBlock':         18,
-//     // 'crownTouched':             18,
-//     'playerCounter':            19,
-//     // 'keyPressed':               19,
-//     // 'playerStatsChanged':       20,
-//     // 'playerWin':                21,
-//     'localSwitchChange':        20,
-//     'localSwitchReset':         21,
-//     'globalSwitchChange':       22,
-//     'globalSwitchReset':        23,
-//     'chatPrivateMessage':       24
-// }
-
 export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
-    'coin_gate':                [HeaderTypes.Int32],
-    'blue_coin_gate':           [HeaderTypes.Int32],
-    'coin_door':                [HeaderTypes.Int32],
-    'blue_coin_door':           [HeaderTypes.Int32],
+    'coin_gold_gate':           [HeaderTypes.Int32],
+    'coin_blue_gate':           [HeaderTypes.Int32],
+    'coin_gold_door':           [HeaderTypes.Int32],
+    'coin_blue_door':           [HeaderTypes.Int32],
     
-    'death_gate':               [HeaderTypes.Int32],
-    'death_door':               [HeaderTypes.Int32],
+    'hazard_death_gate':        [HeaderTypes.Int32],
+    'hazard_death_door':        [HeaderTypes.Int32],
 
     'portal':                   [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
     'portal_invisible':         [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
-    'world_portal':             [HeaderTypes.String],
-
+    'portal_world':             [HeaderTypes.String],
+    
     'spikes':                   [HeaderTypes.Int32],
+    
+    'sign_normal':              [HeaderTypes.String],
+    'sign_red':                 [HeaderTypes.String],
+    'sign_green':               [HeaderTypes.String],
+    'sign_blue':                [HeaderTypes.String],
+    'sign_gold':                [HeaderTypes.String],
 
-    'local_switch':             [HeaderTypes.Int32],
-    'local_switch_activator':   [HeaderTypes.Int32, HeaderTypes.Byte],
-    'local_switch_resetter':    [HeaderTypes.Byte],
-    'local_switch_door':        [HeaderTypes.Int32],
-    'local_switch_gate':        [HeaderTypes.Int32],
+    'effects_jump_height':      [HeaderTypes.Int32],
+    'effects_fly':              [HeaderTypes.Boolean],
+    'effects_speed':            [HeaderTypes.Int32],
+    'effects_invulnerability':  [HeaderTypes.Boolean],
+    'effects_curse':            [HeaderTypes.Int32],
+    'effects_zombie':           [HeaderTypes.Int32],
+    'effects_gravityforce':     [HeaderTypes.Int32],
+    'effects_multi_jump':       [HeaderTypes.Int32],
 
-    'global_switch':            [HeaderTypes.Int32],
-    'global_switch_activator':  [HeaderTypes.Int32, HeaderTypes.Byte],
-    'global_switch_resetter':   [HeaderTypes.Byte],
-    'global_switch_door':       [HeaderTypes.Int32],
-    'global_switch_gate':       [HeaderTypes.Int32],
+    'switch_local_toggle':      [HeaderTypes.Int32],
+    'switch_local_activator':   [HeaderTypes.Int32, HeaderTypes.Byte],
+    'switch_local_resetter':    [HeaderTypes.Byte],
+    'switch_local_door':        [HeaderTypes.Int32],
+    'switch_local_gate':        [HeaderTypes.Int32],
+
+    'switch_global_toggle':     [HeaderTypes.Int32],
+    'switch_global_activator':  [HeaderTypes.Int32, HeaderTypes.Byte],
+    'switch_global_resetter':   [HeaderTypes.Byte],
+    'switch_global_door':       [HeaderTypes.Int32],
+    'switch_global_gate':       [HeaderTypes.Int32],
 }
 
 export type SystemMessageEvents = {
