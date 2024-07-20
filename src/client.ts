@@ -16,7 +16,7 @@ import Structure from './types/structure.js'
 
 import BotCommandModule from './modules/bot-command.js'
 import ChatModule from './modules/chat.js'
-import SystemMessageModule from './modules/system-command.js'
+// import SystemMessageModule from './modules/system-command.js'
 import WorldManagerModule from './modules/world-manager.js'
 import StartModule from "./modules/start.js"
 import { GamePlayerModule } from "./modules/player-manager.js"
@@ -225,7 +225,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         this.include(BotCommandModule(this.#command))
         this.include(ChatModule)
-        this.include(SystemMessageModule)
+        // this.include(SystemMessageModule)
         this.include(WorldManagerModule)
 
         this.include(StartModule(this.#players))
