@@ -125,7 +125,7 @@ export function GamePlayerModule(players: GamePlayerArray<true>) {
                 return client.emit('world:key', [player, block_name.substring(4)])
 
             switch (block_name) {
-                case 'crown':
+                case 'crown_gold':
                     const old_crown = players.find(p => p.has_crown)
                     client.players.forEach((p) => p.has_crown = p.id == id)
                     return client.emit('player:crown', [player, old_crown || null])

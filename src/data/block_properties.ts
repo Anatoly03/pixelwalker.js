@@ -31,9 +31,9 @@ export const BlockProperties = {
     "boost_up":                 GravityUp,
     "boost_right":              GravityRight,
     "boost_down":               GravityDown,
-    "jungle_vine_vertical":     GravityControl,
+    "climbable_vine_vertical":     GravityControl,
     "jungle_vine_horizontal":   GravityControl,
-    "crown":                    Action,
+    'crown_gold':                    Action,
     "trophy":                   Action,
     "key_red":                  Action, // Question
     "key_green":                Action, // Question

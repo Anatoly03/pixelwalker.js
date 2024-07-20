@@ -51,13 +51,13 @@ export function module(client: Client) {
 
         if (!STRUCTURE) return
 
-        const [[x, y]] = STRUCTURE.list('crown')
+        const [[x, y]] = STRUCTURE.list('crown_gold')
 
         if (player) return player.teleport(TOP_LEFT.x + x, TOP_LEFT.y + y)
     }
 
     function push_worm(x?: number, y?: number) {
-        const [CROWN_COORDINATE] = STRUCTURE?.list('crown') as [number, number, number][] || [10, 10]
+        const [CROWN_COORDINATE] = STRUCTURE?.list('crown_gold') as [number, number, number][] || [10, 10]
 
         if (WORM.length == 0) {
             [x, y] = CROWN_COORDINATE
@@ -94,7 +94,7 @@ export function module(client: Client) {
         if (!w) return Promise.resolve(true)
         if (WORM.findIndex(([x, y]) => w[0] == x && w[1] == y) != -1) return Promise.resolve(true) // The Worm is very huge, it spans over the entire field and became a modulo.
 
-        const [CROWN_COORDINATE] = STRUCTURE?.list('crown') as [number, number, number][] || [10, 10]
+        const [CROWN_COORDINATE] = STRUCTURE?.list('crown_gold') as [number, number, number][] || [10, 10]
         const [x, y] = w
 
         if (x < 1 || y < 1 || x > width - 2 || y > height - 2) return Promise.resolve(true) // Outside
@@ -225,7 +225,7 @@ export function module(client: Client) {
             await (() => {
                 const x = Math.floor(Math.random() * (width - 2)) + 1,
                     y = Math.floor(Math.random() * (height - 2)) + 1,
-                    [CROWN_COORDINATE] = STRUCTURE?.list('crown') as [number, number, number][] || [10, 10],
+                    [CROWN_COORDINATE] = STRUCTURE?.list('crown_gold') as [number, number, number][] || [10, 10],
                     block = OBSTACLE_BLOCKS[Math.floor(OBSTACLE_BLOCKS.length * Math.random())]
 
                 if (gameRound.players.some(v => (v.x - (TOP_LEFT.x + x)) ** 2 + (v.y - (TOP_LEFT.y + y)) ** 2 < 6 ** 2)) return

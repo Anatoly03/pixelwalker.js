@@ -37,7 +37,7 @@ export default class Block {
         return !this.isSameAs(other)
     }
 
-    public get name(): keyof typeof BlockMappings {
+    public get name(): keyof typeof BlockMappings & string {
         return BlockMappingsReverse[this.id]
     }
 
