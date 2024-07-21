@@ -1,7 +1,7 @@
 
-import Client from '../client'
-import { PlayerBase } from '../types/player'
-import { PlayerArray } from '../types/player-ds'
+import Client from '../client.js'
+import { PlayerBase } from '../types/player.js'
+import { PlayerArray } from '../types/player-ds.js'
 import fs from 'node:fs'
 import YAML from 'yaml'
 import util from 'util'
