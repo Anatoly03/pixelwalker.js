@@ -63,6 +63,7 @@ export function module (client: Client) {
 
     client.on('player:join', ([player]) => {
         if (!Eliminated.includes(player.cuid)) player.edit_rights(true)
+        // else if (!Eliminated.includes(player.cuid)) player.edit_rights(false)
     })
 
     client.onCommand('colors', () => {

@@ -8,10 +8,11 @@ process.on('SIGINT', () => {
     })    
 })
 
-const client = new Client({ token: process.env.TOKEN as string })
+const client = await Client.new({ token: process.env.TOKEN as string })
 export default client
 
 import * as Checkpoint from './checkpoint.js'
+import * as Files from './files.js'
 import * as Fill from './fill.js'
 import * as History from './history.js'
 import * as Settings from './settings.js'
@@ -24,11 +25,12 @@ import * as Settings from './settings.js'
 // GOSHA: etc
 
 client
-    .on('player:join', ([p]) => p.god(true)) // Give everyone god mode
+    .on('player:join', ([p]) => p.god_rights(true)) // Give everyone god mode
     .once('start', ([self]) => self.set_god(true)) // Self should not be part of players in game.
     .on('player:join', ([player]) => console.log(`${player.username} joined: ${player.cuid}`))
     .include(Client.HelpCommand('help'))
     .include(Checkpoint)
+    .include(Files)
     .include(Fill)
     .include(History)
     .include(Settings)

@@ -9,7 +9,7 @@ process.on('SIGINT', () => {
     })
 })
 
-const client = new Client({ token: process.env.TOKEN as string })
+const client = await Client.new({ token: process.env.TOKEN as string })
 export default client
 
 import * as Map from './map.js'

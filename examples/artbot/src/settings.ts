@@ -45,8 +45,8 @@ export function module (client: Client) {
         if (r != RULE.EVERYONE_EDIT) return
 
         let affected = client.players.none()
-        if (v == 'true') affected = client.players.forEach(p => p.edit(true))
-        else if (v == 'false') affected = client.players.filter(p => !IS_ADMIN(p)).forEach(p => p.edit(false))
+        if (v == 'true') affected = client.players.forEach(p => p.edit_rights(true))
+        else if (v == 'false') affected = client.players.filter(p => !IS_ADMIN(p)).forEach(p => p.edit_rights(false))
         else return
 
         return `${v == 'true' ? 'Gave' : 'Removed'} edit rights ${v == 'true' ? 'to' : 'from'} ${affected.length} players.`
@@ -54,15 +54,15 @@ export function module (client: Client) {
 
     client.onCommand('rule', IS_ADMIN, ([p, _, r, v]) => {
         if (r != RULE.EVERYONE_GOD) return
-        if (v == 'true') return client.players.forEach(p => p.god(true))
-        if (v == 'false') return client.players.filter(p => !IS_ADMIN(p)).forEach(p => p.god(false))
+        if (v == 'true') return client.players.forEach(p => p.god_rights(true))
+        if (v == 'false') return client.players.filter(p => !IS_ADMIN(p)).forEach(p => p.god_rights(false))
     })
 
     client.on('player:join', ([p]) => {
         if (Rule(RULE.EVERYONE_EDIT))
-            p.edit(true)
+            p.edit_rights(true)
         if (Rule(RULE.EVERYONE_GOD))
-            p.god(true)
+            p.god_rights(true)
     })
 
     return client
