@@ -1,9 +1,9 @@
-import { WorldPosition } from './types/block.js'
+import { WorldPosition } from './types/world/block.js'
 
 export { default, default as Client } from './client.js'
 export { default as World } from './types/world.js'
 export { default as Structure } from './types/structure.js'
-export { default as Block, WorldPosition, BlockIdentifier } from "./types/block.js"
+export { default as Block, WorldPosition, BlockIdentifier } from "./types/world/block.js"
 export { default as Player } from './types/player/player.js'
 export { SelfPlayer } from './types/player/self.js'
 export { PlayerBase } from './types/player/base.js'

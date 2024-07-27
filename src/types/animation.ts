@@ -1,4 +1,4 @@
-import Block, { WorldPosition } from "./block"
+import Block, { WorldPosition } from "./world/block"
 
 // export type AnimationType = (to_be_placed: [WorldPosition, Block][]) => Generator<[WorldPosition, Block] | undefined, boolean, unknown>
 

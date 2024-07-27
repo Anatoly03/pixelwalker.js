@@ -1,4 +1,4 @@
-import Block, { WorldPosition } from "../types/block"
+import Block, { WorldPosition } from "../types/world/block"
 import Player, { SelfPlayer } from "../types/player/player"
 import { MessageTypes } from "./message_types"
 

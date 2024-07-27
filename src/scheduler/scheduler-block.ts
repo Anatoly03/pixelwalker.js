@@ -1,7 +1,7 @@
 import Client from "../client.js"
 import { HeaderTypes, SpecialBlockData } from "../data/consts.js"
 import { Bit7, Boolean, Byte, Int32, String, Magic, ByteArray } from "../types/message-bytes.js"
-import Block from "../types/block.js"
+import Block from "../types/world/block.js"
 import BaseScheduler from "./base.js"
 
 type BlockCoordinate = `${number}.${number}.${0|1}`

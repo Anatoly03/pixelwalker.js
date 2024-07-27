@@ -141,7 +141,10 @@ export default class Player  {
      * Retrieve the public profile of a user.
      */
     public async profile(): Promise<PublicProfile> {
-        return this.client.pocketbase().collection('public_profiles').getFirstListItem<PublicProfile>(this.client.pocketbase().filter(`id ~ ${this.cuid}`))
+        return this.client
+            .pocketbase()
+            .collection('public_profiles')
+            .getFirstListItem(this.client.pocketbase().filter(`id ~ ${this.cuid}`))
     }
 
     //

@@ -1,4 +1,4 @@
-import { HeaderTypes } from "./data/consts"
+import { HeaderTypes } from "../data/consts"
 
 /**
  * On occasions, the game has integer compression with the bits

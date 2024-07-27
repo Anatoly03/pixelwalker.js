@@ -1,4 +1,4 @@
-import { length7BitInt, write7BitInt } from "../math.js"
+import { length7BitInt, write7BitInt } from "./math.js"
 
 /**
  * @param {string} value 

@@ -5,10 +5,10 @@ import { EventEmitter } from 'events'
 
 import RoomTypes from './data/room_types.js'
 
-import { read7BitInt, deserialise } from './math.js'
+import { read7BitInt, deserialise } from './types/math.js'
 import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
 import { Bit7, Magic, String } from './types/message-bytes.js'
-import Block, { BlockIdentifier } from './types/block.js'
+import Block, { BlockIdentifier } from './types/world/block.js'
 import Player from './types/player/player.js'
 
 import World from './types/world.js'

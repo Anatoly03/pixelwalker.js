@@ -1,10 +1,8 @@
 
-import { SpecialBlockData } from "../data/consts.js"
-import { BlockMappings, BlockMappingsReverse } from "../data/mappings.js"
-import palette_fix from '../data/palette_fix.js'
-
-export type WorldPosition = [number, number, 0 | 1]
-export type BlockIdentifier = keyof typeof BlockMappings | Block | number | null
+import { SpecialBlockData } from "../../data/consts.js"
+import { BlockMappings, BlockMappingsReverse } from "../../data/mappings.js"
+import palette_fix from '../../data/palette_fix.js'
+import { BlockIdentifier } from "../index.js"
 
 export default class Block {
     public id: number
