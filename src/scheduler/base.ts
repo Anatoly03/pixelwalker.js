@@ -1,5 +1,5 @@
 import { EventEmitter } from "events"
-import Client from "../client"
+import Client from "../client.js"
 
 class SchedulerEntry<V> {
     value: V

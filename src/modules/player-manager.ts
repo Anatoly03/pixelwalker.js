@@ -1,4 +1,4 @@
-import Client from "../client"
+import Client from "../client.js"
 import { BlockMappingsReverse } from "../data/mappings.js"
 import { PlayerArray, GamePlayerArray } from "../types/player-ds"
 import Player, { PlayerBase } from "../types/player/player.js"

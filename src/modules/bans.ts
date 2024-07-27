@@ -1,7 +1,7 @@
-import Client from '../client'
-import Player, { PlayerBase, SelfPlayer } from '../types/player/player'
-import { PlayerArray } from '../types/player-ds'
-import PlayerStorage from './player-storage'
+import Client from '../client.js'
+import Player, { PlayerBase, SelfPlayer } from '../types/player/player.js'
+import { PlayerArray } from '../types/player-ds.js'
+import PlayerStorage from './player-storage.js'
 
 type ConstructorArgs = {
     cuid: string;
