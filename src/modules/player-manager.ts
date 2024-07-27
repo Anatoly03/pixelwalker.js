@@ -1,6 +1,6 @@
 import Client from "../client.js"
 import { BlockMappingsReverse } from "../data/mappings.js"
-import { PlayerArray, GamePlayerArray } from "../types/player-ds"
+import { PlayerArray, GamePlayerArray } from "../types/list/player.js"
 import Player, { PlayerBase } from "../types/player/player.js"
 
 export function GamePlayerModule(players: GamePlayerArray<true>) {

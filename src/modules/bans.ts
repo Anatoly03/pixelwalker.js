@@ -1,6 +1,6 @@
 import Client from '../client.js'
 import Player, { PlayerBase, SelfPlayer } from '../types/player/player.js'
-import { PlayerArray } from '../types/player-ds.js'
+import { PlayerArray } from '../types/list/player.js'
 import PlayerStorage from './player-storage.js'
 
 type ConstructorArgs = {

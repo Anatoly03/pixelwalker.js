@@ -7,7 +7,7 @@ export { default as Block, WorldPosition, BlockIdentifier } from "./types/world/
 export { default as Player } from './types/player/player.js'
 export { SelfPlayer } from './types/player/self.js'
 export { PlayerBase } from './types/player/base.js'
-export { PlayerArray, GamePlayerArray } from './types/player-ds.js'
+export { PlayerArray, GamePlayerArray } from './types/list/player.js'
 export * as BitType from './types/message-bytes.js'
 export { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
 export { SolidBlocks, Decorations, Property, BlockProperties } from './data/block_properties.js'

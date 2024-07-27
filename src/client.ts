@@ -23,7 +23,7 @@ import { GamePlayerModule } from "./modules/player-manager.js"
 
 import BlockScheduler from './scheduler/scheduler-block.js'
 import { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
-import { PlayerArray, GamePlayerArray } from './types/player-ds.js'
+import { PlayerArray, GamePlayerArray } from './types/list/player.js'
 import { PublicProfile } from './types/player/profile.js'
 import { MessageTypes } from './data/message_types.js'
 import PaletteFix from './data/palette_fix.js'
