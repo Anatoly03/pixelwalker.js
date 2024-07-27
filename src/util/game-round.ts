@@ -1,6 +1,6 @@
 import { Client } from ".."
 import { EventEmitter } from 'events'
-import Player from "../types/player"
+import Player from "../types/player/player"
 
 type GameRoundEvents = {
     'start': [Player[]]

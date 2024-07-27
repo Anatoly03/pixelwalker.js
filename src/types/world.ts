@@ -1,5 +1,5 @@
 
-import Block, { BlockIdentifier, WorldPosition } from "./block.js"
+import Block, { WorldPosition } from "./block.js"
 import Structure from "./structure.js"
 import Client from "../index.js"
 import { FIFO } from "./animation.js"

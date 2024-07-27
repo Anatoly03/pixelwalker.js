@@ -9,7 +9,7 @@ import { read7BitInt, deserialise } from './math.js'
 import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
 import { Bit7, Magic, String } from './types/message-bytes.js'
 import Block, { BlockIdentifier } from './types/block.js'
-import Player, { PlayerBase, SelfPlayer } from './types/player.js'
+import Player from './types/player/player.js'
 
 import World from './types/world.js'
 import Structure from './types/structure.js'
@@ -24,9 +24,10 @@ import { GamePlayerModule } from "./modules/player-manager.js"
 import BlockScheduler from './scheduler/scheduler-block.js'
 import { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
 import { PlayerArray, GamePlayerArray } from './types/player-ds.js'
-import { PublicProfile } from './types/player.profile.js'
+import { PublicProfile } from './types/player/profile.js'
 import { MessageTypes } from './data/message_types.js'
 import PaletteFix from './data/palette_fix.js'
+import { SelfPlayer } from './types/player/self.js'
 
 /**
  * @example Snake Tail
@@ -119,16 +120,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * PocketBase API
      */
-    #pocketbase: PocketBase
+    #pocketbase!: PocketBase
 
     /**
      * Client's API Connection target
      */
-    #linkApiAccount = API_ACCOUNT_LINK
-
-    /**
-     * Client's Room Connection Target
-     */
+    #runningDevServer = false
     #linkApiRoom = API_ROOM_LINK
 
     /**
@@ -179,7 +176,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * Stores the chat prefix which the bot uses to append to messages.
      */
-    #chatPrefix = ''
+    #chatPrefix: string | undefined = undefined
 
     /**
      * @todo
@@ -226,38 +223,63 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     static new(args: { user: string, pass: string }): Promise<Client>;
 
-    static async new(args: { token: string } | { user: string, pass: string }): Promise<Client> {
-        return new Client(args);
+    static async new(args: NodeJS.ProcessEnv | { token?: string, user?: string, pass?: string }): Promise<Client> {
+        const client = new Client()
+        client.#pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
+
+        if (args.token) {
+            if (typeof args.token != 'string') throw new Error('Token should be of type string')
+            client.#pocketbase.authStore.save(args.token, { verified: true })
+            if (!client.#pocketbase.authStore.isValid) throw new Error('Invalid Token')
+        } else if (args.user && args.pass) {
+            if (typeof args.user != 'string' || typeof args.pass != 'string') throw new Error('Username and password should be of type string')
+            await client.#pocketbase.collection('users').authWithPassword(args.user, args.pass)
+        } else {
+            throw new Error('Invalid attempt to connect with pocketbase client.')
+        }
+
+        return client
     }
 
     /**
-     * @deprecated
-     * 
+     * Create a new Client instance that connects with the dev server. The
+     * dev server is running on localhosts at ports 8090 (API Server) and
+     * 5148 (Game Server)
+     */
+    static async dev(args: NodeJS.ProcessEnv | { token?: string, user?: string, pass?: string }): Promise<Client> {
+        const client = new Client()
+
+        client.#runningDevServer = true
+        client.#linkApiRoom = 'localhost:5148'
+        client.#pocketbase = new PocketBase(`http://127.0.0.1:8090`) // not secure
+
+        if (args.token) {
+            if (typeof args.token != 'string') throw new Error('Token should be of type string')
+            client.#pocketbase.authStore.save(args.token, { verified: true })
+            if (!client.#pocketbase.authStore.isValid) throw new Error('Invalid Token')
+        } else if (args.user && args.pass) {
+            if (typeof args.user != 'string' || typeof args.pass != 'string') throw new Error('Username and password should be of type string')
+            await client.#pocketbase.collection('users').authWithPassword(args.user, args.pass)
+        } else {
+            throw new Error('Invalid attempt to connect with pocketbase client.')
+        }
+
+        return client
+    }
+
+    /**
      * Use the structure `Client.new` instead of `new Client()`. The reason
      * for this change is to allow login with username and password, which
      * requires the constructor to be asynchronous.
      * 
      * The constructor will soon be privatised.
      */
-    public constructor(args: NodeJS.ProcessEnv | { token?: string, user?: string, pass?: string }) {
+    private constructor() {
         super()
 
-        this.#pocketbase = new PocketBase(`https://${this.#linkApiAccount}`)
         this.#socket = null
-
         this.#players = new GamePlayerArray<true>()
         this.#profiles = new PlayerArray<PublicProfile, true>()
-
-        if (args.token) {
-            if (typeof args.token != 'string') throw new Error('Token should be of type string')
-            this.#pocketbase.authStore.save(args.token, { verified: true })
-            if (!this.#pocketbase.authStore.isValid) throw new Error('Invalid Token')
-        } else if (args.user && args.pass) {
-            if (typeof args.user != 'string' || typeof args.pass != 'string') throw new Error('Username and password should be of type string')
-            this.#pocketbase.collection('users').authWithPassword(args.user, args.pass)
-        } else {
-            throw new Error('Invalid attempt to connect with pocketbase client.')
-        }
 
         this.block_scheduler = new BlockScheduler(this)
 
@@ -274,15 +296,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
         process.on('SIGINT', (signal) => this.disconnect())
         // Print unhandled promises after termination
         process.on("unhandledRejection", (error) => console.error(error));
-    }
-
-    /**
-     * Set local connection target to a different game server. 
-     */
-    public deroute(API_SERVER = '127.0.0.1:8090/api', GAME_SERVER = 'localhost:5148') {
-        this.#linkApiAccount = API_SERVER
-        this.#linkApiRoom = GAME_SERVER
-        return this
     }
 
     /**
@@ -305,17 +318,22 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     public async connect(world_id: string, room_type?: typeof RoomTypes[0]): Promise<this> {
         if (world_id == undefined) throw new Error('`world_id` was not provided in `Client.connect()`')
-        if (room_type && !RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
+        if (!this.#runningDevServer && room_type && !RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
+        if (this.#runningDevServer && room_type != 'pixelwalker_dev') throw new Error(`\`room_type\` expected to be \`pixelwalker_dev\` since you are running on the development server`)
         if (!room_type) room_type = RoomTypes[0]
         if (this.#pocketbase == null) throw new Error('Can\'t connect to a world without having pocketbase data.')
 
         const { token } = await this.#pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
 
+        // console.log('Socket failed to connect to\n' +
+        //     `\t\`/api/joinkey/${room_type}/${world_id}\`\n` +
+        //     `\t\`wss://${this.#linkApiRoom}/room/token\``)
+        
         try {
-            this.#socket = new WebSocket(`wss://${this.#linkApiRoom}/room/${token}`)
+            this.#socket = new WebSocket(`${this.#runningDevServer ? 'ws' : 'wss'}://${this.#linkApiRoom}/room/${token}`)
             this.#socket.binaryType = 'arraybuffer'
         } catch (e) {
-            throw new Error('Socket failed to connect.')
+            throw e
         }
 
         this.#socket.on('message', (event) => this.receive_message(Buffer.from(event as WithImplicitCoercion<ArrayBuffer>)))
@@ -595,19 +613,18 @@ export default class Client extends EventEmitter<LibraryEvents> {
             preamble += `${this.#chatPrefix} `
         }
 
-        console.log(preamble, content)
+        console.log(preamble + ':' + content)
 
         const MESSAGE_SIZE = 120;
-        const CONTENT_ALLOWED_SIZE = MESSAGE_SIZE - preamble.length - (preamble.length > 0 ? 1 : 0);
+        const CONTENT_ALLOWED_SIZE = MESSAGE_SIZE - preamble.length
 
         if (preamble.length > MESSAGE_SIZE)
-            throw new Error('Chat preamble is larger than message size.')
+            throw new Error('Chat preamble cannot be larger than message size.')
 
         for (let i = 0; i < content.length; i += CONTENT_ALLOWED_SIZE) {
             const chunk = content.substring(CONTENT_ALLOWED_SIZE * i, Math.min(CONTENT_ALLOWED_SIZE * (i + 1), content.length))
-            const separation_index = chunk.lastIndexOf(' ') // TODO regex
+            // const separation_index = chunk.lastIndexOf(' ') // TODO regex
             if (chunk.trim().length == 0) return
-            console.log(`Chunk ${i}/${content.length}: '${chunk}'`)
             this.send(Magic(0x6B), Bit7(Client.MessageId('ChatMessage')), String(preamble + chunk))
         }
     }

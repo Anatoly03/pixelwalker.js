@@ -1,4 +1,4 @@
-import Player, { PlayerBase } from "./player.js"
+import Player, { PlayerBase } from "./player/player.js"
 import util from 'util'
 
 // export type PlayerArrayFields =

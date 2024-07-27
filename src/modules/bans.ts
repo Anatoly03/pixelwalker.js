@@ -1,5 +1,5 @@
 import Client from '../client'
-import Player, { PlayerBase, SelfPlayer } from '../types/player'
+import Player, { PlayerBase, SelfPlayer } from '../types/player/player'
 import { PlayerArray } from '../types/player-ds'
 import PlayerStorage from './player-storage'
 

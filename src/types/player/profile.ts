@@ -9,14 +9,14 @@ export type Date = `${number}-${number}-${number} ${number}:${number}:${number}.
  * public profiles 
  */
 export class PublicProfile {
-    admin: boolean
-    banned: boolean
-    collectionId: string
-    collectionName: 'public_profiles'
-    created: Date
-    face: number
-    id: string
-    username: Uppercase<string>
+    public readonly admin: boolean
+    public readonly banned: boolean
+    public readonly collectionId: string
+    public readonly collectionName: 'public_profiles'
+    public readonly created: Date
+    public readonly face: number
+    public readonly id: string
+    public readonly username: Uppercase<string>
 
     constructor(args: PublicProfile) {
         this.admin = args.admin
@@ -30,6 +30,9 @@ export class PublicProfile {
     }
 }
 
+/**
+ * Yourself.
+ */
 export class PublicUser {
     admin: false
     banned: false

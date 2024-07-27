@@ -1,5 +1,5 @@
 import Block, { WorldPosition } from "../types/block"
-import Player, { SelfPlayer } from "../types/player"
+import Player, { SelfPlayer } from "../types/player/player"
 import { MessageTypes } from "./message_types"
 
 export const API_ACCOUNT_LINK = 'api.pixelwalker.net'

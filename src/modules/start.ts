@@ -1,7 +1,7 @@
 import Client from "../client.js"
 import { Magic, Bit7 } from "../types/message-bytes.js"
 import { GamePlayerArray } from "../types/player-ds.js"
-import Player, { PlayerBase, SelfPlayer } from "../types/player.js"
+import Player, { PlayerBase, SelfPlayer } from "../types/player/player.js"
 import World from "../types/world.js"
 
 export default function StartModule(players: GamePlayerArray<true>) {

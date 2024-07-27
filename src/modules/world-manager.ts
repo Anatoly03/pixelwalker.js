@@ -1,5 +1,5 @@
 import { Client, Player, World } from "..";
-import { PlayerBase } from "../types/player";
+import { PlayerBase } from "../types/player/player";
 
 /**
  * This module generates a module function that will log certain events.

@@ -162,6 +162,7 @@ export default abstract class BaseScheduler<K extends string, V> {
     }
 
     public wait_till_emptied() {
+        // console.log([...this.promises.keys()])
         return Promise.all([...this.promises.values()])
     }
 }

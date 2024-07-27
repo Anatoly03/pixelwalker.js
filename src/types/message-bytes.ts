@@ -90,13 +90,13 @@ export function Boolean(value: boolean): Buffer {
  * @param {Uint8Array} value 
  * @returns {Buffer}
  */
-export function ByteArray(value: any): Buffer {
-    // TODO implement
-    // offset = this.write7BitEncodedInt(buffer, value.byteLength, offset);
-    // for (let j = 0; j < value.byteLength; j++) {
-    //     buffer.writeUInt8(value[j], offset++);
-    return Buffer.from([])
+export function ByteArray(buffer: Buffer): Buffer {
+    const bufferByteLen = Buffer.byteLength(buffer)
 
+    const bufLength = Buffer.alloc(length7BitInt(bufferByteLen))
+    write7BitInt(bufLength, bufferByteLen, 0)
+
+    return Buffer.concat([Buffer.from([8]), bufLength, buffer])
 }
 
 /**

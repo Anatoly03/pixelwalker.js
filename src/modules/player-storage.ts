@@ -1,6 +1,6 @@
 
 import Client from '../client'
-import { PlayerBase } from '../types/player'
+import { PlayerBase } from '../types/player/player'
 import { PlayerArray } from '../types/player-ds'
 import fs from 'node:fs'
 import YAML from 'yaml'
