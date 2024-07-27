@@ -67,11 +67,17 @@ export class SelfPlayer extends Player {
     }
 
     /**
-     * 
-     * @param content 
+     * Speak with the current self instance
      */
     public say(content: string) {
         return this.client.say(content)
+    }
+
+    /**
+     * @ignore
+     */
+    public touchBlock({ x, y }: Point) {
+        return this.client.send(Magic(0x6B), Bit7(Client.MessageId('PlayerTouchBlock')), Int32(x), Int32(y))
     }
 
     /**

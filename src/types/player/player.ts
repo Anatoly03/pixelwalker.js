@@ -1,6 +1,6 @@
 import Client from "../../client.js"
 import { Point } from "../index.js"
-import { PlayerBase } from "./base.js"
+import { PublicProfile } from "./profile.js"
 import { SelfPlayer } from "./self.js"
 import { Team, TeamIdentifier } from "./team.js"
 
@@ -32,6 +32,27 @@ export type PlayerInitArgs = {
     checkpoint?: Point,
 }
 
+export type PlayerEvents = {
+    ChatMessage: [string],
+    PlayerLeft: [],
+    PlayerMoved: [],
+    PlayerTeleported: [number, number],
+    PlayerFace: [],
+    PlayerGodMode: [],
+    PlayerModMode: [],
+    PlayerRespawn: [],
+    PlayerReset: [],
+    PlayerTouchBlock: [],
+    PlayerTouchPlayer: [],
+    PlayerEffect: [],
+    PlayerRemoveEffect: [],
+    PlayerResetEffects: [],
+    PlayerTeam: [],
+    PlayerCounters: [],
+    PlayerLocalSwitchChanged: [],
+    PlayerLocalSwitchReset: [],
+}
+
 /**
  * ```ts
  * const player = client.players.random()
@@ -40,10 +61,11 @@ export type PlayerInitArgs = {
  * player.god(false)
  * ```
  */
-export default class Player extends PlayerBase {
+export default class Player  {
     protected readonly client: Client
-    // protected promises: Promise<any>[] = [] // TODO keep track of promises, and instead async pm, have a collector of promises (await all)
 
+    public readonly cuid: string
+    public readonly username: string
     public readonly id: number
     public readonly isAdmin: boolean
     #isSelf: boolean
@@ -72,14 +94,14 @@ export default class Player extends PlayerBase {
      * @ignore
      */
     constructor(args: PlayerInitArgs) {
-        super(args)
-
         this.client = args.client
 
         this.#x = args.x
         this.#y = args.y
         this.#face = args.face
 
+        this.cuid = args.cuid
+        this.username = args.username
         this.id = args.id
         this.isAdmin = args.isAdmin
         this.#isSelf = args.isSelf
@@ -108,8 +130,48 @@ export default class Player extends PlayerBase {
     //
     //
 
+    /**
+     * Type hint wether the current player is client self
+     */
     public isSelf(): this is SelfPlayer {
         return this.#isSelf
+    }
+
+    /**
+     * Retrieve the public profile of a user.
+     */
+    public async profile(): Promise<PublicProfile> {
+        return this.client.pocketbase().collection('public_profiles').getFirstListItem<PublicProfile>(this.client.pocketbase().filter(`id ~ ${this.cuid}`))
+    }
+
+    //
+    //
+    // Event Code
+    //
+    //
+
+    /**
+     * @ignore
+     */
+    public on<K extends keyof PlayerEvents>(event: K, callback: (...args: PlayerEvents[K]) => void): this {
+        throw new Error('Not Implemented') // TODO add event emitter
+        return this
+    }
+
+    /**
+     * @ignore
+     */
+    public once<K extends keyof PlayerEvents>(event: K, callback: (...args: PlayerEvents[K]) => void): this {
+        throw new Error('Not Implemented') // TODO add event emitter
+        return this
+    }
+
+    /**
+     * @ignore
+     */
+    public emit<K extends keyof PlayerEvents>(event: K, ...args: PlayerEvents[K]): this {
+        throw new Error('Not Implemented') // TODO trigger event emitter
+        return this
     }
 
     //
