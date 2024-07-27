@@ -1,7 +1,7 @@
 import Client from "../../client.js"
 import Player, { PlayerInitArgs } from "./player"
 import { Bit7, Magic, Boolean, Int32, Double } from "../message-bytes.js"
-import { Point } from "../geometry.js"
+import { Point } from "../index.js"
 
 export type MoveArgs = {
     x: number,
@@ -19,7 +19,7 @@ export type MoveArgs = {
 /**
  * ```
  * client.on('start', () => {
- *     client.self.set_god(true)
+ *     client.self.forceGod(true)
  * })
  * ```
  */
@@ -31,6 +31,7 @@ export class SelfPlayer extends Player {
      */
     constructor(args: PlayerInitArgs) {
         super({...args, ...{
+            isSelf: true,
             win: false,
             coins: 0,
             blue_coins: 0,
@@ -40,47 +41,30 @@ export class SelfPlayer extends Player {
 
     //
     //
-    // Setters & Getters
-    //
-    //
-
-    public set face(value: number) {
-        this.client.send(Magic(0x6B), Bit7(Client.MessageId('PlayerFace')), Int32(value))
-    }
-
-    public override get pos(): Point {
-        return super.pos
-    }
-
-    public override set pos(value: [number, number] | { x: number, y: number}) {
-        if (Array.isArray(value)) {
-            this.move({ x: value[0], y: value[1] })
-        } else {
-            this.move(value)
-        }
-    }
-
-    public override set god(value: boolean) {
-        if (!this.client.connected)
-            throw new Error(`Tried to run \`self.god = ${value}\` on disconnected client.`)
-        
-        this.client.send(Magic(0x6B), Bit7(Client.MessageId('PlayerGodMode')), Boolean(value))
-    }
-
-    public override set mod(value: boolean) {
-        if (!this.client.connected)
-            throw new Error(`Tried to run \`self.mod = ${value}\` on disconnected client.`)
-        if (!this.client.self?.isAdmin)
-            throw new Error(`Tried to run \`${this.username}.mod = ${value}\` without having permissions. Are you an admin?`)
-        
-        this.client.send(Magic(0x6B), Bit7(Client.MessageId('PlayerModMode')), Boolean(value))
-    }
-
-    //
-    //
     // Methods
     //
     //
+
+    /**
+     * @todo
+     */
+    public setFace(value: number) {
+        return this.client.send(Magic(0x6B), Bit7(Client.MessageId('PlayerFace')), Int32(value))
+    }
+
+    /**
+     * @todo
+     */
+    public override async teleport(to: Point) {
+        return this.move(to)
+    }
+
+    /**
+     * @todo
+     */
+    public override async forceGod(value: boolean, mod: boolean = this.isAdmin) {
+        return this.client.send(Magic(0x6B), Bit7(Client.MessageId(mod? 'PlayerModMode' : 'PlayerGodMode')), Boolean(value))
+    }
 
     /**
      * 

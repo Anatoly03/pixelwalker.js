@@ -27,7 +27,8 @@ import { PlayerArray, GamePlayerArray } from './types/player-ds.js'
 import { PublicProfile } from './types/player/profile.js'
 import { MessageTypes } from './data/message_types.js'
 import PaletteFix from './data/palette_fix.js'
-import { SelfPlayer } from './types/player/self.js'
+import { MoveArgs, SelfPlayer } from './types/player/self.js'
+import { Point } from './types/index.js'
 
 /**
  * @example Snake Tail
@@ -594,7 +595,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * @param {string} content Write to chat
      */
-    public say(content: string) {
+    public say(content: string): Promise<any> {
         const isPrivateMessage = content.startsWith('/pm')
 
         if (content.startsWith('/') && !isPrivateMessage) {
@@ -624,30 +625,33 @@ export default class Client extends EventEmitter<LibraryEvents> {
         for (let i = 0; i < content.length; i += CONTENT_ALLOWED_SIZE) {
             const chunk = content.substring(CONTENT_ALLOWED_SIZE * i, Math.min(CONTENT_ALLOWED_SIZE * (i + 1), content.length))
             // const separation_index = chunk.lastIndexOf(' ') // TODO regex
-            if (chunk.trim().length == 0) return
+            if (chunk.trim().length == 0) break
             this.send(Magic(0x6B), Bit7(Client.MessageId('ChatMessage')), String(preamble + chunk))
         }
+
+        // TODO this should be scheduler response
+        return Promise.resolve(true)
     }
 
     /**
      * Wrapper for `client.self` methods
      */
-    public god(value: boolean, mod_mode: boolean) {
-        return this.self?.[mod_mode ? 'set_mod' : 'set_god'](value)
+    public god(value: boolean) {
+        this.self!.god = value
     }
 
     /**
      * Wrapper for `client.self.face()` method
      */
     public face(value: number) {
-        return this.self?.set_face(value)
+        this.self!.face = value
     }
 
     /**
      * Wrapper for `client.self.move()` method
      */
-    public move(x: number, y: number, xVel: number, yVel: number, xMod: number, yMod: number, horizontal: -1 | 0 | 1, vertical: -1 | 0 | 1, space_down: boolean, space_just_down: boolean) {
-        return this.self?.move(x, y, xVel, yVel, xMod, yMod, horizontal, vertical, space_down, space_just_down)
+    public move(args: Partial<MoveArgs> & Point) {
+        return this.self?.move(args)
     }
 
     /**
