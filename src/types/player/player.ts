@@ -1,8 +1,11 @@
+import EventEmitter from "events"
 import Client from "../../client.js"
 import { Point } from "../index.js"
 import { PublicProfile } from "./profile.js"
-import { SelfPlayer } from "./self.js"
+import SelfPlayer from "./self.js"
 import { Team, TeamIdentifier } from "./team.js"
+import { BlockMappings, BlockMappingsReverse } from "../../data/mappings.js"
+import palette_fix from "../../data/palette_fix.js"
 
 export type PlayerInitArgs = {
     client: Client,
@@ -33,24 +36,25 @@ export type PlayerInitArgs = {
 }
 
 export type PlayerEvents = {
+    UpdateRights: [boolean, boolean],
     ChatMessage: [string],
-    PlayerLeft: [],
-    PlayerMoved: [],
+    // PlayerLeft: [],
+    PlayerMoved: [number, number, number, number, number, number, -1 | 0 | 1, -1 | 0 | 1, boolean, boolean, number],
     PlayerTeleported: [number, number],
-    PlayerFace: [],
-    PlayerGodMode: [],
-    PlayerModMode: [],
-    PlayerRespawn: [],
-    PlayerReset: [],
-    PlayerTouchBlock: [],
-    PlayerTouchPlayer: [],
-    PlayerEffect: [],
-    PlayerRemoveEffect: [],
+    PlayerFace: [number],
+    PlayerGodMode: [boolean],
+    PlayerModMode: [boolean],
+    PlayerRespawn: [number, number],
+    PlayerReset: [number | undefined, number | undefined],
+    PlayerTouchBlock: [number, number, number],
+    PlayerTouchPlayer: [number, 0 | 1],
+    PlayerEffect: any[],
+    PlayerRemoveEffect: [number],
     PlayerResetEffects: [],
-    PlayerTeam: [],
-    PlayerCounters: [],
-    PlayerLocalSwitchChanged: [],
-    PlayerLocalSwitchReset: [],
+    PlayerTeam: [number],
+    PlayerCounters: [number, number, number],
+    PlayerLocalSwitchChanged: [number, number],
+    PlayerLocalSwitchReset: [number],
 }
 
 /**
@@ -61,8 +65,9 @@ export type PlayerEvents = {
  * player.god(false)
  * ```
  */
-export default class Player  {
+export default class Player {
     protected readonly client: Client
+    protected readonly events = new EventEmitter<PlayerEvents>()
 
     public readonly cuid: string
     public readonly username: string
@@ -70,15 +75,13 @@ export default class Player  {
     public readonly isAdmin: boolean
     #isSelf: boolean
 
-    #x: number
-    #y: number
     #face: number
 
     #god: boolean
     #mod: boolean
     #can_god: boolean
     #can_edit: boolean
-    
+
     #crown: boolean
     #win: boolean
     #team: Team
@@ -90,14 +93,17 @@ export default class Player  {
     #switches: Set<number>
     #collected: Set<Point>
 
+    // Movement
+    #x: number
+    #y: number
+    #tickId: number
+
     /**
      * @ignore
      */
     constructor(args: PlayerInitArgs) {
         this.client = args.client
 
-        this.#x = args.x
-        this.#y = args.y
         this.#face = args.face
 
         this.cuid = args.cuid
@@ -110,11 +116,11 @@ export default class Player  {
         this.#mod = args.mod ?? false
         this.#can_god = args.can_god ?? false
         this.#can_edit = args.can_edit ?? false
-    
+
         this.#crown = args.crown ?? false
         this.#win = args.win ?? false
         this.#team = new Team(args.team)
-    
+
         this.#coins = args.coins ?? 0
         this.#blue_coins = args.blue_coins ?? 0
         this.#deaths = args.deaths ?? 0
@@ -122,6 +128,13 @@ export default class Player  {
 
         this.#switches = new Set() // TODO
         this.#collected = new Set() // TODO
+
+        // Movement
+        this.#x = args.x
+        this.#y = args.y
+        this.#tickId = 0
+
+        this.registerEvents()
     }
 
     //
@@ -149,6 +162,184 @@ export default class Player  {
 
     //
     //
+    // Satic
+    //
+    //
+
+    private registerEvents() {
+        /**
+         * The player rights changed.
+         */
+        this.on('UpdateRights', (can_edit, can_god) => {
+            this.#can_edit = can_edit
+            this.#can_god = can_god
+        })
+
+        /**
+         * The player moved.
+         */
+        this.on('PlayerMoved', (x, y, speed_x, speed_y, mod_x, mod_y, horizontal, vertical, space_down, space_just_down, tick_id) => {
+            if (tick_id > this.#tickId) return // Drop Packet
+
+            this.#x = x / 16
+            this.#y = y / 16
+            this.#tickId = tick_id
+        })
+
+        /**
+         * The player was forcefully teleported.
+         */
+        this.on('PlayerTeleported', (x, y) => {
+            this.#x = x / 16
+            this.#y = y / 16
+
+            // TODO Momentum changes?
+        })
+
+        /**
+         * The player changed face.
+         */
+        this.on('PlayerFace', (face) => {
+            this.#face = face
+        })
+
+        /**
+         * The players' god mode state changed.
+         */
+        this.on('PlayerGodMode', (state) => {
+            this.#god = state
+            this.#mod = false
+        })
+
+        /**
+         * The players' mod mode state changed.
+         */
+        this.on('PlayerModMode', (state) => {
+            this.#god = false
+            this.#mod = state
+        })
+
+        /**
+         * The player respawned.
+         */
+        this.on('PlayerRespawn', (x, y) => {
+            this.#x = x / 16
+            this.#y = y / 16
+        })
+
+        /**
+         * The player was reset.
+        */
+        // TODO
+        this.on('PlayerReset', (x, y) => {
+            if (x && y) {
+                this.#x = x / 16
+                this.#y = y / 16
+            }
+
+            this.#crown = false
+            this.#win = false
+            this.#team = new Team(0)
+
+            this.#coins = 0
+            this.#blue_coins = 0
+            this.#deaths = 0
+            this.#checkpoint = undefined
+        })
+
+        /**
+         * The player interacted a block.
+         */
+        // TODO
+        this.on('PlayerTouchBlock', (x, y, bid) => {
+            const block = BlockMappingsReverse[bid]
+            const fix = (name: string) => (palette_fix[name as keyof typeof palette_fix]) ?? name
+
+            switch (block) {
+                case fix('key_red'): {
+                    // TODO
+                    break
+                }
+                case fix('crown_gold'): {
+                    // TODO reset old crown
+                    this.#crown = true
+                    break
+                }
+                case fix('crown_silver'): {
+                    this.#win =  true
+                    break
+                }
+                case fix('tool_checkpoint'): {
+                    this.#checkpoint = { x, y }
+                    break
+                }
+                case fix('tool_god_mode_activator'): {
+                    this.#can_god = true
+                    break
+                }
+            }
+        })
+
+        /**
+         * The player interacted a player.
+         */
+        // TODO
+        this.on('PlayerTouchPlayer', (id, state) => { })
+
+        /**
+         * The player interacted a player.
+         */
+        // TODO
+        this.on('PlayerEffect', () => { })
+
+        /**
+         * The player interacted a player.
+         */
+        // TODO
+        this.on('PlayerRemoveEffect', (id) => { })
+
+        /**
+         * The player touched the effect removal button/
+         */
+        // TODO
+        this.on('PlayerResetEffects', () => { })
+
+        /**
+         * The player became member of a team.
+         */
+        // TODO
+        this.on('PlayerTeam', (team) => {
+            this.#team = new Team(team as any)
+        })
+
+        /**
+         * The player touched the effect removal button
+         */
+        // TODO
+        this.on('PlayerCounters', (gold_coins, blue_coins, death_count) => {
+            this.#coins = gold_coins
+            this.#blue_coins = blue_coins
+            this.#deaths = death_count
+        })
+
+
+        /**
+         * The player touched a local switch.
+         */
+        // TODO
+        this.on('PlayerLocalSwitchChanged', (id, state) => { })
+
+
+        /**
+         * The player resetted a local switch.
+         */
+        // TODO
+        this.on('PlayerLocalSwitchReset', (id) => { })
+
+    }
+
+    //
+    //
     // Event Code
     //
     //
@@ -157,7 +348,7 @@ export default class Player  {
      * @ignore
      */
     public on<K extends keyof PlayerEvents>(event: K, callback: (...args: PlayerEvents[K]) => void): this {
-        throw new Error('Not Implemented') // TODO add event emitter
+        this.events.on(event, callback as any)
         return this
     }
 
@@ -165,7 +356,7 @@ export default class Player  {
      * @ignore
      */
     public once<K extends keyof PlayerEvents>(event: K, callback: (...args: PlayerEvents[K]) => void): this {
-        throw new Error('Not Implemented') // TODO add event emitter
+        this.events.once(event, callback as any)
         return this
     }
 
@@ -173,7 +364,7 @@ export default class Player  {
      * @ignore
      */
     public emit<K extends keyof PlayerEvents>(event: K, ...args: PlayerEvents[K]): this {
-        throw new Error('Not Implemented') // TODO trigger event emitter
+        this.events.emit(event, ...args as any)
         return this
     }
 
@@ -269,6 +460,13 @@ export default class Player  {
     // Methods
     //
     //
+
+    /**
+     * Receive and increment a new tick id.
+     */
+    protected getNewTickId(): number {
+        return this.#tickId ++
+    }
 
     /**
      * @param {string} content The message to send to the user.

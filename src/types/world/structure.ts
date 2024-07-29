@@ -57,6 +57,23 @@ export default class Structure<Meta extends MapIdentifier = {}> {
         this.meta = {} as any
     }
 
+    //
+    //
+    // Getters
+    //
+    //
+
+    public get layerCount(): number {
+        return this.#layers.length
+    }
+
+    //
+    //
+    // Methods
+    //
+    //
+
+
     /**
      * The foreground layer. In this layer all smiley collisions take place.
      */
@@ -99,7 +116,7 @@ export default class Structure<Meta extends MapIdentifier = {}> {
     /**
      * @todo
      */
-    set(position: WorldPosition, block: Block) {
+    place(position: WorldPosition, block: Block) {
         this.#layers[position.layer].set(position, block)
     }
 
@@ -127,6 +144,20 @@ export default class Structure<Meta extends MapIdentifier = {}> {
                 this.foreground.set({ x: this.width - 1, y }, new Block(0))
             }
         }
+    }
+
+    /**
+     * Paste World chunk into this world
+     * @param {args} options Options can be inherited by children classes who have more control over block placement control flow
+     */
+    public paste(xt: number, yt: number, data: Structure, options?: never) {
+        for (let x = 0; x < data.width; x++)
+            for (let y = 0; y < data.height; y++) {
+                if (x + xt < 0 || y + yt < 0 || x + xt >= this.width || y + yt >= this.height)
+                    continue
+                for (let l =  0; l < this.#layers.length; l++)
+                    this.#layers[l].set({ x: x + xt, y: y + yt}, data.#layers[l].get({ x, y }))
+            }
     }
 
     /**
@@ -183,20 +214,6 @@ export default class Structure<Meta extends MapIdentifier = {}> {
 //         return world
 //     }
 
-//     /**
-//      * Paste World chunk into this world
-//      * @param {args} options Options can be inherited by children classes who have more control over block placement control flow
-//      */
-//     public paste(xt: number, yt: number, data: Structure, options?: never): Promise<any> {
-//         for (let x = 0; x < data.width; x++)
-//             for (let y = 0; y < data.height; y++) {
-//                 if (x + xt < 0 || y + yt < 0 || x + xt >= this.width || y + yt >= this.height)
-//                     continue
-//                 this.foreground[x + xt][y + yt] = data.foreground[x][y]
-//                 this.background[x + xt][y + yt] = data.background[x][y]
-//             }
-//         return Promise.resolve(true)
-//     }
 
 //     //
 //     //

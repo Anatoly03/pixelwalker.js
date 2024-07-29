@@ -1,6 +1,9 @@
-import Block, { WorldPosition } from "../types/world/block"
-import Player, { SelfPlayer } from "../types/player/player"
-import { MessageTypes } from "./message_types"
+import Block from "../types/world/block.js"
+import Player from "../types/player/player.js"
+import SelfPlayer from "../types/player/self.js"
+import { MessageTypes } from "./message_types.js"
+import { WorldPosition } from "../types/index.js"
+import { TeamIdentifier } from "../types/player/team.js"
 
 export const API_ACCOUNT_LINK = 'api.pixelwalker.net'
 export const API_ROOM_LINK = 'game.pixelwalker.net'
@@ -54,7 +57,7 @@ export interface RawGameEvents {
     'ChatMessage':              [[number, string]],
     'OldChatMessages':          any[],
     'SystemMessage':            [[string, string, boolean]],
-    'PlayerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, number, Uint8Array, boolean, boolean, boolean, boolean, number, Buffer]],
+    'PlayerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, number, Uint8Array, boolean, boolean, boolean, boolean, TeamIdentifier & number, Buffer]],
     'PlayerLeft':               [[number]],
     'PlayerMoved':              [[number, number, number, number, number, number, number, -1 | 0 | 1, -1 | 0 | 1, boolean, boolean, number]],
     'PlayerTeleported':         [[number, number, number]],

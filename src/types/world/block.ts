@@ -7,9 +7,24 @@ import { BlockIdentifier } from "../index.js"
 export default class Block {
     public id: number
     public data: any[] = []
+
+    /**
+     * @returns The empty block, which is the default block in a world
+     * and also the eraser.
+     */
+    public static 0() {
+        return new Block(0)
+    }
+
+    /**
+     * @returns a new Block defined by its' identifier.
+     */
+    public static new(id: BlockIdentifier) {
+        throw new Error('Not Implemented') // TODO make the constructor secret
+    }
     
-    constructor(id?: BlockIdentifier) {
-        if (id == null || id == undefined) id = 0
+    constructor(id: BlockIdentifier) {
+        if (!id) id = 0
 
         switch (typeof id) {
             case 'string': // as type `keyof typeof BlockMappings`
@@ -23,7 +38,7 @@ export default class Block {
         }
     }
 
-    public isSameAs(other?: BlockIdentifier) {
+    public isSameAs(other: BlockIdentifier) {
         const block = new Block(other)
         if (this.id != block.id) return false
         if (this.data.length != block.data.length) return false
@@ -32,7 +47,7 @@ export default class Block {
         return true
     }
 
-    public isNotSameAs(other?: BlockIdentifier) {
+    public isNotSameAs(other: BlockIdentifier) {
         return !this.isSameAs(other)
     }
 

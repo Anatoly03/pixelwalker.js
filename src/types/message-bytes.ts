@@ -1,5 +1,18 @@
 import { length7BitInt, write7BitInt } from "./math.js"
 
+// TODO
+export default class MessageComponentType {
+    /**
+     * @param {number} value 
+     * @returns {Buffer}
+     */
+    static Byte(value: number): Buffer {
+        const buf = Buffer.from([1, 0])
+        buf.writeUInt8(value, 1)
+        return buf
+    }
+}
+
 /**
  * @param {string} value 
  * @returns {Buffer}

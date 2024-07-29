@@ -1,24 +1,22 @@
 import Client from '../client.js'
-import Player, { PlayerBase, SelfPlayer } from '../types/player/player.js'
-import { PlayerArray } from '../types/list/player.js'
+import { PlayerBase } from '../types/index.js';
+import Player from '../types/player/player.js'
+import { SelfPlayer } from '../types/player/self.js';
 import PlayerStorage from './player-storage.js'
 
-type ConstructorArgs = {
-    cuid: string;
-    username: string;
-    reason: string | undefined;
-}
-
-class BannedPlayer extends PlayerBase {
+class BannedPlayer implements PlayerBase {
+    public cuid: string;
+    public username: Uppercase<string>;
     public reason: string | undefined
 
-    constructor(args: ConstructorArgs) {
-        super(args)
+    constructor(args: BannedPlayer) {
+        this.cuid = args.cuid
+        this.username = args.username
         this.reason = args.reason
     }
 }
 
-export default class BannedPlayersManager extends PlayerStorage<BannedPlayer, ConstructorArgs> {
+export default class BannedPlayersManager extends PlayerStorage<BannedPlayer> {
     #permissionCallback: (p: Player) => boolean
     #client_self: SelfPlayer | undefined
 

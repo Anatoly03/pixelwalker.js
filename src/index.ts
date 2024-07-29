@@ -1,12 +1,10 @@
-import { WorldPosition } from './types/world/block.js'
 
 export { default, default as Client } from './client.js'
-export { default as World } from './types/world.js'
-export { default as Structure } from './types/structure.js'
-export { default as Block, WorldPosition, BlockIdentifier } from "./types/world/block.js"
+export { default as World } from './types/world/world.js'
+export { default as Structure } from './types/world/structure.js'
+export { default as Block } from "./types/world/block.js"
 export { default as Player } from './types/player/player.js'
 export { SelfPlayer } from './types/player/self.js'
-export { PlayerBase } from './types/player/base.js'
 export { PlayerArray, GamePlayerArray } from './types/list/player.js'
 export * as BitType from './types/message-bytes.js'
 export { BlockMappings, BlockMappingsReverse } from './data/mappings.js'

@@ -17,18 +17,15 @@ export type MoveArgs = {
 }
 
 /**
+ * @ignore
+ * 
  * ```
  * client.on('start', () => {
  *     client.self.forceGod(true)
  * })
  * ```
  */
-export class SelfPlayer extends Player {
-    #moveTick = 0
-
-    /**
-     * @ignore
-     */
+export default class SelfPlayer extends Player {
     constructor(args: PlayerInitArgs) {
         super({...args, ...{
             isSelf: true,
@@ -118,7 +115,7 @@ export class SelfPlayer extends Player {
             Double(args.xMod), Double(args.yMod),
             Int32(args.horizontal), Int32(args.vertical),
             Boolean(args.space_down), Boolean(args.space_just_down),
-            Int32(this.#moveTick++)
+            Int32(this.getNewTickId())
         )
     }
 }

@@ -8,11 +8,11 @@ import RoomTypes from './data/room_types.js'
 import { read7BitInt, deserialise } from './types/math.js'
 import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
 import { Bit7, Magic, String } from './types/message-bytes.js'
-import Block, { BlockIdentifier } from './types/world/block.js'
+import Block from './types/world/block.js'
 import Player from './types/player/player.js'
 
-import World from './types/world.js'
-import Structure from './types/structure.js'
+import World from './types/world/world.js'
+import Structure from './types/world/structure.js'
 
 import BotCommandModule from './modules/bot-command.js'
 import ChatModule from './modules/chat.js'
@@ -27,8 +27,8 @@ import { PlayerArray, GamePlayerArray } from './types/list/player.js'
 import { PublicProfile } from './types/player/profile.js'
 import { MessageTypes } from './data/message_types.js'
 import PaletteFix from './data/palette_fix.js'
-import { MoveArgs, SelfPlayer } from './types/player/self.js'
-import { Point } from './types/index.js'
+import SelfPlayer, { MoveArgs } from './types/player/self.js'
+import { BlockIdentifier, LayerId, Point } from './types/index.js'
 
 /**
  * @example Snake Tail
@@ -579,9 +579,11 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     // TODO
-    public block(x: number, y: number, layer: 0 | 1, block: number | null | keyof typeof BlockMappings, ...args: any[]): Promise<boolean>
-    public block(x: number, y: number, layer: 0 | 1, block: Block): Promise<boolean>
-    public block(x: number, y: number, layer: 0 | 1, block: BlockIdentifier, ...args: any[]): Promise<boolean> {
+    public block(x: number, y: number, layer: LayerId, block: BlockIdentifier, ...args: any[]): Promise<boolean>
+
+    public block(x: number, y: number, layer: LayerId, block: Block): Promise<boolean>
+
+    public block(x: number, y: number, layer: LayerId, block: BlockIdentifier, ...args: any[]): Promise<boolean> {
         if (block == null) block = 0
         if (typeof block == 'string' || typeof block == 'number') {
             block = new Block(block)
@@ -589,7 +591,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         } else if (!(block instanceof Block))
             return Promise.reject("Expected `Block` or block identifier, got unknown object.")
 
-        return this.world?.put_block(x, y, layer, block) || Promise.reject('The `client.world` object was not loaded.')
+        return this.world?.place({ x, y, layer }, block) || Promise.reject('The `client.world` object was not loaded.')
     }
 
     /**
@@ -637,27 +639,27 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * Wrapper for `client.self` methods
      */
     public god(value: boolean) {
-        this.self!.god = value
+        return this.self!.forceGod(value)
     }
 
     /**
      * Wrapper for `client.self.face()` method
      */
     public face(value: number) {
-        this.self!.face = value
+        return this.self!.setFace(value)
     }
 
     /**
      * Wrapper for `client.self.move()` method
      */
     public move(args: Partial<MoveArgs> & Point) {
-        return this.self?.move(args)
+        return this.self!.move(args)
     }
 
     /**
      * @todo
      */
     public fill(xt: number, yt: number, fragment: Structure, args?: { animation?: (b: any) => any, ms?: number, write_empty?: boolean }) {
-        return this.world?.paste(xt, yt, fragment, args)
+        return this.world!.paste(xt, yt, fragment, args)
     }
 }
