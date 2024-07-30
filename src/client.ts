@@ -332,8 +332,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.#socket.on('error', (err) => { this.emit('error', [err]); this.disconnect() })
         this.#socket.on('close', (code, buffer) => { this.emit('close', [code, buffer.toString('ascii')]); this.disconnect() })
 
-        this.world = await worldPromise
         this.#isConnected = true
+        this.world = await worldPromise
 
         this.block_scheduler.start()
 
@@ -462,6 +462,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public send(...args: Buffer[]): Promise<any | undefined> {
         if (!this.connected) return Promise.reject("Client not connected, but `send` was called.")
+
+        // TODO make it debug mode
+        // console.log(args)
+
         return new Promise((res, rej) => {
             if (!this.#socket) throw new Error('Socket not existing.')
             if (this.#socket.readyState != this.#socket.OPEN) throw new Error('Socket not connected.')

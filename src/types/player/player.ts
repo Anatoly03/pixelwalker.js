@@ -149,7 +149,7 @@ export default class Player {
          * PlayerEvents are all player-associated events. Their first
          * component is always the player id.
          */
-        const PlayerEvents = ['UpdateRights',  'ChatMessage',  'PlayerMoved',  'PlayerTeleported',  'PlayerFace',  'PlayerGodMode',  'PlayerModMode',  'PlayerRespawn',  'PlayerReset',  'PlayerTouchBlock',  'PlayerTouchPlayer',  'PlayerEffect',  'PlayerRemoveEffect',  'PlayerResetEffects',  'PlayerTeam',  'PlayerCounters',  'PlayerLocalSwitchChanged',  'PlayerLocalSwitchReset']
+        const PlayerEvents = ['UpdateRights',  'ChatMessage',  'PlayerMoved',  'PlayerTeleported',  'PlayerFace',  'PlayerGodMode',  'PlayerModMode',  'PlayerRespawn',  'PlayerReset',  'PlayerTouchBlock',  'PlayerTouchPlayer',  'PlayerEffect',  'PlayerRemoveEffect',  'PlayerResetEffects',  'PlayerTeam',  'PlayerCounters',  'PlayerLocalSwitchChanged',  'PlayerLocalSwitchReset'] as const
         
         /**
          * The array of all players in the client instance.
@@ -161,7 +161,6 @@ export default class Player {
          */
         client.raw.once('PlayerInit', async ([id, cuid, username, face, isAdmin, x, y, name_color, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
             await client.send(Magic(0x6B), Bit7(Client.MessageId('PlayerInit')))
-
             const player = new Player({ client, id, cuid, username, face, isSelf: false, isAdmin, x: x / 16, y: y / 16, god: false, mod: false, crown: false, win: false, coins: 0, blue_coins: 0, deaths: 0, can_edit, can_god, team: 0 })
             players.push(player)
         })
@@ -186,9 +185,9 @@ export default class Player {
         /**
          * Broadcast all player events to the player.
          */
-        client.raw.on('*', ([message, id, ...args]) => {
-            client.players.byId(id)!.emit(message as keyof PlayerEvents, args)
-        })
+        PlayerEvents.forEach(message => client.raw.on(message, ([id, ...args]: any) => {
+            client.players.byId(id)!.emit(message, args)
+        }))
 
         return players
     }
