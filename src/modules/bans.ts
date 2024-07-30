@@ -1,7 +1,7 @@
 import Client from '../client.js'
 import { PlayerBase } from '../types/index.js';
 import Player from '../types/player/player.js'
-import { SelfPlayer } from '../types/player/self.js';
+import SelfPlayer from '../types/player/self.js';
 import PlayerStorage from './player-storage.js'
 
 class BannedPlayer implements PlayerBase {

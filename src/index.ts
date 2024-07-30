@@ -2,12 +2,12 @@
 export { default, default as Client } from './client.js'
 export { default as World } from './types/world/world.js'
 export { default as Structure } from './types/world/structure.js'
-export { default as Block } from "./types/world/block.js"
+export { default as Block } from "./types/world/block/block.js"
 export { default as Player } from './types/player/player.js'
-export { SelfPlayer } from './types/player/self.js'
+export { default as SelfPlayer } from './types/player/self.js'
 export { PlayerArray, GamePlayerArray } from './types/list/player.js'
 export * as BitType from './types/message-bytes.js'
-export { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
+export { BlockMappings, BlockMappingsReverse } from './types/world/block/mappings.js'
 export { SolidBlocks, Decorations, Property, BlockProperties } from './data/block_properties.js'
 export { RoomTypes } from './data/room_types.js'
 export { default as PlayerStorage } from './modules/player-storage.js'

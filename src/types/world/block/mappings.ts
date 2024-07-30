@@ -1,4 +1,4 @@
-import { API_ROOM_LINK } from "./consts.js"
+import { API_ROOM_LINK } from '../../../data/consts'
 import fs from 'node:fs'
 
 const data: Response = await fetch(`https://${API_ROOM_LINK}/mappings`)

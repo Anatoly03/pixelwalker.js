@@ -1,7 +1,7 @@
 import { Point } from ".."
 import { HeaderTypes, SpecialBlockData } from "../../data/consts"
 import { read7BitInt } from "../math"
-import Block from "./block"
+import Block from "./block/block"
 
 /**
  * A World is an offline-saved chunk of two dimensional

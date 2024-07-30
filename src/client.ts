@@ -8,7 +8,7 @@ import RoomTypes from './data/room_types.js'
 import { read7BitInt, deserialise } from './types/math.js'
 import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
 import { Bit7, Magic, String } from './types/message-bytes.js'
-import Block from './types/world/block.js'
+import Block from './types/world/block/block.js'
 import Player from './types/player/player.js'
 
 import World from './types/world/world.js'
@@ -17,16 +17,13 @@ import Structure from './types/world/structure.js'
 import BotCommandModule from './modules/bot-command.js'
 import ChatModule from './modules/chat.js'
 // import SystemMessageModule from './modules/system-command.js'
-import WorldManagerModule from './modules/world-manager.js'
-import StartModule from "./modules/start.js"
-import { GamePlayerModule } from "./modules/player-manager.js"
 
 import BlockScheduler from './scheduler/scheduler-block.js'
-import { BlockMappings, BlockMappingsReverse } from './data/mappings.js'
+import { BlockMappings, BlockMappingsReverse } from './types/world/block/mappings.js'
 import { PlayerArray, GamePlayerArray } from './types/list/player.js'
 import { PublicProfile } from './types/player/profile.js'
 import { MessageTypes } from './data/message_types.js'
-import PaletteFix from './data/palette_fix.js'
+import PaletteFix from './types/world/block/palette_fix.js'
 import SelfPlayer, { MoveArgs } from './types/player/self.js'
 import { BlockIdentifier, LayerId, Point } from './types/index.js'
 
@@ -162,12 +159,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * If the client is connected, stores a reference to the player instance, which the client controls.
      */
-    public self: SelfPlayer | undefined
+    public self!: SelfPlayer
 
     /**
      * @todo
      */
-    public world: World | undefined
+    public world!: World
 
     /**
      * @ignore Command prefici which the bot respond to
@@ -279,18 +276,14 @@ export default class Client extends EventEmitter<LibraryEvents> {
         super()
 
         this.#socket = null
-        this.#players = new GamePlayerArray<true>()
+
+        this.#players = Player.registerDynamicArray(this)
         this.#profiles = new PlayerArray<PublicProfile, true>()
 
         this.block_scheduler = new BlockScheduler(this)
 
         this.include(BotCommandModule(this.#command))
         this.include(ChatModule)
-        // this.include(SystemMessageModule)
-        this.include(WorldManagerModule)
-
-        this.include(StartModule(this.#players))
-        this.include(GamePlayerModule(this.#players))
 
         // On process interrupt, gracefully disconnect.
         // DO NOT merge this into one function, otherwise it does not work.
@@ -326,9 +319,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
         const { token } = await this.#pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
 
-        // console.log('Socket failed to connect to\n' +
-        //     `\t\`/api/joinkey/${room_type}/${world_id}\`\n` +
-        //     `\t\`wss://${this.#linkApiRoom}/room/token\``)
+        const worldPromise = World.registerDynamicWorld(this)
         
         try {
             this.#socket = new WebSocket(`${this.#runningDevServer ? 'ws' : 'wss'}://${this.#linkApiRoom}/room/${token}`)
@@ -341,6 +332,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         this.#socket.on('error', (err) => { this.emit('error', [err]); this.disconnect() })
         this.#socket.on('close', (code, buffer) => { this.emit('close', [code, buffer.toString('ascii')]); this.disconnect() })
 
+        this.world = await worldPromise
         this.#isConnected = true
 
         this.block_scheduler.start()

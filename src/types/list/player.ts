@@ -1,15 +1,10 @@
-import Player, { PlayerBase } from "../player/player.js"
+import Player from "../player/player.js"
+import { PlayerBase } from "../index.js"
 import util from 'util'
 
-// export type PlayerArrayFields =
-//     'none' | 'is_mut' | 'length' | 'map' | 'forEach' |
-//     'join' | 'every' | 'filter' | 'find' | 'includes' |
-//     'reduce' | 'reduceRight' | 'reverse' | 'some' |
-//     'sort' | 'sortBy' | 'values' | 'first' | 'last' |
-//     'byCuid' | 'byUsername' | 'random' | 'push' |
-//     'filter_mut' | 'remove_all' | 'immut' | 'toString' |
-//     'toArray'
-
+/**
+ * 
+ */
 export class PlayerArray<P, Mut extends boolean> {
     #mut: Mut
 
@@ -321,7 +316,7 @@ export class GamePlayerArray<Mut extends boolean = false> extends PlayerArray<Pl
      */
     public byCrown(): Player | undefined {
         for (const p of this.data.values())
-            if (p.has_crown)
+            if (p.hasCrown)
                 return p
     }
 
@@ -345,7 +340,7 @@ export class GamePlayerArray<Mut extends boolean = false> extends PlayerArray<Pl
      * Give all players rights to edit or take
      */
     public edit(state: boolean): this {
-        this.data.forEach(player => player.edit_rights(state))
+        this.data.forEach(player => player.setEditRights(state))
         return this
     }
 
@@ -353,22 +348,22 @@ export class GamePlayerArray<Mut extends boolean = false> extends PlayerArray<Pl
      * Give all players rights to god mode or take
      */
     public god(state: boolean): this {
-        this.data.forEach(player => player.god_rights(state))
+        this.data.forEach(player => player.setGodRights(state))
         return this
     }
 
     /**
-     * Filter players based on if they are in god mode (and/or) mod mode
+     * Filter players based on if they are flying (in god mode or mod mode)
      */
-    public filter_god(god: boolean, mod: boolean = god) {
-        return this.filter(v => v.god_mode == god && v.mod_mode == mod)
+    public filter_god(state: boolean) {
+        return this.filter(v => v.isFlying === state)
     }
 
     /**
      * Filter only players who won
      */
     public winners() {
-        return this.filter(v => v.win)
+        return this.filter(v => v.isWinner)
     }
 
     /**
@@ -379,7 +374,7 @@ export class GamePlayerArray<Mut extends boolean = false> extends PlayerArray<Pl
     public teleport(x: number | [number, number][], y?: number): this {
         // We deal with one position.
         if (typeof x == 'number' && typeof y == 'number') {
-            this.forEach(player => player.teleport(x, y))
+            this.forEach(player => player.teleport({ x, y }))
             return this
         }
         // Here we deal with an array of positions

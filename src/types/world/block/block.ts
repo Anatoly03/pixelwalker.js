@@ -1,18 +1,22 @@
 
-import { SpecialBlockData } from "../../data/consts.js"
-import { BlockMappings, BlockMappingsReverse } from "../../data/mappings.js"
-import palette_fix from '../../data/palette_fix.js'
-import { BlockIdentifier } from "../index.js"
+import { SpecialBlockData } from "../../../data/consts.js"
+import { BlockMappings, BlockMappingsReverse } from "./mappings.js"
+import palette_fix from './palette_fix.js'
+import { BlockIdentifier } from "../../index.js"
 
 export default class Block {
-    public id: number
+    public id!: number
     public data: any[] = []
 
     /**
      * @returns The empty block, which is the default block in a world
      * and also the eraser.
      */
-    public static 0() {
+    public static get [0]() {
+        return new Block(0)
+    }
+
+    public static get ['empty']() {
         return new Block(0)
     }
 
@@ -28,14 +32,15 @@ export default class Block {
 
         switch (typeof id) {
             case 'string': // as type `keyof typeof BlockMappings`
-                id = BlockMappings[(palette_fix[id as keyof typeof palette_fix]) ?? id]
+                this.id = BlockMappings[(palette_fix[id as keyof typeof palette_fix]) ?? id]
             case 'number':
-                this.id = id
+                this.id = id as number
                 break
             case 'object':
                 this.id = id.id || 0
                 this.data = id.data || []
         }
+
     }
 
     public isSameAs(other: BlockIdentifier) {

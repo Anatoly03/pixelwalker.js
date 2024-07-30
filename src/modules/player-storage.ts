@@ -1,5 +1,5 @@
 import Client from '../client.js'
-import { PlayerBase } from '../types/player.js'
+import { PlayerBase } from '../types/index.js'
 import { PlayerArray } from '../types/list/player.js'
 
 import fs from 'node:fs'

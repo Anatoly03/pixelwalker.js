@@ -3,15 +3,17 @@ import Client from "../../client.js"
 import { Point } from "../index.js"
 import { PublicProfile } from "./profile.js"
 import SelfPlayer from "./self.js"
-import { Team, TeamIdentifier } from "./team.js"
-import { BlockMappings, BlockMappingsReverse } from "../../data/mappings.js"
-import palette_fix from "../../data/palette_fix.js"
+import { BlockMappingsReverse } from "../world/block/mappings.js"
+import palette_fix from "../world/block/palette_fix.js"
+import { GamePlayerArray } from "../list/player.js"
+import { Bit7, Magic } from "../message-bytes.js"
+import { TeamId, TeamIdentifier } from "../events.js"
 
 export type PlayerInitArgs = {
-    client: Client,
-    cuid: string,
+    client: Client
+    cuid: string
 
-    username: string,
+    username: string
     id: number
     isAdmin: boolean
     isSelf: boolean
@@ -27,18 +29,17 @@ export type PlayerInitArgs = {
 
     crown: boolean
     win: boolean
-    team: TeamIdentifier
+    team: TeamId
 
-    coins: number,
-    blue_coins: number,
-    deaths: number,
-    checkpoint?: Point,
+    coins: number
+    blue_coins: number
+    deaths: number
+    checkpoint?: Point
 }
 
 export type PlayerEvents = {
     UpdateRights: [boolean, boolean],
     ChatMessage: [string],
-    // PlayerLeft: [],
     PlayerMoved: [number, number, number, number, number, number, -1 | 0 | 1, -1 | 0 | 1, boolean, boolean, number],
     PlayerTeleported: [number, number],
     PlayerFace: [number],
@@ -51,7 +52,7 @@ export type PlayerEvents = {
     PlayerEffect: any[],
     PlayerRemoveEffect: [number],
     PlayerResetEffects: [],
-    PlayerTeam: [number],
+    PlayerTeam: [TeamId],
     PlayerCounters: [number, number, number],
     PlayerLocalSwitchChanged: [number, number],
     PlayerLocalSwitchReset: [number],
@@ -84,7 +85,7 @@ export default class Player {
 
     #crown: boolean
     #win: boolean
-    #team: Team
+    #team: TeamId
 
     #coins: number
     #blue_coins: number
@@ -99,9 +100,9 @@ export default class Player {
     #tickId: number
 
     /**
-     * @ignore
+     * @todo
      */
-    constructor(args: PlayerInitArgs) {
+    protected constructor(args: PlayerInitArgs) {
         this.client = args.client
 
         this.#face = args.face
@@ -119,7 +120,7 @@ export default class Player {
 
         this.#crown = args.crown ?? false
         this.#win = args.win ?? false
-        this.#team = new Team(args.team)
+        this.#team = args.team
 
         this.#coins = args.coins ?? 0
         this.#blue_coins = args.blue_coins ?? 0
@@ -135,6 +136,61 @@ export default class Player {
         this.#tickId = 0
 
         this.registerEvents()
+    }
+
+    //
+    //
+    // Static Methods
+    //
+    //
+
+    public static registerDynamicArray(client: Client): GamePlayerArray<true> {
+        /**
+         * PlayerEvents are all player-associated events. Their first
+         * component is always the player id.
+         */
+        const PlayerEvents = ['UpdateRights',  'ChatMessage',  'PlayerMoved',  'PlayerTeleported',  'PlayerFace',  'PlayerGodMode',  'PlayerModMode',  'PlayerRespawn',  'PlayerReset',  'PlayerTouchBlock',  'PlayerTouchPlayer',  'PlayerEffect',  'PlayerRemoveEffect',  'PlayerResetEffects',  'PlayerTeam',  'PlayerCounters',  'PlayerLocalSwitchChanged',  'PlayerLocalSwitchReset']
+        
+        /**
+         * The array of all players in the client instance.
+         */
+        const players = new GamePlayerArray<true>()
+
+        /**
+         * Initialize the self player in the array.
+         */
+        client.raw.once('PlayerInit', async ([id, cuid, username, face, isAdmin, x, y, name_color, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
+            await client.send(Magic(0x6B), Bit7(Client.MessageId('PlayerInit')))
+
+            const player = new Player({ client, id, cuid, username, face, isSelf: false, isAdmin, x: x / 16, y: y / 16, god: false, mod: false, crown: false, win: false, coins: 0, blue_coins: 0, deaths: 0, can_edit, can_god, team: 0 })
+            players.push(player)
+        })
+
+        /**
+         * Add joining players to the array.
+         */
+        client.raw.on('PlayerJoined', ([id, cuid, username, face, isAdmin, can_edit, can_god, x, y, color, coins, blue_coins, deaths, collected, god, mod, crown, win, team, switches]) => {
+            const player = new Player({ client, id, cuid, username, face, isSelf: false, isAdmin, x: x / 16, y: y / 16, god, mod, crown, win, coins, blue_coins, deaths, can_edit, can_god, team })
+            players.push(player)
+            // TODO emit player joined
+        })
+
+        /**
+         * Remove leaving players from the array.
+         */
+        client.raw.on('PlayerLeft', ([id]) => {
+            const removedPlayers = players.remove_all(p => p.id == id)
+            // TODO emit player left
+        })
+
+        /**
+         * Broadcast all player events to the player.
+         */
+        client.raw.on('*', ([message, id, ...args]) => {
+            client.players.byId(id)!.emit(message as keyof PlayerEvents, args)
+        })
+
+        return players
     }
 
     //
@@ -239,7 +295,7 @@ export default class Player {
 
             this.#crown = false
             this.#win = false
-            this.#team = new Team(0)
+            this.#team = 0
 
             this.#coins = 0
             this.#blue_coins = 0
@@ -256,12 +312,17 @@ export default class Player {
             const fix = (name: string) => (palette_fix[name as keyof typeof palette_fix]) ?? name
 
             switch (block) {
-                case fix('key_red'): {
+                case fix('key_red'):
+                case fix('key_green'):
+                case fix('key_blue'):
+                case fix('key_cyan'):
+                case fix('key_magenta'):
+                case fix('key_yellow'): {
                     // TODO
                     break
                 }
                 case fix('crown_gold'): {
-                    // TODO reset old crown
+                    this.client.players.forEach(p => p.#crown = false)
                     this.#crown = true
                     break
                 }
@@ -309,7 +370,7 @@ export default class Player {
          */
         // TODO
         this.on('PlayerTeam', (team) => {
-            this.#team = new Team(team as any)
+            this.#team = team
         })
 
         /**
@@ -451,8 +512,23 @@ export default class Player {
     /**
      * What team is the user of?
      */
-    public get team() {
-        return this.#team.name
+    public get teamId() {
+        return this.#team
+    }
+
+    /**
+     * What team is the user of?
+     */
+    public get teamName(): TeamIdentifier & string {
+        switch (this.#team) {
+            case 0: return 'none'
+            case 1: return 'red'
+            case 2: return 'green'
+            case 3: return 'blue'
+            case 4: return 'cyan'
+            case 5: return 'magenta'
+            case 6: return 'yellow'
+        }
     }
 
     //

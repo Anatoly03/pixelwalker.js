@@ -1,5 +1,5 @@
-import { BlockMappings, BlockMappingsReverse } from "../data/mappings"
-import Block from "./world/block"
+import { BlockMappings, BlockMappingsReverse } from "./world/block/mappings.js"
+import Block from "./world/block/block.js"
 
 /**
  * A data structure used to describe a coordinate within two

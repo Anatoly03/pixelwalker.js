@@ -1,8 +1,9 @@
 import Structure, { MapIdentifier } from "./structure";
 import { WorldPosition } from "..";
-import Block from "./block.js";
+import Block from "./block/block.js";
 import Client from "../../client.js";
 import { FIFO } from "../animation";
+import { Bit7, Magic } from "../message-bytes";
 
 export type WorldMeta = {
     title: string
@@ -26,16 +27,73 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
     #keys: [number, number, number, number, number, number]
     #switches: Set<number>
 
-    constructor(args: { width: number, height: number, client: Client, title: string, owner: string, plays: number }) {
+    /**
+     * @todo
+     */
+    private constructor(args: { width: number, height: number, client: Client, title: string, owner: string, plays: number }) {
         super(args.width, args.height)
         this.client = args.client
 
-        this.meta.title = 'Untiled World'
-        this.meta.owner = 'USERNAME'
-        this.meta.plays = 0
+        this.meta.title = args.title
+        this.meta.owner = args.owner
+        this.meta.plays = args.plays
 
         this.#keys = [0, 0, 0, 0, 0, 0]
         this.#switches = new Set() // TODO
+    }
+
+    //
+    //
+    // Static Methods
+    //
+    //
+
+    public static registerDynamicWorld(client: Client) {
+        /**
+         * Initialize the self player in the array.
+         */
+        const promise = new Promise<World>((res) => {
+            client.raw.once('PlayerInit', async ([id, cuid, username, face, isAdmin, x, y, name_color, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
+                client.world = new World({ width, height, client, title, plays, owner }).init(buffer)
+                res(client.world)
+            })
+        })
+
+        /**
+         * A block was placed in the world.
+         */
+        client.raw.on('WorldBlockPlaced', async ([id, x, y, layer, bid, ...args]) => {
+            const block = new Block(bid)
+            block.data = args
+            client.world.getLayer(layer).set({ x, y }, block)
+            // TODO client emit
+        })
+
+        /**
+         * Update world metadata
+         */ 
+        client.raw.on('WorldMetadata', async ([title, plays, owner]) => {
+            client.world.meta.title = title
+            client.world.meta.owner = owner
+            client.world.meta.plays = plays
+        })
+
+        /**
+         * The world was cleared
+         */
+        client.raw.on('WorldCleared', async () => {
+            client.world.clear(true)
+            // TODO emit?
+        })
+
+        /**
+         * Reload world with new buffer.
+         */
+        client.raw.on('WorldReloaded', async ([buffer]) => {
+            client.world.init(buffer)
+        })
+
+        return promise
     }
 
     //

@@ -1,5 +1,5 @@
 import { WorldPosition } from ".."
-import Block from "./block"
+import Block from "./block/block"
 import Player from "../player/player"
 import Layer from "./layer"
 
@@ -34,23 +34,7 @@ export default class Structure<Meta extends MapIdentifier = {}> {
      * @param height 
      */
     public static fromBuffer(width: number, height: number, buffer: Buffer) {
-        const object = new Structure<{}>(width, height)
-        
-        const deserializeLayer = (buffer: Buffer, offset: number) => {
-            const layer = new Layer(width, height)
-            object.#layers.push(layer)
-            return layer.deserializeFromBuffer(buffer, offset)
-        }
-
-        let offset = 0
-        offset = deserializeLayer(buffer, offset)
-        offset = deserializeLayer(buffer, offset)
-
-        if (buffer.length != offset) {
-            console.warn(`Buffer Length for World Data and Offset do not match. (${buffer.length} != ${offset}). You may be loading a world with blocks that are not yet encoded in this API version.`)
-        }
-
-        return object
+        return new Structure<{}>(width, height).init(buffer)
     }
 
     constructor(public width: number, public height: number) {
@@ -107,16 +91,42 @@ export default class Structure<Meta extends MapIdentifier = {}> {
     }
 
     /**
+     * 
+     */
+
+    /**
+     * @param width 
+     * @param height 
+     */
+    protected init(buffer: Buffer, width: number = this.width, height: number = this.height) {
+        const deserializeLayer = (buffer: Buffer, offset: number) => {
+            const layer = new Layer(width, height)
+            this.#layers.push(layer)
+            return layer.deserializeFromBuffer(buffer, offset)
+        }
+
+        let offset = 0
+        offset = deserializeLayer(buffer, offset)
+        offset = deserializeLayer(buffer, offset)
+
+        if (buffer.length != offset) {
+            console.warn(`Buffer Length for World Data and Offset do not match. (${buffer.length} != ${offset}). You may be loading a world with blocks that are not yet encoded in this API version.`)
+        }
+
+        return this
+    }
+
+    /**
      * @todo
      */
-    blockAt(position: WorldPosition): Block {
+    public blockAt(position: WorldPosition): Block {
         return this.getLayer(position.layer).get(position)
     }
 
     /**
      * @todo
      */
-    place(position: WorldPosition, block: Block) {
+    public place(position: WorldPosition, block: Block) {
         this.#layers[position.layer].set(position, block)
     }
 

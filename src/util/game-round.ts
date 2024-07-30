@@ -43,7 +43,7 @@ export class GameRound extends EventEmitter<GameRoundEvents> {
         this.running = false
     }
 
-    public async signup(callback: (p: Player) => boolean = (p) => !p.god_mode && !p.mod_mode) {
+    public async signup(callback: (p: Player) => boolean = (p) => !p.god && !p.mod) {
         this.players = this.client.players
             .filter(callback)
             .shuffle()
@@ -61,7 +61,7 @@ export class GameRound extends EventEmitter<GameRoundEvents> {
         client.on('player:god', ([p]) => {
             // console.log(this)
             // console.log(client.self)
-            if (p.god_mode) this.eliminate(p, 'god')
+            if (p.god) this.eliminate(p, 'god')
         })
 
         client.on('player:death', ([p]) => {
