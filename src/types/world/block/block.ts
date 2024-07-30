@@ -5,7 +5,7 @@ import palette_fix from './palette_fix.js'
 import { BlockIdentifier } from "../../index.js"
 
 export default class Block {
-    public id!: number
+    public id: number = 0
     public data: any[] = []
 
     /**
@@ -31,14 +31,16 @@ export default class Block {
         if (!id) id = 0
 
         switch (typeof id) {
+            case 'number':
+                this.id = id
+                break
             case 'string': // as type `keyof typeof BlockMappings`
                 this.id = BlockMappings[(palette_fix[id as keyof typeof palette_fix]) ?? id]
-            case 'number':
-                this.id = id as number
                 break
             case 'object':
                 this.id = id.id || 0
                 this.data = id.data || []
+                break
         }
 
     }

@@ -15,8 +15,12 @@ export default class BlockScheduler extends BaseScheduler<BlockCoordinate, Block
     constructor(client: Client) {
         super(client)
 
-        client.raw.on('WorldBlockPlaced', ([_, x, y, layer, bid, ...data]) => {
-            this.remove(`${x}.${y}.${layer}`)
+        client.raw.on('WorldBlockPlaced', ([_, coordinates, layer, bid, ...data]) => {
+            for (let idx = 0; idx < coordinates.length; idx += 4) {
+                const x = coordinates[idx] | (coordinates[idx + 1] << 8);
+                const y = coordinates[idx + 2] | (coordinates[idx + 3] << 8);
+                this.remove(`${x}.${y}.${layer}`)
+            }
         })
 
         // this.setMaxListeners(300 * 300 * 2) // max world width * world height * layers
@@ -33,6 +37,7 @@ export default class BlockScheduler extends BaseScheduler<BlockCoordinate, Block
 
         const buffer: Buffer[] = [Magic(0x6B), Bit7(Client.MessageId('WorldBlockPlaced')), ByteArray(Buffer.from(coordinates)), Int32(layer), Int32(block.id)]
         const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
+        console.log(buffer)
 
         for (let i = 0; i < arg_types.length; i++) {
             switch (arg_types[i]) {

@@ -1,7 +1,10 @@
-import { WorldPosition } from ".."
+import YAML from 'yaml'
 import Block from "./block/block"
 import Player from "../player/player"
 import Layer from "./layer"
+import { WorldPosition } from ".."
+import { BlockMappings } from './block/mappings'
+import Client from '../../client'
 
 export type MapIdentifier = { [keys: number | string]: number | string | boolean | null | undefined  }
 
@@ -13,19 +16,20 @@ export type MapIdentifier = { [keys: number | string]: number | string | boolean
 export default class Structure<Meta extends MapIdentifier = {}> {
     public meta!: Meta
     
+    [layer: number]: readonly Layer[]
     #layers: Layer[] = []
+
+    /**
+     * The amount of layers the game has.
+     */
+    public static LAYER_COUNT = 2 as const
 
     /**
      * Initialize an empty structure of given dimensions
      */
     public static empty(width: number, height: number): Structure<{}> {
         const object = new Structure<{}>(width, height)
-
-        object.#layers = [
-            new Layer(width, height),
-            new Layer(width, height),
-        ]
-
+        object.clear(false)
         return object
     }
 
@@ -37,18 +41,56 @@ export default class Structure<Meta extends MapIdentifier = {}> {
         return new Structure<{}>(width, height).init(buffer)
     }
 
-    constructor(public width: number, public height: number) {
-        this.meta = {} as any
+    /**
+     * @param data 
+     * @returns 
+     */
+    public static fromString(data: string): Structure {
+        const value = YAML.parse(data)
+        const world = new Structure(value.width, value.height)
+
+        world.meta = value.meta
+
+        const palette: (keyof typeof BlockMappings)[] = value.palette.map((name: keyof typeof BlockMappings) => (Client.PaletteFix[name as keyof typeof Client.PaletteFix]) ?? name);
+        const foreground: number[] = value.layers.foreground.split(' ').map((v: string) => parseInt(v, 36))
+        const background: number[] = value.layers.background.split(' ').map((v: string) => parseInt(v, 36))
+        const block_data: any[][] = value.layers.data
+
+        let idx = 0
+        let data_idx = 0
+
+        for (let x = 0; x < world.width; x++)
+            for (let y = 0; y < world.height; y++) {
+                world.foreground.set({ x, y }, new Block(palette[foreground[idx++]]))
+
+                if (world.foreground.get({ x, y }).data_count > 0)
+                    world.foreground.get({ x, y }).data = block_data[data_idx++]
+            }
+
+        idx = 0
+
+        for (let x = 0; x < world.width; x++)
+            for (let y = 0; y < world.height; y++) {
+                world.background.set({ x, y }, new Block(palette[background[idx++]]))
+
+                if (world.background.get({ x, y }).data_count > 0)
+                    world.background.get({ x, y }).data = block_data[data_idx++]
+            }
+
+        return world
     }
 
-    //
-    //
-    // Getters
-    //
-    //
+    /**
+     * 
+     */
+    constructor(public width: number, public height: number) {
+        this.meta = {} as any
+        this.clear(false)
 
-    public get layerCount(): number {
-        return this.#layers.length
+        // Define getters for indexing the layers
+        for (let layer = 0; layer < Structure.LAYER_COUNT; layer++) {
+            Object.defineProperty(this, layer, { get: () => this.#layers[layer] })
+        }
     }
 
     //
@@ -141,7 +183,7 @@ export default class Structure<Meta extends MapIdentifier = {}> {
      * Clear structure with or without border
      */
     public clear(border = false) {
-        this.#layers.forEach(l => l.clear())
+        this.#layers = [...new Array(Structure.LAYER_COUNT).keys()].map(() => new Layer(this.width, this.height))
 
         if (border) {
             for (let x = 0; x < this.width; x++) {
@@ -338,41 +380,6 @@ export default class Structure<Meta extends MapIdentifier = {}> {
 //             }
 
 //         return YAML.stringify(data)
-//     }
-
-//     public static fromString(data: string): Structure {
-//         const value = YAML.parse(data)
-//         const world = new Structure(value.width, value.height)
-
-//         world.meta = value.meta
-
-//         const palette: (keyof typeof BlockMappings)[] = value.palette.map((name: keyof typeof BlockMappings) => (Client.PaletteFix[name as keyof typeof Client.PaletteFix]) ?? name);
-//         const foreground: number[] = value.layers.foreground.split(' ').map((v: string) => parseInt(v, 36))
-//         const background: number[] = value.layers.background.split(' ').map((v: string) => parseInt(v, 36))
-//         const block_data: any[][] = value.layers.data
-
-//         let idx = 0
-//         let data_idx = 0
-
-//         for (let x = 0; x < world.width; x++)
-//             for (let y = 0; y < world.height; y++) {
-//                 world.foreground[x][y] = new Block(palette[foreground[idx++]])
-
-//                 if (world.foreground[x][y].data_count > 0)
-//                     world.foreground[x][y].data = block_data[data_idx++]
-//             }
-
-//         idx = 0
-
-//         for (let x = 0; x < world.width; x++)
-//             for (let y = 0; y < world.height; y++) {
-//                 world.background[x][y] = new Block(palette[background[idx++]])
-
-//                 if (world.background[x][y].data_count > 0)
-//                     world.background[x][y].data = block_data[data_idx++]
-//             }
-
-//         return world
 //     }
 
 //     public static metaFromString(data: string): any {

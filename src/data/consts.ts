@@ -53,7 +53,7 @@ export interface RawGameEvents {
     'WorldMetadata':            [[string, number, string]],
     'WorldCleared':             [],
     'WorldReloaded':            [[Buffer]],
-    'WorldBlockPlaced':         [[number, number, number, 0 | 1, number, ...any]],
+    'WorldBlockPlaced':         [[number, Buffer, 0 | 1, number, ...any]],
     'ChatMessage':              [[number, string]],
     'OldChatMessages':          any[],
     'SystemMessage':            [[string, string, boolean]],

@@ -46,7 +46,7 @@ export type BlockId = 0 | keyof typeof BlockMappingsReverse
  * let block_name: BlockIdentifier = 'basic_blue'
  * ```
  */
-export type BlockName = 'empty' | keyof typeof BlockMappings
+export type BlockName = 'empty' | (keyof (typeof BlockMappings) & string)
 
 /**
  * A common type with which you can uniquely refer to a

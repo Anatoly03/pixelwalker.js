@@ -159,12 +159,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * If the client is connected, stores a reference to the player instance, which the client controls.
      */
-    public self!: SelfPlayer
+    public self?: SelfPlayer
 
     /**
      * @todo
      */
-    public world!: World
+    public world?: World
 
     /**
      * @ignore Command prefici which the bot respond to

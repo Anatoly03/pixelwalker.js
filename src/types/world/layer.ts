@@ -9,12 +9,20 @@ import Block from "./block/block"
  * like a pixel raster.
  */
 export default class Layer {
+    [x: number]: readonly Block[]
     #data: Block[][] = []
 
     /**
      * 
      */
-    constructor(public readonly width: number, public readonly height: number) { }
+    constructor(public readonly width: number, public readonly height: number) {
+        this.clear()
+        
+        // Define getters for indexing the layer
+        for (let x = 0; x < this.width; x++) {
+            Object.defineProperty(this, x, { get: () => this.#data[x] })
+        }
+    }
 
     /**
      * Get block at specific coordinates.
@@ -35,6 +43,12 @@ export default class Layer {
      */
     public clear(): this {
         this.#data = []
+        for (let x = 0; x < this.width; x++) {
+            this.#data.push([])
+            for (let y = 0; y < this.width; y++) {
+                this.#data[x].push(Block.empty)
+            }
+        }
         return this
     }
 
@@ -42,7 +56,7 @@ export default class Layer {
      * Deserialize the layer from buffer
      */
     public deserializeFromBuffer(buffer: Buffer, offset: number): number {
-        this.clear()
+        this.#data = []
 
         for (let x = 0; x < this.width; x++) {
             this.#data.push([])

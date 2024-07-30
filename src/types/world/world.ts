@@ -15,7 +15,7 @@ export type WorldEvents = {
     WorldMetadata: [string],
     WorldCleared: [],
     WorldReloaded: [Buffer],
-    WorldBlockPlaced: [number],
+    WorldBlockPlaced: [number, Buffer, number, number, ...any[]],
     PlayerTouchBlock: [],
     GlobalSwitchChanged: [],
     GlobalSwitchReset: [],
@@ -49,23 +49,28 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
     //
 
     public static registerDynamicWorld(client: Client) {
+        let respond: (w: World) => void
+        const promise = new Promise<World>((res) => respond = res)
+
         /**
          * Initialize the self player in the array.
          */
-        const promise = new Promise<World>((res) => {
-            client.raw.once('PlayerInit', async ([id, cuid, username, face, isAdmin, x, y, name_color, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
-                client.world = new World({ width, height, client, title, plays, owner }).init(buffer)
-                res(client.world)
-            })
+        client.raw.once('PlayerInit', async ([id, cuid, username, face, isAdmin, x, y, name_color, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
+            client.world = new World({ width, height, client, title, plays, owner }).init(buffer)
+            respond(client.world)
         })
 
         /**
          * A block was placed in the world.
          */
-        client.raw.on('WorldBlockPlaced', async ([id, x, y, layer, bid, ...args]) => {
+        client.raw.on('WorldBlockPlaced', async ([id, coordinates, layer, bid, ...args]) => {
             const block = new Block(bid)
             block.data = args
-            client.world.getLayer(layer).set({ x, y }, block)
+            for (let idx = 0; idx < coordinates.length; idx += 4) {
+                const x = coordinates[idx] | (coordinates[idx + 1] << 8);
+                const y = coordinates[idx + 2] | (coordinates[idx + 3] << 8);
+                client.world!.getLayer(layer).set({ x, y }, block)
+            }
             // TODO client emit
         })
 
@@ -73,16 +78,16 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
          * Update world metadata
          */ 
         client.raw.on('WorldMetadata', async ([title, plays, owner]) => {
-            client.world.meta.title = title
-            client.world.meta.owner = owner
-            client.world.meta.plays = plays
+            client.world!.meta.title = title
+            client.world!.meta.owner = owner
+            client.world!.meta.plays = plays
         })
 
         /**
          * The world was cleared
          */
         client.raw.on('WorldCleared', async () => {
-            client.world.clear(true)
+            client.world!.clear(true)
             // TODO emit?
         })
 
@@ -90,7 +95,7 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
          * Reload world with new buffer.
          */
         client.raw.on('WorldReloaded', async ([buffer]) => {
-            client.world.init(buffer)
+            client.world!.init(buffer)
         })
 
         return promise
@@ -150,8 +155,9 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
             if (x + xt < 0 && x + xt >= this.width) continue
             for (let y = 0; y < fragment.height; y++) {
                 if (y + yt < 0 || y + yt >= this.height) continue
-                for (let layer: any = 0; layer < this.layerCount; layer++) {
-                    to_be_placed.push([{ x, y, layer }, fragment.blockAt({ x, y, layer })])
+                for (let layer: any = 0; layer < Structure.LAYER_COUNT; layer++) {
+                    // console.log(fragment.blockAt({ x, y, layer }))
+                    to_be_placed.push([{ x: x + xt, y: y + yt, layer }, fragment.blockAt({ x, y, layer })])
                 }
 
                 // const blockAtLayer = ((i: 0|1) => fragment.blockAt(x, y, i) || new Block('empty'))
@@ -172,12 +178,10 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
 
         while (to_be_placed.length > 0) {
             const yielded = generator.next()
-            const [[x, y, layer], block]: any = yielded.value
+            const [{ x, y, layer }, block]: any = yielded.value
 
             const promise = this.place({ x, y, layer }, block)
-            promise.catch(v => {
-                throw new Error(v)
-            })
+            promise.catch(v => { throw new Error(v) })
             promises.push(promise)
 
             if (args.ms) await this.client.wait(args.ms)
