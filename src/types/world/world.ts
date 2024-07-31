@@ -152,12 +152,15 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
         const to_be_placed: [WorldPosition, Block][] = []
 
         for (let x = 0; x < fragment.width; x++) {
-            if (x + xt < 0 && x + xt >= this.width) continue
+            if (x + xt < 0 && x + xt >= this.width)
+                continue
             for (let y = 0; y < fragment.height; y++) {
-                if (y + yt < 0 || y + yt >= this.height) continue
+                if (y + yt < 0 || y + yt >= this.height)
+                    continue
                 for (let layer: any = 0; layer < Structure.LAYER_COUNT; layer++) {
                     const block = fragment.blockAt({ x, y, layer }) ?? Block.empty
-                    // if (block.name == 'empty' && !args.write_empty) continue
+                    if (block.id === 0 && !args.write_empty)
+                        continue
                     to_be_placed.push([{ x: x + xt, y: y + yt, layer }, block])
                 }
             }

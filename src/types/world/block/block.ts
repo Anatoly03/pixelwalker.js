@@ -5,7 +5,7 @@ import palette_fix from './palette_fix.js'
 import { BlockIdentifier } from "../../index.js"
 
 export default class Block {
-    public id: number = 0
+    public id: number
     public data: any[] = []
 
     /**
@@ -28,8 +28,6 @@ export default class Block {
     }
     
     constructor(id: BlockIdentifier) {
-        if (!id) id = 0
-
         switch (typeof id) {
             case 'number':
                 this.id = id
@@ -47,7 +45,7 @@ export default class Block {
 
     public isSameAs(other: BlockIdentifier) {
         const block = new Block(other)
-        if (this.id != block.id) return false
+        if (this.id !== block.id) return false
         if (this.data.length != block.data.length) return false
         for (let i = 0; i < this.data.length; i++)
             if (this.data[i] != block.data[i]) return false
