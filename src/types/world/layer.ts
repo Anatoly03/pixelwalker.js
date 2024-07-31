@@ -9,7 +9,7 @@ import Block from "./block/block"
  * like a pixel raster.
  */
 export default class Layer {
-    [x: number]: readonly Block[]
+    [x: number]: { [y: number]: Block }
     #data: Block[][] = []
 
     /**

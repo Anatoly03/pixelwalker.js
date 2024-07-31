@@ -3,7 +3,7 @@ import Player from "../types/player/player.js"
 import SelfPlayer from "../types/player/self.js"
 import { MessageTypes } from "./message_types.js"
 import { WorldPosition } from "../types/index.js"
-import { TeamId } from "../types/events.js"
+import { PlayerUsername, TeamId } from "../types/events.js"
 
 export const API_ACCOUNT_LINK = 'api.pixelwalker.net'
 export const API_ROOM_LINK = 'game.pixelwalker.net'
@@ -48,7 +48,7 @@ export interface LibraryEvents {
 
 export interface RawGameEvents {
     '*':                        [[((typeof MessageTypes)[number]), ...any[]]],
-    'PlayerInit':               [[number, string, string, number, boolean, number, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
+    'PlayerInit':               [[number, string, PlayerUsername, number, boolean, number, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
     'UpdateRights':             [[number, boolean, boolean]],
     'WorldMetadata':            [[string, number, string]],
     'WorldCleared':             [],
@@ -57,7 +57,7 @@ export interface RawGameEvents {
     'ChatMessage':              [[number, string]],
     'OldChatMessages':          any[],
     'SystemMessage':            [[string, string, boolean]],
-    'PlayerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, number, Uint8Array, boolean, boolean, boolean, boolean, TeamId, Buffer]],
+    'PlayerJoined':             [[number, string, PlayerUsername, number, boolean, boolean, boolean, number, number, number, number, number, number, Uint8Array, boolean, boolean, boolean, boolean, TeamId, Buffer]],
     'PlayerLeft':               [[number]],
     'PlayerMoved':              [[number, number, number, number, number, number, number, -1 | 0 | 1, -1 | 0 | 1, boolean, boolean, number]],
     'PlayerTeleported':         [[number, number, number]],
@@ -92,8 +92,6 @@ export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
     'portal':                   [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
     'portal_invisible':         [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
     'portal_world':             [HeaderTypes.String],
-    
-    'spikes':                   [HeaderTypes.Int32],
     
     'sign_normal':              [HeaderTypes.String],
     'sign_red':                 [HeaderTypes.String],

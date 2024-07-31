@@ -1,9 +1,17 @@
-import Client, { PlayerArray, PlayerBase, PlayerStorage } from "../../../dist"
+import Client, { PlayerArray, PlayerStorage } from "../../../dist"
+import { PlayerBase } from "../../../dist/types/index.js"
 
-export class StoredPlayer extends PlayerBase {
+export class StoredPlayer implements PlayerBase {
+    public username: Uppercase<string>
+    public cuid: string
     public wins: number = 0
     public rounds: number = 0
     public time: number = 0
+
+    constructor ({ username, cuid }: PlayerBase) {
+        this.username = username
+        this.cuid = cuid
+    }
 }
 
 export class StoredPlayerManager extends PlayerStorage<StoredPlayer> {

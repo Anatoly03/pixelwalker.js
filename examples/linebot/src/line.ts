@@ -31,8 +31,8 @@ client.raw.on('*', ([ev, ...args]) => {
 })
 
 client
-    .on('player:join', ([p]) => p.god_rights(true)) // Give everyone god mode
-    .once('start', ([self]) => self.set_god(true)) // Self should not be part of players in game.
+    .on('player:join', ([p]) => p.setGodRights(true)) // Give everyone god mode
+    .once('start', ([self]) => self.forceGod(true)) // Self should not be part of players in game.
     .on('player:join', ([player]) => console.log(`${player.username} joined: ${player.cuid}`))
     .include(Client.HelpCommand('help'))
     .include(Map)

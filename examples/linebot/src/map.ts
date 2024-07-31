@@ -1,5 +1,5 @@
 import Client, { Animation, Block, Structure, BlockProperties, Property } from '../../../dist/index.js'
-import { BlockIdentifier } from '../../../dist/types/block.js'
+import { BlockIdentifier } from '../../../dist/types/index.js'
 import client, { is_bot_admin } from './line.js'
 import fs, { writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -7,7 +7,8 @@ import path from 'node:path'
 export const WIDTH = 200
 export const HEIGHT = 50
 
-const snapshots: { [keys: string]: Structure } = {}
+type LineMeta = { left_y: number, right_y: number, frequency: number }
+const snapshots: { [keys: string]: Structure<LineMeta> } = {}
 const empty_map = new Structure(WIDTH, HEIGHT)
 const map = new Structure(WIDTH, HEIGHT)
 
@@ -21,9 +22,9 @@ let DISPLAY_TILE: string | undefined
 
 export const JOINT = { x: 0, y: 0 }
 export const LEFT_JOINT = { x: 0, y: 0 }
-export const QUEUE: [string, Structure][] = []
+export const QUEUE: [string, Structure<LineMeta>][] = []
 const TILES_PATH = process.env.MAPS_PATH || 'maps'
-let CURRENT_TILE: Structure | undefined
+let CURRENT_TILE: Structure<LineMeta> | undefined
 let PIECE_X: number | undefined
 
 export let PLATFORM_SIZE = 40
@@ -35,7 +36,7 @@ function create_snapshot(): number {
 
     for (const file of files) {
         const value = fs.readFileSync(path.join(TILES_PATH, file)).toString()
-        const structure = Structure.fromString(value)
+        const structure = Structure.fromString(value) as Structure<LineMeta>
         snapshots[file] = structure
     }
 
@@ -56,8 +57,8 @@ export async function create_empty_arena(PLATFORM_LENGTH?: number) {
     const SPIKES = [...Array(map.width - 2).keys()]
         .map(i => i + 1)
         .map(x => {
-            map.foreground[x][map.height - 2] = new Block('spikes')
-            empty_map.foreground[x][map.height - 2] = new Block('spikes')
+            map.foreground[x][map.height - 2] = new Block('hazard_spikes_down')
+            empty_map.foreground[x][map.height - 2] = new Block('hazard_spikes_down')
         })
 
     const LEFT = PORTAL_MATRIX().forEach((a, x) => a.forEach(y => {
@@ -187,14 +188,14 @@ export async function advance_one_piece(): Promise<boolean> {
     }
 
     let piece = CURRENT_TILE,
-        line: Structure,
+        line: Structure<LineMeta>,
         promises: Promise<any>[] = []
 
     if (PIECE_X == undefined) {
         PIECE_X = 0
     }
 
-    line = piece.copy(PIECE_X, 0, PIECE_X, piece.height - 1)
+    line = piece.copy(PIECE_X, 0, PIECE_X, piece.height - 1).setMeta(CURRENT_TILE.meta)
 
     // for (let x = 0; x < piece.width; x++) {
     // const line = piece.copy(x, 0, x, piece.height - 1)
@@ -210,7 +211,7 @@ export async function advance_one_piece(): Promise<boolean> {
     PIECE_X += 1
     SIZE += 1
 
-    console.log(SIZE, LEFT_JOINT.x, JOINT.x)
+    // console.log(SIZE, LEFT_JOINT.x, JOINT.x)
 
     while (SIZE > PLATFORM_SIZE) {
         let replace = empty_map.copy(LEFT_JOINT.x, 0, LEFT_JOINT.x, empty_map.height)
@@ -441,7 +442,7 @@ export function module(client: Client) {
         const tiles = Object
             .values(snapshots)
             .map(piece => {
-                const border_piece = new Structure(piece.width + 2, piece.height + 2)
+                const border_piece = new Structure<LineMeta>(piece.width + 2, piece.height + 2)
 
                 piece.replace_all(new Block('basic_gray'), FRAME)
                 border_piece.clear(false)

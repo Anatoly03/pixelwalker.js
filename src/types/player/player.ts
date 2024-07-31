@@ -2,18 +2,17 @@ import EventEmitter from "events"
 import Client from "../../client.js"
 import { Point } from "../index.js"
 import { PublicProfile } from "./profile.js"
-import SelfPlayer from "./self.js"
 import { BlockMappingsReverse } from "../world/block/mappings.js"
 import palette_fix from "../world/block/palette_fix.js"
 import { GamePlayerArray } from "../list/player.js"
 import { Bit7, Magic } from "../message-bytes.js"
-import { TeamId, TeamIdentifier } from "../events.js"
+import { IsPlayerAdmin, PlayerConnectUserId, PlayerId, PlayerUsername, TeamId, TeamIdentifier } from "../events.js"
 
 export type PlayerInitArgs = {
     client: Client
     cuid: string
 
-    username: string
+    username: PlayerUsername
     id: number
     isAdmin: boolean
     isSelf: boolean
@@ -70,10 +69,10 @@ export default class Player {
     protected readonly client: Client
     protected readonly events = new EventEmitter<PlayerEvents>()
 
-    public readonly cuid: string
-    public readonly username: string
-    public readonly id: number
-    public readonly isAdmin: boolean
+    public readonly cuid: PlayerConnectUserId
+    public readonly username: PlayerUsername
+    public readonly id: PlayerId
+    public readonly isAdmin: IsPlayerAdmin
     #isSelf: boolean
 
     #face: number
@@ -100,9 +99,9 @@ export default class Player {
     #tickId: number
 
     /**
-     * @todo
+     * @ignore
      */
-    protected constructor(args: PlayerInitArgs) {
+    public constructor(args: PlayerInitArgs) {
         this.client = args.client
 
         this.#face = args.face
@@ -140,70 +139,9 @@ export default class Player {
 
     //
     //
-    // Static Methods
-    //
-    //
-
-    public static registerDynamicArray(client: Client): GamePlayerArray<true> {
-        /**
-         * PlayerEvents are all player-associated events. Their first
-         * component is always the player id.
-         */
-        const PlayerEvents = ['UpdateRights',  'ChatMessage',  'PlayerMoved',  'PlayerTeleported',  'PlayerFace',  'PlayerGodMode',  'PlayerModMode',  'PlayerRespawn',  'PlayerReset',  'PlayerTouchBlock',  'PlayerTouchPlayer',  'PlayerEffect',  'PlayerRemoveEffect',  'PlayerResetEffects',  'PlayerTeam',  'PlayerCounters',  'PlayerLocalSwitchChanged',  'PlayerLocalSwitchReset'] as const
-        
-        /**
-         * The array of all players in the client instance.
-         */
-        const players = new GamePlayerArray<true>()
-
-        /**
-         * Initialize the self player in the array.
-         */
-        client.raw.once('PlayerInit', async ([id, cuid, username, face, isAdmin, x, y, name_color, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
-            await client.send(Magic(0x6B), Bit7(Client.MessageId('PlayerInit')))
-            const player = new Player({ client, id, cuid, username, face, isSelf: false, isAdmin, x: x / 16, y: y / 16, god: false, mod: false, crown: false, win: false, coins: 0, blue_coins: 0, deaths: 0, can_edit, can_god, team: 0 })
-            players.push(player)
-        })
-
-        /**
-         * Add joining players to the array.
-         */
-        client.raw.on('PlayerJoined', ([id, cuid, username, face, isAdmin, can_edit, can_god, x, y, color, coins, blue_coins, deaths, collected, god, mod, crown, win, team, switches]) => {
-            const player = new Player({ client, id, cuid, username, face, isSelf: false, isAdmin, x: x / 16, y: y / 16, god, mod, crown, win, coins, blue_coins, deaths, can_edit, can_god, team })
-            players.push(player)
-            // TODO emit player joined
-        })
-
-        /**
-         * Remove leaving players from the array.
-         */
-        client.raw.on('PlayerLeft', ([id]) => {
-            const removedPlayers = players.remove_all(p => p.id == id)
-            // TODO emit player left
-        })
-
-        /**
-         * Broadcast all player events to the player.
-         */
-        PlayerEvents.forEach(message => client.raw.on(message, ([id, ...args]: any) => {
-            client.players.byId(id)!.emit(message, args)
-        }))
-
-        return players
-    }
-
-    //
-    //
     // Type Predicate
     //
     //
-
-    /**
-     * Type hint wether the current player is client self
-     */
-    public isSelf(): this is SelfPlayer {
-        return this.#isSelf
-    }
 
     /**
      * Retrieve the public profile of a user.

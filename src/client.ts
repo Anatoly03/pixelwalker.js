@@ -9,7 +9,9 @@ import { read7BitInt, deserialise } from './types/math.js'
 import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
 import { Bit7, Magic, String } from './types/message-bytes.js'
 import Block from './types/world/block/block.js'
+
 import Player from './types/player/player.js'
+import PlayerEventArray from './types/player/events.js'
 
 import World from './types/world/world.js'
 import Structure from './types/world/structure.js'
@@ -269,15 +271,13 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * Use the structure `Client.new` instead of `new Client()`. The reason
      * for this change is to allow login with username and password, which
      * requires the constructor to be asynchronous.
-     * 
-     * The constructor will soon be privatised.
      */
     private constructor() {
         super()
 
         this.#socket = null
 
-        this.#players = Player.registerDynamicArray(this)
+        this.#players = PlayerEventArray(this)
         this.#profiles = new PlayerArray<PublicProfile, true>()
 
         this.block_scheduler = new BlockScheduler(this)

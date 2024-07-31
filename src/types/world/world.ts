@@ -156,21 +156,10 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
             for (let y = 0; y < fragment.height; y++) {
                 if (y + yt < 0 || y + yt >= this.height) continue
                 for (let layer: any = 0; layer < Structure.LAYER_COUNT; layer++) {
-                    // console.log(fragment.blockAt({ x, y, layer }))
-                    to_be_placed.push([{ x: x + xt, y: y + yt, layer }, fragment.blockAt({ x, y, layer })])
+                    const block = fragment.blockAt({ x, y, layer }) ?? Block.empty
+                    // if (block.name == 'empty' && !args.write_empty) continue
+                    to_be_placed.push([{ x: x + xt, y: y + yt, layer }, block])
                 }
-
-                // const blockAtLayer = ((i: 0|1) => fragment.blockAt(x, y, i) || new Block('empty'))
-
-                // if (!blockAtLayer(1).isSameAs(this.foreground[xt + x]?.[yt + y])) {
-                //     if (!((blockAtLayer(1).name == 'empty') && !args.write_empty))
-                //         to_be_placed.push([[xt + x, yt + y, 1], fragment.blockAt(x, y, 1)])
-                // }
-
-                // if (!blockAtLayer(0).isSameAs(this.background[xt + x]?.[yt + y])) {
-                //     if (!((blockAtLayer(0).name == 'empty') && !args.write_empty))
-                //         to_be_placed.push([[xt + x, yt + y, 0], fragment.blockAt(x, y, 0)])
-                // }
             }
         }
 
@@ -178,9 +167,8 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
 
         while (to_be_placed.length > 0) {
             const yielded = generator.next()
-            const [{ x, y, layer }, block]: any = yielded.value
-
-            const promise = this.place({ x, y, layer }, block)
+            const [position, block]: any = yielded.value
+            const promise = this.place(position, block)
             promise.catch(v => { throw new Error(v) })
             promises.push(promise)
 
@@ -190,6 +178,16 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
         return Promise.all(promises)
     }
 
+    /**
+     * Replace all blocks of type A with blocks B
+     */
+    public override replace_all(block: Block, new_block: Block) {
+        return Promise.all(this.list(block.name).map(position => this.place(position, new_block)))
+    }
+
+    /**
+     * Place a block
+     */
     public override place(position: WorldPosition, block: Block) {
         if (this.blockAt(position).isSameAs(block)) return Promise.resolve(true)
         return this.client.block_scheduler.add(`${position.x}.${position.y}.${position.layer}`, block)

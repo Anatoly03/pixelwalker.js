@@ -26,15 +26,16 @@ export type MoveArgs = {
  * ```
  */
 export default class SelfPlayer extends Player {
-    constructor(args: PlayerInitArgs) {
-        super({...args, ...{
-            isSelf: true,
-            win: false,
-            coins: 0,
-            blue_coins: 0,
-            deaths: 0,
-        }})
-    }
+    // constructor(args: PlayerInitArgs) {
+    //     super(args)
+    //     // super({...args, ...{
+    //     //     isSelf: true,
+    //     //     win: false,
+    //     //     coins: 0,
+    //     //     blue_coins: 0,
+    //     //     deaths: 0,
+    //     // }})
+    // }
 
     //
     //

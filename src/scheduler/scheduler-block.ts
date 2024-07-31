@@ -37,7 +37,7 @@ export default class BlockScheduler extends BaseScheduler<BlockCoordinate, Block
 
         const buffer: Buffer[] = [Magic(0x6B), Bit7(Client.MessageId('WorldBlockPlaced')), ByteArray(Buffer.from(coordinates)), Int32(layer), Int32(block.id)]
         const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
-        console.log(buffer)
+        // console.log(buffer)
 
         for (let i = 0; i < arg_types.length; i++) {
             switch (arg_types[i]) {

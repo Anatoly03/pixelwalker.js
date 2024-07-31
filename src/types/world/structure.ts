@@ -141,6 +141,8 @@ export default class Structure<Meta extends MapIdentifier = {}> {
      * @param height 
      */
     protected init(buffer: Buffer, width: number = this.width, height: number = this.height) {
+        this.#layers = []
+
         const deserializeLayer = (buffer: Buffer, offset: number) => {
             const layer = new Layer(width, height)
             this.#layers.push(layer)
@@ -148,8 +150,13 @@ export default class Structure<Meta extends MapIdentifier = {}> {
         }
 
         let offset = 0
-        offset = deserializeLayer(buffer, offset)
-        offset = deserializeLayer(buffer, offset)
+
+        for (let i = 0; i < Structure.LAYER_COUNT; i++) {
+            offset = deserializeLayer(buffer, offset)
+        }
+
+        // offset = deserializeLayer(buffer, offset)
+        // console.log(`World Serialized: ${buffer.length} ${offset}`)
 
         if (buffer.length != offset) {
             console.warn(`Buffer Length for World Data and Offset do not match. (${buffer.length} != ${offset}). You may be loading a world with blocks that are not yet encoded in this API version.`)
@@ -187,15 +194,32 @@ export default class Structure<Meta extends MapIdentifier = {}> {
 
         if (border) {
             for (let x = 0; x < this.width; x++) {
-                this.foreground.set({ x, y: 0 }, new Block(0))
-                this.foreground.set({ x, y: this.height - 1 }, new Block(0))
+                this.foreground.set({ x, y: 0 }, new Block('basic_gray'))
+                this.foreground.set({ x, y: this.height - 1 }, new Block('basic_gray'))
             }
 
             for (let y = 0; y < this.height; y++) {
-                this.foreground.set({ x: 0, y }, new Block(0))
-                this.foreground.set({ x: this.width - 1, y }, new Block(0))
+                this.foreground.set({ x: 0, y }, new Block('basic_gray'))
+                this.foreground.set({ x: this.width - 1, y }, new Block('basic_gray'))
             }
         }
+    }
+
+    public copy(x1: number, y1: number, x2: number, y2: number): Structure {
+        if (x2 < x1) { let tmp = x2; x2 = x1; x1 = tmp }
+        if (y2 < y1) { let tmp = y2; y2 = y1; y1 = tmp }
+
+        const world = new Structure(x2 - x1 + 1, y2 - y1 + 1)
+
+        for (let x = x1; x <= x2; x++)
+            for (let y = y1; y <= y2; y++) {
+                if (x < 0 || y < 0 || x >= this.width || y >= this.height)
+                    continue
+                world.background[x - x1][y - y1] = this.background[x][y]
+                world.foreground[x - x1][y - y1] = this.foreground[x][y]
+            }
+
+        return world
     }
 
     /**
@@ -213,10 +237,107 @@ export default class Structure<Meta extends MapIdentifier = {}> {
     }
 
     /**
+     * Replace all blocks of type A with blocks B
+     */
+    public replace_all(block: Block, new_block: Block) {
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height; y++) {
+                if (this.foreground[x][y].name == block.name)
+                    this.foreground[x][y] = new_block
+                if (this.background[x][y].name == block.name)
+                    this.background[x][y] = new_block
+            }
+    }
+
+    /**
+     * 
+     */
+    public list(block: keyof typeof BlockMappings): WorldPosition[];
+
+    /**
+     * 
+     */
+    public list(block: (keyof typeof BlockMappings)[]): WorldPosition[];
+
+    /**
+     * 
+     */
+    public list(...block: (keyof typeof BlockMappings)[]): WorldPosition[];
+
+    public list(blocks: keyof typeof BlockMappings | (keyof typeof BlockMappings)[], ...args: (keyof typeof BlockMappings)[]): WorldPosition[] {
+        if (!Array.isArray(blocks)) return this.list([blocks, ...args])
+
+        let value: WorldPosition[] = []
+        for (let block of blocks) {
+            for (let x = 0; x < this.width; x++)
+                for (let y = 0; y < this.height; y++) {
+                    if (this.foreground[x][y].name == block)
+                        value.push({ x, y, layer: 1 })
+                    if (this.background[x][y].name == block)
+                        value.push({ x, y, layer: 0 })
+                }
+        }
+
+        return value
+    }
+
+    /**
      * @todo
      */
     getWalkablePositionsFor(player: Player) {
         
+    }
+
+
+    /**
+     * Write world data into a stream
+     */
+    // public toString(writer: stream.Writable): string ???
+    public toString(): string {
+        const data: any = {
+            'file-version': 0,
+            meta: this.meta,
+            width: this.width,
+            height: this.height,
+            palette: ['empty'],
+            layers: {
+                foreground: '',
+                background: '',
+                data: [],
+            }
+        }
+
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height; y++) {
+                const block = this.foreground[x][y]
+
+                if (!data.palette.includes(block.name))
+                    data.palette.push(block.name)
+
+                const shortcut = data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
+
+                data.layers.foreground += shortcut + ' '
+
+                if (block.data.length > 0)
+                    data.layers.data.push(block.data)
+            }
+
+        for (let x = 0; x < this.width; x++)
+            for (let y = 0; y < this.height; y++) {
+                const block = this.background[x][y]
+
+                if (!data.palette.includes(block.name))
+                    data.palette.push(block.name)
+
+                const shortcut = data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
+
+                data.layers.background += shortcut + ' '
+
+                if (block.data.length > 0)
+                    data.layers.data.push(block.data)
+            }
+
+        return YAML.stringify(data)
     }
 }
 
@@ -249,23 +370,6 @@ export default class Structure<Meta extends MapIdentifier = {}> {
 //         return [[x, y, l], block]
 //     }
 
-//     public copy(x1: number, y1: number, x2: number, y2: number): Structure {
-//         if (x2 < x1) { let tmp = x2; x2 = x1; x1 = tmp }
-//         if (y2 < y1) { let tmp = y2; y2 = y1; y1 = tmp }
-
-//         const world = new Structure(x2 - x1 + 1, y2 - y1 + 1)
-
-//         for (let x = x1; x <= x2; x++)
-//             for (let y = y1; y <= y2; y++) {
-//                 if (x < 0 || y < 0 || x >= this.width || y >= this.height)
-//                     continue
-//                 world.background[x - x1][y - y1] = this.background[x][y]
-//                 world.foreground[x - x1][y - y1] = this.foreground[x][y]
-//             }
-
-//         return world
-//     }
-
 
 //     //
 //     //
@@ -273,45 +377,12 @@ export default class Structure<Meta extends MapIdentifier = {}> {
 //     //
 //     //
 
-//     /**
-//      * Replace all blocks of type A with blocks B
-//      */
-//     public replace_all(block: Block, new_block: Block) {
-//         for (let x = 0; x < this.width; x++)
-//             for (let y = 0; y < this.height; y++) {
-//                 if (this.foreground[x][y].name == block.name)
-//                     this.foreground[x][y] = new_block
-//                 if (this.background[x][y].name == block.name)
-//                     this.background[x][y] = new_block
-//             }
-//     }
-
 //     public total(block: keyof typeof BlockMappings): number {
 //         let value = 0
 //         for (let x = 0; x < this.width; x++)
 //             for (let y = 0; y < this.height; y++)
 //                 if (this.foreground[x][y].name == block)
 //                     value++
-//         return value
-//     }
-
-//     public list(block: keyof typeof BlockMappings): WorldPosition[];
-//     public list(block: (keyof typeof BlockMappings)[]): WorldPosition[];
-//     public list(...block: (keyof typeof BlockMappings)[]): WorldPosition[];
-//     public list(blocks: keyof typeof BlockMappings | (keyof typeof BlockMappings)[], ...args: (keyof typeof BlockMappings)[]): WorldPosition[] {
-//         if (!Array.isArray(blocks)) return this.list([blocks, ...args])
-
-//         let value: WorldPosition[] = []
-//         for (let block of blocks) {
-//             for (let x = 0; x < this.width; x++)
-//                 for (let y = 0; y < this.height; y++) {
-//                     if (this.foreground[x][y].name == block)
-//                         value.push([x, y, 1])
-//                     if (this.background[x][y].name == block)
-//                         value.push([x, y, 0])
-//                 }
-//         }
-
 //         return value
 //     }
 
@@ -330,57 +401,6 @@ export default class Structure<Meta extends MapIdentifier = {}> {
 //     // Parsers
 //     //
 //     //
-
-//     /**
-//      * Write world data into a stream
-//      */
-//     // public toString(writer: stream.Writable): string ???
-//     public toString(): string {
-//         const data: any = {
-//             'file-version': 0,
-//             meta: this.meta,
-//             width: this.width,
-//             height: this.height,
-//             palette: ['empty'],
-//             layers: {
-//                 foreground: '',
-//                 background: '',
-//                 data: [],
-//             }
-//         }
-
-//         for (let x = 0; x < this.width; x++)
-//             for (let y = 0; y < this.height; y++) {
-//                 const block = this.foreground[x][y]
-
-//                 if (!data.palette.includes(block.name))
-//                     data.palette.push(block.name)
-
-//                 const shortcut = data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
-
-//                 data.layers.foreground += shortcut + ' '
-
-//                 if (block.data.length > 0)
-//                     data.layers.data.push(block.data)
-//             }
-
-//         for (let x = 0; x < this.width; x++)
-//             for (let y = 0; y < this.height; y++) {
-//                 const block = this.background[x][y]
-
-//                 if (!data.palette.includes(block.name))
-//                     data.palette.push(block.name)
-
-//                 const shortcut = data.palette.indexOf(block.name).toString(36).toLocaleUpperCase()
-
-//                 data.layers.background += shortcut + ' '
-
-//                 if (block.data.length > 0)
-//                     data.layers.data.push(block.data)
-//             }
-
-//         return YAML.stringify(data)
-//     }
 
 //     public static metaFromString(data: string): any {
 //         const value = YAML.parse(data)
