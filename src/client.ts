@@ -612,7 +612,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
             preamble += `${this.#chatPrefix} `
         }
 
-        // console.log(preamble + ':' + content)
+        console.log(preamble + ':' + content)
 
         const MESSAGE_SIZE = 120;
         const CONTENT_ALLOWED_SIZE = MESSAGE_SIZE - preamble.length
