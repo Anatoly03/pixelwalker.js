@@ -4,8 +4,6 @@ import { Point } from "../index.js"
 import { PublicProfile } from "./profile.js"
 import { BlockMappingsReverse } from "../world/block/mappings.js"
 import palette_fix from "../world/block/palette_fix.js"
-import { GamePlayerArray } from "../list/player.js"
-import { Bit7, Magic } from "../message-bytes.js"
 import { IsPlayerAdmin, PlayerConnectUserId, PlayerId, PlayerUsername, TeamId, TeamIdentifier } from "../events.js"
 
 export type PlayerInitArgs = {

@@ -56,20 +56,21 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
          * Initialize the self player in the array.
          */
         client.raw.once('PlayerInit', async ([id, cuid, username, face, isAdmin, x, y, name_color, can_edit, can_god, title, plays, owner, global_switch_states, width, height, buffer]) => {
-            client.world = new World({ width, height, client, title, plays, owner }).init(buffer)
-            respond(client.world)
+            respond(new World({ width, height, client, title, plays, owner }).init(buffer))
         })
 
         /**
          * A block was placed in the world.
          */
         client.raw.on('WorldBlockPlaced', async ([id, coordinates, layer, bid, ...args]) => {
+            const world = await client.world()
             const block = new Block(bid)
             block.data = args
+
             for (let idx = 0; idx < coordinates.length; idx += 4) {
                 const x = coordinates[idx] | (coordinates[idx + 1] << 8);
                 const y = coordinates[idx + 2] | (coordinates[idx + 3] << 8);
-                client.world!.getLayer(layer).set({ x, y }, block)
+                world.getLayer(layer).set({ x, y }, block)
             }
             // TODO client emit
         })
@@ -78,16 +79,18 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
          * Update world metadata
          */ 
         client.raw.on('WorldMetadata', async ([title, plays, owner]) => {
-            client.world!.meta.title = title
-            client.world!.meta.owner = owner
-            client.world!.meta.plays = plays
+            const world = await client.world()
+            world.meta.title = title
+            world.meta.owner = owner
+            world.meta.plays = plays
         })
 
         /**
          * The world was cleared
          */
         client.raw.on('WorldCleared', async () => {
-            client.world!.clear(true)
+            const world = await client.world()
+            world.clear(true)
             // TODO emit?
         })
 
@@ -95,7 +98,8 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
          * Reload world with new buffer.
          */
         client.raw.on('WorldReloaded', async ([buffer]) => {
-            client.world!.init(buffer)
+            const world = await client.world()
+            world.init(buffer)
         })
 
         return promise

@@ -1,11 +1,9 @@
 
 import PocketBase from 'pocketbase'
-import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 
 import RoomTypes from './data/room_types.js'
 
-import { read7BitInt, deserialise } from './types/math.js'
 import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
 import { Bit7, Magic, String } from './types/message-bytes.js'
 import Block from './types/world/block/block.js'
@@ -28,6 +26,7 @@ import { MessageTypes } from './data/message_types.js'
 import PaletteFix from './types/world/block/palette_fix.js'
 import SelfPlayer, { MoveArgs } from './types/player/self.js'
 import { BlockIdentifier, LayerId, Point } from './types/index.js'
+import Connection from './connection.js'
 
 /**
  * @example Snake Tail
@@ -112,26 +111,20 @@ export default class Client extends EventEmitter<LibraryEvents> {
     static PaletteFix = PaletteFix
 
     /**
-     * Connection State Marker. This is set to true if an active client
-     * is connected.
-     */
-    #isConnected = false
-
-    /**
      * PocketBase API
      */
     #pocketbase!: PocketBase
+
+    /**
+     * Game Connection
+     */
+    #connection!: Connection<boolean>
 
     /**
      * Client's API Connection target
      */
     #runningDevServer = false
     #linkApiRoom = API_ROOM_LINK
-
-    /**
-     * Socket that connects with the game
-     */
-    #socket: WebSocket | null
 
     /**
      * All registered commands.
@@ -166,7 +159,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * @todo
      */
-    public world?: World
+    readonly #world = World.registerDynamicWorld(this)
 
     /**
      * @ignore Command prefici which the bot respond to
@@ -226,6 +219,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     static async new(args: NodeJS.ProcessEnv | { token?: string, user?: string, pass?: string }): Promise<Client> {
         const client = new Client()
         client.#pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
+        client.#connection = new Connection<false>(client)
 
         if (args.token) {
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
@@ -252,6 +246,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         client.#runningDevServer = true
         client.#linkApiRoom = 'localhost:5148'
         client.#pocketbase = new PocketBase(`http://127.0.0.1:8090`) // not secure
+        client.#connection = new Connection<false>(client, true)
 
         if (args.token) {
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
@@ -275,8 +270,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
     private constructor() {
         super()
 
-        this.#socket = null
-
         this.#players = PlayerEventArray(this)
         this.#profiles = new PlayerArray<PublicProfile, true>()
 
@@ -288,9 +281,37 @@ export default class Client extends EventEmitter<LibraryEvents> {
         // On process interrupt, gracefully disconnect.
         // DO NOT merge this into one function, otherwise it does not work.
         process.on('SIGINT', (signal) => this.disconnect())
-        // Print unhandled promises after termination
-        process.on("unhandledRejection", (error) => console.error(error));
     }
+
+    //
+    //
+    // Getters
+    //
+    //
+
+    /**
+     * Retrieve the connection layer. It connects with an event
+     * listener which can be used to intercept incoming and outgoing
+     * messages.
+     * 
+     * ```ts
+     * client.connection().on('Receive', buffer => console.log(buffer))
+     * ```
+     * 
+     * @event Send The client is trying to send a packet to the server.
+     * @event Receive The server has sent the client a packet.
+     * @event Error An error occured during the communication.
+     * @event Close The socket was closed.
+     */
+    public connection() {
+        return this.#connection
+    }
+
+    //
+    //
+    // Methods
+    //
+    //
 
     /**
      * Connect client instance to a room with default room type. 
@@ -310,30 +331,15 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public connect(world_id: string, room_type: typeof RoomTypes[0]): Promise<this>
 
-    public async connect(world_id: string, room_type?: typeof RoomTypes[0]): Promise<this> {
+    public async connect(world_id: string, room_type: typeof RoomTypes[0] = RoomTypes[0]): Promise<this> {
         if (world_id == undefined) throw new Error('`world_id` was not provided in `Client.connect()`')
         if (!this.#runningDevServer && room_type && !RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
         if (this.#runningDevServer && room_type != 'pixelwalker_dev') throw new Error(`\`room_type\` expected to be \`pixelwalker_dev\` since you are running on the development server`)
-        if (!room_type) room_type = RoomTypes[0]
         if (this.#pocketbase == null) throw new Error('Can\'t connect to a world without having pocketbase data.')
 
-        const { token } = await this.#pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
+        await this.#connection.start(world_id, room_type)
 
-        const worldPromise = World.registerDynamicWorld(this)
-        
-        try {
-            this.#socket = new WebSocket(`${this.#runningDevServer ? 'ws' : 'wss'}://${this.#linkApiRoom}/room/${token}`)
-            this.#socket.binaryType = 'arraybuffer'
-        } catch (e) {
-            throw e
-        }
-
-        this.#socket.on('message', (event) => this.receive_message(Buffer.from(event as WithImplicitCoercion<ArrayBuffer>)))
-        this.#socket.on('error', (err) => { this.emit('error', [err]); this.disconnect() })
-        this.#socket.on('close', (code, buffer) => { this.emit('close', [code, buffer.toString('ascii')]); this.disconnect() })
-
-        this.#isConnected = true
-        this.world = await worldPromise
+        // this.world = await worldPromise
 
         this.block_scheduler.start()
 
@@ -341,41 +347,23 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /**
-     * This function is called when a message is received from the server.
-     * @param {Buffer} buffer The bytes that are received.
-     * @returns {boolean} Returns true if the bytes were successfully processed, `false` otherwise.
-     */
-    private receive_message(buffer: Buffer): boolean {
-        if (buffer[0] == 0x3F) { // 63
-            this.send(Magic(0x3F))
-            return true
-        }
-
-        if (buffer[0] == 0x6B) { // 107
-            let [event_id, offset] = read7BitInt(buffer, 1)
-            const event_name = MessageTypes[event_id] as keyof RawGameEvents
-            const data = deserialise(buffer, offset)
-
-            if (event_name == undefined) {
-                console.warn((`Unknown event type ${event_id}. API may be out of date. Deserialised: ${data}`))
-                return false
-            }
-
-            this.raw.emit('*', [event_name, ...data])
-
-            return this.raw.emit(event_name, data as any)
-        }
-
-        this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
-
-        return false
-    }
-
-    /**
      * 
      */
     public pocketbase() {
         return this.#pocketbase
+    }
+
+    /**
+     * Returns the promise awaiting till the world gets loaded. 
+     * 
+     * ```ts
+     * client.on('save', async () => {
+     *     const world = await client.world()
+     * })
+     * ```
+     */
+    public world(): Promise<World> {
+        return this.#world
     }
 
     /**
@@ -396,8 +384,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * console.log('After Connection:', client.connected) // true
      * ```
      */
-    public get connected(): boolean {
-        return this.#isConnected == true
+    public connected(): boolean {
+        return this.#connection?.connected() ?? false
     }
 
     /**
@@ -409,10 +397,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * ```
      */
     public disconnect() {
-        this.#isConnected = false
+        this.#connection?.disconnect()
         this.block_scheduler.stop(true)
         this.#pocketbase?.authStore.clear()
-        this.#socket?.close()
     }
 
     /**
@@ -460,21 +447,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * client.send(Magic(0x6B), Bit7(MessageTypes['playerGodMode']), Boolean(true))
      * ```
      */
-    public send(...args: Buffer[]): Promise<any | undefined> {
-        if (!this.connected) return Promise.reject("Client not connected, but `send` was called.")
-
-        // TODO make it debug mode
-        // console.log(args)
-
-        return new Promise((res, rej) => {
-            if (!this.#socket) throw new Error('Socket not existing.')
-            if (this.#socket.readyState != this.#socket.OPEN) throw new Error('Socket not connected.')
-            const buffer = Buffer.concat(args)
-            this.#socket.send(buffer, {}, (err: any) => {
-                if (err) return rej(err)
-                res(true)
-            })
-        })
+    public send(...args: Buffer[]): void {
+        if (!this.connected()) return
+        this.#connection.emit('Send', ...args)
     }
 
     /**
@@ -579,21 +554,22 @@ export default class Client extends EventEmitter<LibraryEvents> {
 
     public block(x: number, y: number, layer: LayerId, block: Block): Promise<boolean>
 
-    public block(x: number, y: number, layer: LayerId, block: BlockIdentifier, ...args: any[]): Promise<boolean> {
+    public async block(x: number, y: number, layer: LayerId, block: BlockIdentifier, ...args: any[]): Promise<boolean> {
         if (block == null) block = 0
         if (typeof block == 'string' || typeof block == 'number') {
             block = new Block(block)
             block.data.push(...args)
         } else if (!(block instanceof Block))
             return Promise.reject("Expected `Block` or block identifier, got unknown object.")
-
-        return this.world?.place({ x, y, layer }, block) || Promise.reject('The `client.world` object was not loaded.')
+        
+        const world = await this.world()
+        return world.place({ x, y, layer }, block) || Promise.reject('The `client.world` object was not loaded.')
     }
 
     /**
      * @param {string} content Write to chat
      */
-    public say(content: string): Promise<any> {
+    public say(content: string) {
         const isPrivateMessage = content.startsWith('/pm')
 
         if (content.startsWith('/') && !isPrivateMessage) {
@@ -655,7 +631,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * @todo
      */
-    public fill(xt: number, yt: number, fragment: Structure, args?: { animation?: (b: any) => any, ms?: number, write_empty?: boolean }) {
-        return this.world!.paste(xt, yt, fragment, args)
+    public async fill(xt: number, yt: number, fragment: Structure, args?: { animation?: (b: any) => any, ms?: number, write_empty?: boolean }) {
+        const world = await this.world()
+        return world.paste(xt, yt, fragment, args)
     }
 }

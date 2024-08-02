@@ -60,7 +60,7 @@ export default class SelfPlayer extends Player {
     /**
      * @todo
      */
-    public override async forceGod(value: boolean, mod: boolean = this.isAdmin) {
+    public override forceGod(value: boolean, mod: boolean = this.isAdmin) {
         return this.client.send(Magic(0x6B), Bit7(Client.MessageId(mod? 'PlayerModMode' : 'PlayerGodMode')), Boolean(value))
     }
 
