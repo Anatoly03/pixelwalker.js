@@ -1,6 +1,9 @@
-import Block, { WorldPosition } from "../types/block"
-import Player, { SelfPlayer } from "../types/player"
-import { MessageTypes } from "./message_types"
+import Block from "../types/world/block/block.js"
+import Player from "../types/player/player.js"
+import SelfPlayer from "../types/player/self.js"
+import { MessageTypes } from "./message_types.js"
+import { WorldPosition } from "../types/index.js"
+import { PlayerUsername, TeamId } from "../types/events.js"
 
 export const API_ACCOUNT_LINK = 'api.pixelwalker.net'
 export const API_ROOM_LINK = 'game.pixelwalker.net'
@@ -45,16 +48,16 @@ export interface LibraryEvents {
 
 export interface RawGameEvents {
     '*':                        [[((typeof MessageTypes)[number]), ...any[]]],
-    'PlayerInit':               [[number, string, string, number, boolean, number, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
+    'PlayerInit':               [[number, string, PlayerUsername, number, boolean, number, number, number, boolean, boolean, string, number, string, Buffer, number, number, Buffer]],
     'UpdateRights':             [[number, boolean, boolean]],
     'WorldMetadata':            [[string, number, string]],
     'WorldCleared':             [],
     'WorldReloaded':            [[Buffer]],
-    'WorldBlockPlaced':         [[number, number, number, 0 | 1, number, ...any]],
+    'WorldBlockPlaced':         [[number, Buffer, 0 | 1, number, ...any]],
     'ChatMessage':              [[number, string]],
     'OldChatMessages':          any[],
     'SystemMessage':            [[string, string, boolean]],
-    'PlayerJoined':             [[number, string, string, number, boolean, boolean, boolean, number, number, number, number, number, number, Uint8Array, boolean, boolean, boolean, boolean, number, Buffer]],
+    'PlayerJoined':             [[number, string, PlayerUsername, number, boolean, boolean, boolean, number, number, number, number, number, number, Uint8Array, boolean, boolean, boolean, boolean, TeamId, Buffer]],
     'PlayerLeft':               [[number]],
     'PlayerMoved':              [[number, number, number, number, number, number, number, -1 | 0 | 1, -1 | 0 | 1, boolean, boolean, number]],
     'PlayerTeleported':         [[number, number, number]],
@@ -90,8 +93,6 @@ export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
     'portal_invisible':         [HeaderTypes.Int32, HeaderTypes.Int32, HeaderTypes.Int32],
     'portal_world':             [HeaderTypes.String],
     
-    'spikes':                   [HeaderTypes.Int32],
-    
     'sign_normal':              [HeaderTypes.String],
     'sign_red':                 [HeaderTypes.String],
     'sign_green':               [HeaderTypes.String],
@@ -120,37 +121,37 @@ export const SpecialBlockData: {[keys: string]: HeaderTypes[]} = {
     'switch_global_gate':       [HeaderTypes.Int32],
 }
 
-export type SystemMessageEvents = {
-    'help': [[string]],
-    'receivePm': [[string, string]],
-    'sendPm': [[string, string]],
-    'noPm': [[]],
-    'playerMute': [[string]],
-    'playerUnmute': [[string]],
-    'alreadyGodMode': [[string]],
-    'noMoreGodMode': [[string]],
-    'givenGodMode': [[string]],
-    'alreadyEdit': [[string]],
-    'noMoreEdit': [[string]],
-    'givenEdit': [[string]],
-    'playerTeleported': [[string, number]],
-    'multiplePlayersTeleported': [[number, number, number]],
-    'playerNotTeleported': [[]],
-    'noChangesToSave': [[]],
-    'savingWorld': [[]],
-    'worldSaved': [[]],
-    'reloadingWorld': [[]],
-    'worldReloaded': [[]],
-    'worldCleared': [[]],
-    'titleChanges': [[string]],
-    'titleNotChanged': [[]],
-    'worldVisibility': [['PUBLIC' | 'PRIVATE' | 'UNLISTED']],
-    'onKick': [[string]],
-    'onKickWithReason': [[string, string]],
-    'onSelfKicked': [[string]],
-    'playerNotFound': [[]],
-    'cantMuteYourself': [[]],
-}
+// export type SystemMessageEvents = {
+//     'help': [[string]],
+//     'receivePm': [[string, string]],
+//     'sendPm': [[string, string]],
+//     'noPm': [[]],
+//     'playerMute': [[string]],
+//     'playerUnmute': [[string]],
+//     'alreadyGodMode': [[string]],
+//     'noMoreGodMode': [[string]],
+//     'givenGodMode': [[string]],
+//     'alreadyEdit': [[string]],
+//     'noMoreEdit': [[string]],
+//     'givenEdit': [[string]],
+//     'playerTeleported': [[string, number]],
+//     'multiplePlayersTeleported': [[number, number, number]],
+//     'playerNotTeleported': [[]],
+//     'noChangesToSave': [[]],
+//     'savingWorld': [[]],
+//     'worldSaved': [[]],
+//     'reloadingWorld': [[]],
+//     'worldReloaded': [[]],
+//     'worldCleared': [[]],
+//     'titleChanges': [[string]],
+//     'titleNotChanged': [[]],
+//     'worldVisibility': [['PUBLIC' | 'PRIVATE' | 'UNLISTED']],
+//     'onKick': [[string]],
+//     'onKickWithReason': [[string, string]],
+//     'onSelfKicked': [[string]],
+//     'playerNotFound': [[]],
+//     'cantMuteYourself': [[]],
+// }
 
 // export const SystemMessageFormat = {
 //     'help': ['* SYSTEM', 'Available commands:%s'],

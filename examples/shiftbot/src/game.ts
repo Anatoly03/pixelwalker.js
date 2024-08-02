@@ -1,5 +1,5 @@
 
-import Client, { Player, SolidBlocks, Util } from '../../../dist/index.js'
+import Client, { Block, Player, SolidBlocks, Util } from '../../../dist/index.js'
 
 import { is_bot_admin, storedPlayers } from './shift.js'
 import { TOP_LEFT, build_map, clear_map, close_door, create_win_zone, height, open_door, remove_spawn, set_spawn, width } from './map.js'
@@ -112,7 +112,7 @@ export function module(client: Client) {
         await clear_map()
     
         if (ROUND == 1) {
-            const SPAWNPOINTS = client.world?.list('spawn_point') || []
+            const SPAWNPOINTS = client.world?.list('tool_spawn_lobby') || []
             await Promise.all([set_spawn(), ...SPAWNPOINTS?.map(p => client.block(p[0], p[1], p[2], 0))])
             await gameRound.signup()
             gameRound.players.forEach(p => p.reset())
@@ -120,7 +120,7 @@ export function module(client: Client) {
             await gameRound.signup()
             // TODO SIGNUP_LOCK
             // await SIGNUP_LOCK
-            await Promise.all([remove_spawn(), ...SPAWNPOINTS?.map(p => client.block(p[0], p[1], p[2], 'spawn_point'))])
+            await Promise.all([remove_spawn(), ...SPAWNPOINTS?.map(p => client.block(p[0], p[1], p[2], 'tool_spawn_lobby'))])
 
             gameRound.players.forEach(player => {
                 const user_data = storedPlayers.byCuid(player.cuid) as StoredPlayer
@@ -135,7 +135,6 @@ export function module(client: Client) {
         // Rounds bump here?
     
         const meta = await build_map()
-        console.log(`Round ${ROUND} - ${meta.name}`)
         client.say(`"${meta.name}" by ${meta.creator}`)
     
         await client.wait(2000)

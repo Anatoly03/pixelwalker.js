@@ -1,5 +1,5 @@
 import Client from "../client.js"
-import Player from "../types/player.js"
+import Player from "../types/player/player.js"
 import { EventEmitter } from 'events'
 
 /**

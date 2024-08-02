@@ -1,31 +1,32 @@
 
 import PocketBase from 'pocketbase'
-import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 
 import RoomTypes from './data/room_types.js'
 
-import { read7BitInt, deserialise } from './math.js'
-import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, SystemMessageEvents, RawGameEvents } from './data/consts.js'
+import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
 import { Bit7, Magic, String } from './types/message-bytes.js'
-import Block, { BlockIdentifier } from './types/block.js'
-import Player, { PlayerBase, SelfPlayer } from './types/player.js'
+import Block from './types/world/block/block.js'
 
-import World from './types/world.js'
-import Structure from './types/structure.js'
+import Player from './types/player/player.js'
+import PlayerEventArray from './types/player/events.js'
+
+import World from './types/world/world.js'
+import Structure from './types/world/structure.js'
 
 import BotCommandModule from './modules/bot-command.js'
 import ChatModule from './modules/chat.js'
 // import SystemMessageModule from './modules/system-command.js'
-import WorldManagerModule from './modules/world-manager.js'
-import StartModule from "./modules/start.js"
-import { GamePlayerModule } from "./modules/player-manager.js"
 
 import BlockScheduler from './scheduler/scheduler-block.js'
-import { BlockMappings } from './data/mappings.js'
-import { PlayerArray, GamePlayerArray } from './types/player-ds.js'
-import { PublicProfile } from './types/player.profile.js'
+import { BlockMappings, BlockMappingsReverse } from './types/world/block/mappings.js'
+import { PlayerArray, GamePlayerArray } from './types/list/player.js'
+import { PublicProfile } from './types/player/profile.js'
 import { MessageTypes } from './data/message_types.js'
+import PaletteFix from './types/world/block/palette_fix.js'
+import SelfPlayer, { MoveArgs } from './types/player/self.js'
+import { BlockIdentifier, LayerId, Point } from './types/index.js'
+import Connection from './connection.js'
 
 /**
  * @example Snake Tail
@@ -50,22 +51,17 @@ import { MessageTypes } from './data/message_types.js'
  */
 export default class Client extends EventEmitter<LibraryEvents> {
     /**
-     * Get an array of message types sequenced integer → message name
+     * Get an array of message typed sequenced integer → message name. Note,
+     * that the array below is not full, 
      * 
      * @example
      * 
      * ```ts
      * import Client from 'pixelwalker.js'
-     * 
-     * console.log(Client.MessageTypes); 
-     * ```
-     * 
-     * Which will print out the following in version
-     * ```json
-     * ["PlayerInit","UpdateRights","WorldMetadata","WorldCleared","WorldReloaded","WorldBlockPlaced","ChatMessage","OldChatMessages","SystemMessage","PlayerJoined","PlayerLeft","PlayerMoved","PlayerTeleported","PlayerFace","PlayerGodMode","PlayerModMode","PlayerRespawn","PlayerReset","PlayerTouchBlock","PlayerTouchPlayer","PlayerEffect","PlayerRemoveEffect","PlayerResetEffects","PlayerTeam","PlayerCounters","PlayerLocalSwitchChanged","PlayerLocalSwitchReset","GlobalSwitchChanged","GlobalSwitchReset","PlayerPrivateMessage"]
+     * console.log(Client.MessageTypes); // ["PlayerInit", "UpdateRights", ...]
      * ```
      */
-    static MessageTypes: typeof MessageTypes = MessageTypes;
+    static MessageTypes = MessageTypes;
 
     /**
      * Get the id for the message. This can then be used with `Magic` to send the proper event header.
@@ -74,7 +70,6 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * 
      * ```ts
      * import Client from 'pixelwalker.js'
-     * 
      * client.send(Client.MessageId('PlayerInit'));
      * ```
      */
@@ -83,33 +78,53 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /**
-     * 
+     * The list of all current block names (referred to as palette)
+     * and their respective block id's.
      */
+    static BlockMappings = BlockMappings
 
     /**
-     * Connection State Marker
+     * The list of all block id's and their respective palette.
      */
-    #isConnected = false
+    static BlockMappingsReverse = BlockMappingsReverse
+
+    /**
+     * This stores a map of palette fixes for minor changes in
+     * the format where old palette names are keys and their new names
+     * are stores as a value. PixelWalker tends to name package names
+     * in the format [package name] [block name], so `coin` was renamed
+     * to `coin_gold` in v1.0.10 alpha. This function is primarily used
+     * to fix palette names in the Structure file and to maintain old
+     * code, which uses older naming styles.
+     * 
+     * @example 
+     * 
+     * Here is an example pattern with which you can convert any, even
+     * out of date block names to a usable block id.
+     * 
+     * ```ts
+     * function blockId(block_name: string): number {
+     *     return Client.BlockMappings[Client.PaletteFix[block_name as keyof typeof Client.PaletteFix] ?? block_name];
+     * }
+     * ```
+     */
+    static PaletteFix = PaletteFix
 
     /**
      * PocketBase API
      */
-    #pocketbase: PocketBase
+    #pocketbase!: PocketBase
+
+    /**
+     * Game Connection
+     */
+    #connection!: Connection<boolean>
 
     /**
      * Client's API Connection target
      */
-    #linkApiAccount = API_ACCOUNT_LINK
-
-    /**
-     * Client's Room Connection Target
-     */
+    #runningDevServer = false
     #linkApiRoom = API_ROOM_LINK
-
-    /**
-     * Socket that connects with the game
-     */
-    #socket: WebSocket | null
 
     /**
      * All registered commands.
@@ -129,7 +144,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * @ignore @todo
      */
-    public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
+    // public readonly system: EventEmitter<SystemMessageEvents> = new EventEmitter()
 
     /**
      * @ignore
@@ -139,12 +154,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
     /**
      * If the client is connected, stores a reference to the player instance, which the client controls.
      */
-    public self: SelfPlayer | undefined
+    public self?: SelfPlayer
 
     /**
      * @todo
      */
-    public world: World | undefined
+    readonly #world = World.registerDynamicWorld(this)
 
     /**
      * @ignore Command prefici which the bot respond to
@@ -152,9 +167,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
     public cmdPrefix: string[] = ['!', '.']
 
     /**
-     * @ignore Stores the chat prefix which the bot uses to append to messages.
+     * Stores the chat prefix which the bot uses to append to messages.
      */
-    public chatPrefix: string | undefined
+    #chatPrefix: string | undefined = undefined
 
     /**
      * @todo
@@ -173,10 +188,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * This is a standart way of creating a new Client instance
      * ```ts
      * import 'dotenv/config'
-     * const client = new Client({ token: process.env.TOKEN as string })
+     * const client = Client.new({ token: process.env.TOKEN as string })
      * ```
      */
-    constructor(args: { token: string });
+    static async new(args: { token: string }): Promise<Client>;
 
     /**
      * Create a new Client instance, by logging in with data defined in the 
@@ -185,10 +200,10 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * This is a standart way of creating a new Client instance
      * ```ts
      * import 'dotenv/config'
-     * const client = new Client(process.env)
+     * const client = Client.new(process.env)
      * ```
      */
-    constructor(args: NodeJS.ProcessEnv);
+    static new(args: NodeJS.ProcessEnv): Promise<Client>;
 
     /**
      * Create a new Client instance, by logging in with a username and a password.
@@ -196,56 +211,107 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * @example
      * ```ts
      * import 'dotenv/config'
-     * const client = new Client({ user: 'user@example.com', pass: 'PixieWalkie' })
+     * const client = Client.new({ user: 'user@example.com', pass: 'PixieWalkie' })
      * ```
      */
-    constructor(args: { user: string, pass: string });
+    static new(args: { user: string, pass: string }): Promise<Client>;
 
-    constructor(args: { token?: string, user?: string, pass?: string }) {
-        super()
-
-        this.#pocketbase = new PocketBase(`https://${this.#linkApiAccount}`)
-        this.#socket = null
-
-        this.#players = new GamePlayerArray<true>()
-        this.#profiles = new PlayerArray<PublicProfile, true>()
+    static async new(args: NodeJS.ProcessEnv | { token?: string, user?: string, pass?: string }): Promise<Client> {
+        const client = new Client()
+        client.#pocketbase = new PocketBase(`https://${API_ACCOUNT_LINK}`)
+        client.#connection = new Connection<false>(client)
 
         if (args.token) {
             if (typeof args.token != 'string') throw new Error('Token should be of type string')
-            this.#pocketbase.authStore.save(args.token, { verified: true })
-            if (!this.#pocketbase.authStore.isValid) throw new Error('Invalid Token')
+            client.#pocketbase.authStore.save(args.token, { verified: true })
+            if (!client.#pocketbase.authStore.isValid) throw new Error('Invalid Token')
         } else if (args.user && args.pass) {
             if (typeof args.user != 'string' || typeof args.pass != 'string') throw new Error('Username and password should be of type string')
-            this.#pocketbase.collection('users').authWithPassword(args.user, args.pass)
+            await client.#pocketbase.collection('users').authWithPassword(args.user, args.pass)
         } else {
             throw new Error('Invalid attempt to connect with pocketbase client.')
         }
+
+        return client
+    }
+
+    /**
+     * Create a new Client instance that connects with the dev server. The
+     * dev server is running on localhosts at ports 8090 (API Server) and
+     * 5148 (Game Server)
+     */
+    static async dev(args: NodeJS.ProcessEnv | { token?: string, user?: string, pass?: string }): Promise<Client> {
+        const client = new Client()
+
+        client.#runningDevServer = true
+        client.#linkApiRoom = 'localhost:5148'
+        client.#pocketbase = new PocketBase(`http://127.0.0.1:8090`) // not secure
+        client.#connection = new Connection<false>(client, true)
+
+        if (args.token) {
+            if (typeof args.token != 'string') throw new Error('Token should be of type string')
+            client.#pocketbase.authStore.save(args.token, { verified: true })
+            if (!client.#pocketbase.authStore.isValid) throw new Error('Invalid Token')
+        } else if (args.user && args.pass) {
+            if (typeof args.user != 'string' || typeof args.pass != 'string') throw new Error('Username and password should be of type string')
+            await client.#pocketbase.collection('users').authWithPassword(args.user, args.pass)
+        } else {
+            throw new Error('Invalid attempt to connect with pocketbase client.')
+        }
+
+        return client
+    }
+
+    /**
+     * Use the structure `Client.new` instead of `new Client()`. The reason
+     * for this change is to allow login with username and password, which
+     * requires the constructor to be asynchronous.
+     */
+    private constructor() {
+        super()
+
+        this.#players = PlayerEventArray(this)
+        this.#profiles = new PlayerArray<PublicProfile, true>()
 
         this.block_scheduler = new BlockScheduler(this)
 
         this.include(BotCommandModule(this.#command))
         this.include(ChatModule)
-        // this.include(SystemMessageModule)
-        this.include(WorldManagerModule)
-
-        this.include(StartModule(this.#players))
-        this.include(GamePlayerModule(this.#players))
 
         // On process interrupt, gracefully disconnect.
         // DO NOT merge this into one function, otherwise it does not work.
         process.on('SIGINT', (signal) => this.disconnect())
-        // Print unhandled promises after termination
-        process.on("unhandledRejection", (error) => console.error(error));
     }
 
+    //
+    //
+    // Getters
+    //
+    //
+
     /**
-     * Set local connection target to a different game server. 
+     * Retrieve the connection layer. It connects with an event
+     * listener which can be used to intercept incoming and outgoing
+     * messages.
+     * 
+     * ```ts
+     * client.connection().on('Receive', buffer => console.log(buffer))
+     * ```
+     * 
+     * @event Send The client is trying to send a packet to the server.
+     * @event Receive The server has sent the client a packet.
+     * @event Error An error occured during the communication.
+     * @event Close The socket was closed.
      */
-    public deroute(API_SERVER = '127.0.0.1:8090/api', GAME_SERVER = 'localhost:5148') {
-        this.#linkApiAccount = API_SERVER
-        this.#linkApiRoom = GAME_SERVER
-        return this
+    public connection() {
+        return this.#connection
     }
+
+    //
+    //
+    // Methods
+    //
+    //
 
     /**
      * Connect client instance to a room with default room type. 
@@ -265,26 +331,15 @@ export default class Client extends EventEmitter<LibraryEvents> {
      */
     public connect(world_id: string, room_type: typeof RoomTypes[0]): Promise<this>
 
-    public async connect(world_id: string, room_type?: typeof RoomTypes[0]): Promise<this> {
+    public async connect(world_id: string, room_type: typeof RoomTypes[0] = RoomTypes[0]): Promise<this> {
         if (world_id == undefined) throw new Error('`world_id` was not provided in `Client.connect()`')
-        if (room_type && !RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
-        if (!room_type) room_type = RoomTypes[0]
+        if (!this.#runningDevServer && room_type && !RoomTypes.includes(room_type)) throw new Error(`\`room_type\` expected to be one of ${RoomTypes}, got \`${room_type}\``)
+        if (this.#runningDevServer && room_type != 'pixelwalker_dev') throw new Error(`\`room_type\` expected to be \`pixelwalker_dev\` since you are running on the development server`)
         if (this.#pocketbase == null) throw new Error('Can\'t connect to a world without having pocketbase data.')
 
-        const { token } = await this.#pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {})
+        await this.#connection.start(world_id, room_type)
 
-        try {
-            this.#socket = new WebSocket(`wss://${this.#linkApiRoom}/room/${token}`)
-            this.#socket.binaryType = 'arraybuffer'
-        } catch (e) {
-            throw new Error('Socket failed to connect.')
-        }
-
-        this.#socket.on('message', (event) => this.receive_message(Buffer.from(event as WithImplicitCoercion<ArrayBuffer>)))
-        this.#socket.on('error', (err) => { this.emit('error', [err]); this.disconnect() })
-        this.#socket.on('close', (code, buffer) => { this.emit('close', [code, buffer.toString('ascii')]); this.disconnect() })
-
-        this.#isConnected = true
+        // this.world = await worldPromise
 
         this.block_scheduler.start()
 
@@ -292,41 +347,23 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     /**
-     * This function is called when a message is received from the server.
-     * @param {Buffer} buffer The bytes that are received.
-     * @returns {boolean} Returns true if the bytes were successfully processed, `false` otherwise.
-     */
-    private receive_message(buffer: Buffer): boolean {
-        if (buffer[0] == 0x3F) { // 63
-            this.send(Magic(0x3F))
-            return true
-        }
-
-        if (buffer[0] == 0x6B) { // 107
-            let [event_id, offset] = read7BitInt(buffer, 1)
-            const event_name = MessageTypes[event_id] as keyof RawGameEvents
-            const data = deserialise(buffer, offset)
-
-            if (event_name == undefined) {
-                console.warn((`Unknown event type ${event_id}. API may be out of date. Deserialised: ${data}`))
-                return false
-            }
-
-            this.raw.emit('*', [event_name, ...data])
-
-            return this.raw.emit(event_name, data as any)
-        }
-
-        this.emit('error', [new Error(`Unknown header byte received: got ${buffer[0]}, expected 63 or 107.`)])
-
-        return false
-    }
-
-    /**
      * 
      */
     public pocketbase() {
         return this.#pocketbase
+    }
+
+    /**
+     * Returns the promise awaiting till the world gets loaded. 
+     * 
+     * ```ts
+     * client.on('save', async () => {
+     *     const world = await client.world()
+     * })
+     * ```
+     */
+    public world(): Promise<World> {
+        return this.#world
     }
 
     /**
@@ -347,8 +384,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * console.log('After Connection:', client.connected) // true
      * ```
      */
-    public get connected(): boolean {
-        return this.#isConnected == true
+    public connected(): boolean {
+        return this.#connection?.connected() ?? false
     }
 
     /**
@@ -360,10 +397,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * ```
      */
     public disconnect() {
-        this.#isConnected = false
+        this.#connection?.disconnect()
         this.block_scheduler.stop(true)
         this.#pocketbase?.authStore.clear()
-        this.#socket?.close()
     }
 
     /**
@@ -411,17 +447,9 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * client.send(Magic(0x6B), Bit7(MessageTypes['playerGodMode']), Boolean(true))
      * ```
      */
-    public send(...args: Buffer[]): Promise<any | undefined> {
-        if (!this.connected) return Promise.reject("Client not connected, but `send` was called.")
-        return new Promise((res, rej) => {
-            if (!this.#socket) throw new Error('Socket not existing.')
-            if (this.#socket.readyState != this.#socket.OPEN) throw new Error('Socket not connected.')
-            const buffer = Buffer.concat(args)
-            this.#socket.send(buffer, {}, (err: any) => {
-                if (err) return rej(err)
-                res(true)
-            })
-        })
+    public send(...args: Buffer[]): void {
+        if (!this.connected()) return
+        this.#connection.emit('Send', ...args)
     }
 
     /**
@@ -499,7 +527,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * ```
      */
     setChatPrefix(prefix: string): this {
-        this.chatPrefix = prefix
+        this.#chatPrefix = prefix
         return this
     }
 
@@ -522,69 +550,89 @@ export default class Client extends EventEmitter<LibraryEvents> {
     }
 
     // TODO
-    public block(x: number, y: number, layer: 0 | 1, block: number | null | keyof typeof BlockMappings, ...args: any[]): Promise<boolean>
-    public block(x: number, y: number, layer: 0 | 1, block: Block): Promise<boolean>
-    public block(x: number, y: number, layer: 0 | 1, block: BlockIdentifier, ...args: any[]): Promise<boolean> {
+    public block(x: number, y: number, layer: LayerId, block: BlockIdentifier, ...args: any[]): Promise<boolean>
+
+    public block(x: number, y: number, layer: LayerId, block: Block): Promise<boolean>
+
+    public async block(x: number, y: number, layer: LayerId, block: BlockIdentifier, ...args: any[]): Promise<boolean> {
         if (block == null) block = 0
         if (typeof block == 'string' || typeof block == 'number') {
             block = new Block(block)
             block.data.push(...args)
         } else if (!(block instanceof Block))
             return Promise.reject("Expected `Block` or block identifier, got unknown object.")
-
-        return this.world?.put_block(x, y, layer, block) || Promise.reject('The `client.world` object was not loaded.')
+        
+        const world = await this.world()
+        return world.place({ x, y, layer }, block) || Promise.reject('The `client.world` object was not loaded.')
     }
 
     /**
      * @param {string} content Write to chat
      */
     public say(content: string) {
-        if (content.startsWith('/')) {
+        const isPrivateMessage = content.startsWith('/pm')
+
+        if (content.startsWith('/') && !isPrivateMessage) {
             return this.send(Magic(0x6B), Bit7(Client.MessageId('ChatMessage')), String(content))
         }
 
-        let preamble = this.chatPrefix ? (this.chatPrefix + ' ') : ''
+        let privateMessageHeader = /^\/pm\s+([\w\d]+|\#\d+)\s+(.+)$/i.exec(content)
+        let preamble = ''
 
-        const MESSAGE_SIZE = 120
-        const CONTENT_ALLOWED_SIZE = MESSAGE_SIZE - preamble.length - (preamble.length > 0 ? 1 : 0)
+        if (isPrivateMessage) {
+            preamble += `/pm ${privateMessageHeader![1]} `
+            content = privateMessageHeader![2] // Note that we cut the header from the content
+        }
+
+        if (this.#chatPrefix) {
+            preamble += `${this.#chatPrefix} `
+        }
+
+        // console.log(preamble + ':' + content)
+
+        const MESSAGE_SIZE = 120;
+        const CONTENT_ALLOWED_SIZE = MESSAGE_SIZE - preamble.length
 
         if (preamble.length > MESSAGE_SIZE)
-            throw new Error('Chat preamble is larger than message size.')
+            throw new Error('Chat preamble cannot be larger than message size.')
 
         for (let i = 0; i < content.length; i += CONTENT_ALLOWED_SIZE) {
             const chunk = content.substring(CONTENT_ALLOWED_SIZE * i, Math.min(CONTENT_ALLOWED_SIZE * (i + 1), content.length))
-            const separation_index = chunk.lastIndexOf(' ') // TODO regex
-            if (chunk.trim().length == 0) return
-            console.log(`Chunk ${i}/${content.length}: '${chunk}'`)
+            // const separation_index = chunk.lastIndexOf(' ') // TODO regex
+            if (chunk.trim().length == 0) break
             this.send(Magic(0x6B), Bit7(Client.MessageId('ChatMessage')), String(preamble + chunk))
         }
+
+        // TODO this should be scheduler response
+        return Promise.resolve(true)
     }
 
     /**
      * Wrapper for `client.self` methods
      */
-    public god(value: boolean, mod_mode: boolean) {
-        return this.self?.[mod_mode ? 'set_mod' : 'set_god'](value)
+    public god(value: boolean) {
+        return this.self!.forceGod(value)
     }
 
     /**
      * Wrapper for `client.self.face()` method
      */
     public face(value: number) {
-        return this.self?.set_face(value)
+        return this.self!.setFace(value)
     }
 
     /**
      * Wrapper for `client.self.move()` method
      */
-    public move(x: number, y: number, xVel: number, yVel: number, xMod: number, yMod: number, horizontal: -1 | 0 | 1, vertical: -1 | 0 | 1, space_down: boolean, space_just_down: boolean) {
-        return this.self?.move(x, y, xVel, yVel, xMod, yMod, horizontal, vertical, space_down, space_just_down)
+    public move(args: Partial<MoveArgs> & Point) {
+        return this.self!.move(args)
     }
 
     /**
      * @todo
      */
-    public fill(xt: number, yt: number, fragment: Structure, args?: { animation?: (b: any) => any, ms?: number, write_empty?: boolean }) {
-        return this.world?.paste(xt, yt, fragment, args)
+    public async fill(xt: number, yt: number, fragment: Structure, args?: { animation?: (b: any) => any, ms?: number, write_empty?: boolean }) {
+        const world = await this.world()
+        return world.paste(xt, yt, fragment, args)
     }
 }

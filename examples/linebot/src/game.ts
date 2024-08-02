@@ -47,7 +47,7 @@ export function module(client: Client) {
             const winner = gameRound.players[0]
             client.say(`[BOT] ${winner.username} won! Platform Time: ${SURVIVAL_TIME}s`)
             console.log(`1. ${player.username}`)
-            gameRound.players[0].crown(true)
+            gameRound.players[0].giveCrown(true)
             GAME_IS_STARTING = true
             GAME_RUNNING = false
 
@@ -98,7 +98,7 @@ export function module(client: Client) {
                 .forEach(p => {
                     // console.log(`Teleport: ${p.x}, ${p.y}, Platform: Y = ${TOP_LEFT.y + JOINT.y}, LEFT X = ${TOP_LEFT.x + LEFT_JOINT.x}, RIGHT X = ${TOP_LEFT.x + JOINT.x}`)
                     const [x, y] = walkable_positions[Math.floor(Math.random() * walkable_positions.length)]
-                    return p.teleport(x, y)
+                    return p.teleport({x, y})
                 })
 
             await client.wait(500)
@@ -155,7 +155,11 @@ export function module(client: Client) {
     })
 
     client.on('player:join', ([p]) => SIGNUP_LOCK?.accept())
-    client.on('player:god', ([p]) => {if (!p.god_mode) SIGNUP_LOCK?.accept()})
+    client.on('player:god', ([p]) => {if (!p.god) SIGNUP_LOCK?.accept()})
+
+    client.onCommand('start', ([p]) => {
+        console.log(p.cuid, client.self?.cuid)
+    })
 
     client.onCommand('start', is_bot_admin, ([player, _, name]) => {
         GAME_HALT_FLAG = false
@@ -201,7 +205,7 @@ export function module(client: Client) {
     client.on('player:move', ([player]) => {
         if (!gameRound.players.includes(player) && !GAME_IN_DEBUG) return
         if (player.x < TOP_LEFT.x + WIDTH - HORIZONTAL_BORDER + 5 + (GAME_IN_DEBUG ? 5 : 0)) return
-        player.teleport(player.x - (WIDTH - 2 * HORIZONTAL_BORDER), player.y)
+        player.teleport({ x: player.x - (WIDTH - 2 * HORIZONTAL_BORDER), y: player.y})
     })
 
     return client

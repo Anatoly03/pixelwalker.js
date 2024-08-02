@@ -1,5 +1,5 @@
 import Client from "../client.js"
-import Player from "../types/player.js"
+import Player from "../types/player/player.js"
 
 /**
  * This module generates a module function that will log certain events.

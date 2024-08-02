@@ -210,4 +210,4 @@ export default {
 	"garden_onewayleafl": "garden_oneway_leaf_left",
 	"garden_onewayleafr": "garden_oneway_leaf_right",
 	"garden_wood": "garden_frame"
-}
+} as const

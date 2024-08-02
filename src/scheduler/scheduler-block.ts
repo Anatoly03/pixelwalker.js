@@ -1,7 +1,7 @@
 import Client from "../client.js"
 import { HeaderTypes, SpecialBlockData } from "../data/consts.js"
-import { Bit7, Boolean, Byte, Int32, Magic } from "../types/message-bytes.js"
-import Block from "../types/block.js"
+import { Bit7, Boolean, Byte, Int32, String, Magic, ByteArray } from "../types/message-bytes.js"
+import Block from "../types/world/block/block.js"
 import BaseScheduler from "./base.js"
 
 type BlockCoordinate = `${number}.${number}.${0|1}`
@@ -15,8 +15,12 @@ export default class BlockScheduler extends BaseScheduler<BlockCoordinate, Block
     constructor(client: Client) {
         super(client)
 
-        client.raw.on('WorldBlockPlaced', ([_, x, y, layer, bid, ...data]) => {
-            this.remove(`${x}.${y}.${layer}`)
+        client.raw.on('WorldBlockPlaced', ([_, coordinates, layer, bid, ...data]) => {
+            for (let idx = 0; idx < coordinates.length; idx += 4) {
+                const x = coordinates[idx] | (coordinates[idx + 1] << 8);
+                const y = coordinates[idx + 2] | (coordinates[idx + 3] << 8);
+                this.remove(`${x}.${y}.${layer}`)
+            }
         })
 
         // this.setMaxListeners(300 * 300 * 2) // max world width * world height * layers
@@ -25,8 +29,15 @@ export default class BlockScheduler extends BaseScheduler<BlockCoordinate, Block
     protected async try_send(pos: `${number}.${number}.0` | `${number}.${number}.1`, block: Block): Promise<void> {
         const [x, y, layer] = pos.split('.').map(v => parseInt(v))
 
-        const buffer: Buffer[] = [Magic(0x6B), Bit7(Client.MessageId('WorldBlockPlaced')), Int32(x), Int32(y), Int32(layer), Int32(block.id)]
+        const coordinates = new Uint8Array(4)
+        coordinates[0] = x & 0xFF;
+        coordinates[1] = (x >> 8) & 0xFF;
+        coordinates[2] = y & 0xFF;
+        coordinates[3] = (y >> 8) & 0xFF;
+
+        const buffer: Buffer[] = [Magic(0x6B), Bit7(Client.MessageId('WorldBlockPlaced')), ByteArray(Buffer.from(coordinates)), Int32(layer), Int32(block.id)]
         const arg_types: HeaderTypes[] = SpecialBlockData[block.name] || []
+        // console.log(buffer)
 
         for (let i = 0; i < arg_types.length; i++) {
             switch (arg_types[i]) {
@@ -39,6 +50,9 @@ export default class BlockScheduler extends BaseScheduler<BlockCoordinate, Block
                 // TODO other types
                 case HeaderTypes.Boolean:
                     buffer.push(Boolean(block.data[i]))
+                    break
+                case HeaderTypes.String:
+                    buffer.push(String(block.data[i]))
                     break
             }
         }
