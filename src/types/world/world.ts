@@ -153,7 +153,7 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
     /**
      * Set the world title.
      */
-    public async setTile(title: string) {
+    public async setTitle(title: string) {
         return this.client.say('/title ' + title) ?? false
     }
 
