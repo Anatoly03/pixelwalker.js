@@ -165,6 +165,20 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
     }
 
     /**
+     * Reload the world
+     */
+    public async reload() {
+        return this.client.say('/reloadworld') ?? false
+    }
+
+    /**
+     * Clear the world
+     */
+    public async clear() {
+        return this.client.say('/clearworld') ?? false
+    }
+
+    /**
      * Paste a structure within coordinates on the map.
      */
     public override async paste(xt: number, yt: number, fragment: Structure, args: { animation?: (b: any) => any, ms?: number, write_empty?: boolean } = { write_empty: true }) {
