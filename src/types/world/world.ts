@@ -174,7 +174,7 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
     /**
      * Clear the world
      */
-    public async clear() {
+    public override async clear() {
         return this.client.say('/clearworld') ?? false
     }
 
