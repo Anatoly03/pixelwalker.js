@@ -158,6 +158,13 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
     }
 
     /**
+     * Set the world visibility.
+     */
+    public async setVisibility(visibility: 'public' | 'unlisted' | 'private') {
+        return this.client.say('/visibility ' + visibility) ?? false
+    }
+
+    /**
      * Paste a structure within coordinates on the map.
      */
     public override async paste(xt: number, yt: number, fragment: Structure, args: { animation?: (b: any) => any, ms?: number, write_empty?: boolean } = { write_empty: true }) {
