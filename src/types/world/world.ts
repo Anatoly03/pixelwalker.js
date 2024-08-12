@@ -3,7 +3,6 @@ import { WorldPosition } from "..";
 import Block from "./block/block.js";
 import Client from "../../client.js";
 import { FIFO } from "../animation";
-import { Bit7, Magic } from "../message-bytes";
 
 export type WorldMeta = {
     title: string
@@ -151,6 +150,16 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
     //
     //
 
+    /**
+     * Set the world title.
+     */
+    public async setTile(title: string) {
+        return this.client.say('/title ' + title) ?? false
+    }
+
+    /**
+     * Paste a structure within coordinates on the map.
+     */
     public override async paste(xt: number, yt: number, fragment: Structure, args: { animation?: (b: any) => any, ms?: number, write_empty?: boolean } = { write_empty: true }) {
         const promises: Promise<boolean>[] = []
         const to_be_placed: [WorldPosition, Block][] = []
