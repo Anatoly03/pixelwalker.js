@@ -359,6 +359,21 @@ export default class Player {
     /**
      * @ignore
      */
+    public oncePromise<K extends keyof PlayerEvents, T>(event: K, callback: (...args: PlayerEvents[K]) => T): Promise<T> {
+        return new Promise((res, rej) => {
+            const reject = () => rej('The client disconnected.')
+            this.client.once('close', reject)
+            this.events.once(event, ((...args: any[]) => {
+                this.client.removeListener('close', reject)
+                const output = (callback as any)(...args) as T
+                res(output)
+            }) as any)
+        })
+    }
+
+    /**
+     * @ignore
+     */
     public emit<K extends keyof PlayerEvents>(event: K, ...args: PlayerEvents[K]): this {
         this.events.emit(event, ...args as any)
         return this

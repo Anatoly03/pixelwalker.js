@@ -220,6 +220,21 @@ export default class Connection<Ready extends boolean = false> {
     /**
      * @ignore
      */
+    public oncePromise<K extends keyof ConnectionEvents, T>(event: K, callback: (...args: ConnectionEvents[K]) => T): Promise<T> {
+        return new Promise((res, rej) => {
+            const reject = () => rej('The client disconnected.')
+            this.once('Close', reject)
+            this.#events.once(event, ((...args: any[]) => {
+                this.#events.removeListener('Close', reject)
+                const output = (callback as any)(...args) as T
+                res(output)
+            }) as any)
+        })
+    }
+
+    /**
+     * @ignore
+     */
     public emit<K extends keyof ConnectionEvents>(event: K, ...args: ConnectionEvents[K]): this {
         this.#events.emit(event, ...args as any)
         return this

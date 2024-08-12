@@ -41,6 +41,13 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
         this.#switches = new Set() // TODO
     }
 
+    /**
+     * This method accesses the super instance of the object.
+     */
+    #super<K extends keyof Structure<T & WorldMeta>>(attr: K): Structure[K] {
+        return super[attr]
+    }
+
     //
     //
     // Static Methods
@@ -89,7 +96,7 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
          */
         client.raw.on('WorldCleared', async () => {
             const world = await client.world()
-            world.clear(true)
+            world.#super('clear')(true)
             // TODO emit?
         })
 
@@ -125,6 +132,14 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
         throw new Error('Not Implemented') // TODO add event emitter
         return this
     }
+
+    /**
+     * @ignore
+     */
+    public oncePromise<K extends keyof WorldEvents, T>(event: K, callback: (...args: WorldEvents[K]) => T): Promise<T> {
+        throw new Error('Not Implemented') // TODO add event emitter
+    }
+
 
     /**
      * @ignore
@@ -175,7 +190,8 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
      * Clear the world
      */
     public override async clear() {
-        return this.client.say('/clearworld') ?? false
+        this.client.say('/clearworld')
+        
     }
 
     /**
