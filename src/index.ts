@@ -11,3 +11,7 @@ export { default as RoomTypes } from './data/room-types.js';
 
 export { default as default, default as PixelWalkerClient } from './protocol/client.js';
 // export { default as Connection } from './protocol/connection.js';
+
+// Localhost Exports
+
+export { default as LocalhostPixelWalkerClient } from './protocol/client.local.js';
