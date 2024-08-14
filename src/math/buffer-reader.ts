@@ -4,7 +4,7 @@
  * type, followed by data. The type header is noted by its'
  * 7-bit notation.
  */
-export const enum ComponentTypeHeader {
+export enum ComponentTypeHeader {
     String = 0,
     Byte = 1,
     Int16 = 2,
@@ -180,6 +180,20 @@ export default class BufferReader extends Buffer {
         const buffer = new BufferReader(this.length7BitInt(value));
         buffer.write7BitInt(value);
         return buffer;
+    }
+
+    /**
+     * https://stackoverflow.com/questions/8609289/convert-a-binary-nodejs-buffer-to-javascript-arraybuffer
+     * @param {Buffer} buffer
+     * @returns {ArrayBuffer}
+     */
+    public toArrayBuffer() {
+        const arrayBuffer = new ArrayBuffer(this.length);
+        const view = new Uint8Array(arrayBuffer);
+        for (let i = 0; i < this.length; ++i) {
+            view[i] = this[i];
+        }
+        return arrayBuffer;
     }
 
     //
@@ -495,5 +509,72 @@ export default class BufferReader extends Buffer {
             value >>= 7;
         }
         this.writeUInt8(value);
+    }
+
+    /**
+     * Keep Deserializing the buffer for typed data until
+     * you reach the end of the buffer. Typed data consists
+     * of a type indicator in 7-bit-encoding and data following
+     * accordingly.
+     */
+    deserialize() {
+        const arr: (string | number | boolean | Buffer | bigint)[] = [];
+
+        while (this.#offset < this.length) {
+            const type = this.read7BitInt();
+
+            switch (type) {
+                case ComponentTypeHeader.String:
+                    {
+                        const length = this.read7BitInt();
+                        arr.push(
+                            this.subarray(
+                                this.#offset,
+                                this.#offset + length
+                            ).toString('ascii')
+                        );
+                        this.#offset += length;
+                    }
+                    break;
+                case ComponentTypeHeader.Byte:
+                    arr.push(this.readUInt8());
+                    break;
+                case ComponentTypeHeader.Int16: // = Int16 (short)
+                    arr.push(this.readInt16BE());
+                    break;
+                case ComponentTypeHeader.Int32: // = Int32
+                    arr.push(this.readInt32BE());
+                    break;
+                case ComponentTypeHeader.Int64:
+                    arr.push(this.readBigInt64BE());
+                    break;
+                case ComponentTypeHeader.Float:
+                    arr.push(this.readFloatBE());
+                    break;
+                case ComponentTypeHeader.Double:
+                    arr.push(this.readDoubleBE());
+                    break;
+                case ComponentTypeHeader.Boolean:
+                    arr.push(!!this.readUInt8()); // !! is truthy
+                    break;
+                case ComponentTypeHeader.ByteArray:
+                    {
+                        const length = this.read7BitInt();
+                        arr.push(
+                            this.subarray(this.#offset, this.#offset + length)
+                        );
+                        this.#offset += length;
+                    }
+                    break;
+                default:
+                    throw new Error(
+                        `While serializing a buffer for data, an unexpected type ${type} was read. Expected one of ${Object.keys(
+                            ComponentTypeHeader
+                        ).filter(isNaN as any)}`
+                    );
+            }
+        }
+
+        return arr;
     }
 }
