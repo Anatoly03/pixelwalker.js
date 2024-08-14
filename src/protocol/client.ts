@@ -111,16 +111,58 @@ export default class PixelWalkerClient {
     }
 
     /**
-     * @todo
-     * Example: `https://api.pixelwalker.net/api/collections/public_profiles/records?perPage=500&page=1`
+     * Returns a Pocketbase [RecordService](https://github.com/pocketbase/js-sdk/blob/master/src/services/RecordService.ts).
+     * See usage at the [PocketBase](https://pocketbase.io/) website for [searching records](https://pocketbase.io/docs/api-records#listsearch-records).
+     * This method returns a collection handler that allows you to search through all public profiles.
+     * 
+     * @example
+     * 
+     * ```
+     * {
+     *   "collectionId": "rhrbt6wqhc4s0cp",
+     *   "collectionName": "public_worlds",
+     *   "description": "This is a 200x200 world",
+     *   "height": 200,
+     *   "id": "djtqrcjn4fzyhi8",
+     *   "minimap": "djtqrcjn4fzyhi8_dsTobiFBDM.png",
+     *   "owner": "5cy5r7za1r3splc",
+     *   "plays": 243,
+     *   "title": "200x200 World",
+     *   "width": 200
+     * }
+     * ```
+     * 
+     * @example
+     * 
+     * `https://api.pixelwalker.net/api/collections/public_profiles/records?perPage=500&page=1`
      */
     public profiles() {
         this.pocketbase.collection('public_profiles') as RecordService<PublicProfile>
     }
 
     /**
-     * @todo
-     * Example: https://api.pixelwalker.net/api/collections/public_worlds/records?page=0&perPage=500
+     * Returns a Pocketbase [RecordService](https://github.com/pocketbase/js-sdk/blob/master/src/services/RecordService.ts).
+     * See usage at the [PocketBase](https://pocketbase.io/) website for [searching records](https://pocketbase.io/docs/api-records#listsearch-records).
+     * This method returns a collection handler that allows you to search through all public worlds.
+     * 
+     * @example
+     * 
+     * ```
+     * {
+     *   "admin": false,
+     *   "banned": false,
+     *   "collectionId": "0wl44rzm22wuf2q",
+     *   "collectionName": "public_profiles",
+     *   "created": "2024-04-17 08:50:37.671Z",
+     *   "face": 15,
+     *   "id": "5cy5r7za1r3splc",
+     *   "username": "ANATOLY"
+     * }
+     * ```
+     * 
+     * @example
+     * 
+     * `https://api.pixelwalker.net/api/collections/public_worlds/records?page=0&perPage=500`
      */
     public worlds() {
         this.pocketbase.collection('public_worlds') as RecordService<PublicWorld>
