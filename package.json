@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npx tsc-alias",
     "docs": "npx typedoc src",
     "test": "jest --verbose ./test"
   },
