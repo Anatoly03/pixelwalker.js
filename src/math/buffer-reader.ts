@@ -1,3 +1,5 @@
+import WebSocket from 'ws';
+
 /**
  * Data during the communication in the process is dynamic
  * typed. Every entry is followed by a byte identifying the
@@ -35,12 +37,30 @@ export default class BufferReader extends Buffer {
      * game-specific bit magic. Optionally specify the offset
      * of the cursor.
      */
-    constructor(buffer: Buffer, offset?: number);
+    constructor(buffer: Buffer | WebSocket.RawData | WithImplicitCoercion<ArrayBuffer>, offset?: number);
 
-    constructor(buffer: Buffer | number, offset = 0) {
+    constructor(buffer: WebSocket.RawData | WithImplicitCoercion<ArrayBuffer> | number, offset = 0) {
         if (typeof buffer == 'number') buffer = Buffer.alloc(buffer);
-        super(buffer);
+        super(Buffer.from(buffer as WithImplicitCoercion<ArrayBuffer>));
         this.#offset = offset;
+    }
+
+    //
+    //
+    // Static Methods
+    //
+    //
+
+    /**
+     * https://stackoverflow.com/questions/8609289/convert-a-binary-nodejs-buffer-to-javascript-arraybuffer
+     */
+    public toArrayBuffer(): ArrayBuffer {
+        const arrayBuffer = new ArrayBuffer(this.length);
+        const view = new Uint8Array(arrayBuffer);
+        for (let i = 0; i < this.length; ++i) {
+            view[i] = this[i];
+        }
+        return arrayBuffer;
     }
 
     //
@@ -71,8 +91,8 @@ export default class BufferReader extends Buffer {
      */
     public static Byte(value: number): Buffer {
         const buffer = new BufferReader(2);
-        buffer.writeUint8(ComponentTypeHeader.Byte);
-        buffer.writeUint8(value);
+        buffer.writeUInt8(ComponentTypeHeader.Byte);
+        buffer.writeUInt8(value);
         return buffer;
     }
 
@@ -82,8 +102,8 @@ export default class BufferReader extends Buffer {
      */
     public static Int16(value: number): Buffer {
         const buffer = new BufferReader(3);
-        buffer.writeUint8(ComponentTypeHeader.Int16);
-        buffer.writeUint16BE(value);
+        buffer.writeUInt8(ComponentTypeHeader.Int16);
+        buffer.writeUInt16BE(value);
         return buffer;
     }
 
@@ -93,7 +113,7 @@ export default class BufferReader extends Buffer {
      */
     public static Int32(value: number): Buffer {
         const buffer = new BufferReader(5);
-        buffer.writeUint8(ComponentTypeHeader.Int32);
+        buffer.writeUInt8(ComponentTypeHeader.Int32);
         buffer.writeInt32BE(value);
         return buffer;
     }
@@ -104,7 +124,7 @@ export default class BufferReader extends Buffer {
      */
     public static Int64(value: bigint): Buffer {
         const buffer = new BufferReader(9);
-        buffer.writeUint8(ComponentTypeHeader.Int64);
+        buffer.writeUInt8(ComponentTypeHeader.Int64);
         buffer.writeBigInt64BE(value);
         return buffer;
     }
@@ -115,7 +135,7 @@ export default class BufferReader extends Buffer {
      */
     public static Float(value: number): Buffer {
         const buffer = new BufferReader(5);
-        buffer.writeUint8(ComponentTypeHeader.Float);
+        buffer.writeUInt8(ComponentTypeHeader.Float);
         buffer.writeFloatBE(value);
         return buffer;
     }
@@ -126,7 +146,7 @@ export default class BufferReader extends Buffer {
      */
     public static Double(value: number): Buffer {
         const buffer = new BufferReader(9);
-        buffer.writeUint8(ComponentTypeHeader.Double);
+        buffer.writeUInt8(ComponentTypeHeader.Double);
         buffer.writeDoubleBE(value);
         return buffer;
     }
@@ -137,8 +157,8 @@ export default class BufferReader extends Buffer {
      */
     public static Boolean(value: boolean): Buffer {
         const buffer = new BufferReader(2);
-        buffer.writeUint8(ComponentTypeHeader.Boolean);
-        buffer.writeUint8(value ? 1 : 0);
+        buffer.writeUInt8(ComponentTypeHeader.Boolean);
+        buffer.writeUInt8(value ? 1 : 0);
         return buffer;
     }
 
@@ -182,18 +202,6 @@ export default class BufferReader extends Buffer {
         return buffer;
     }
 
-    /**
-     * https://stackoverflow.com/questions/8609289/convert-a-binary-nodejs-buffer-to-javascript-arraybuffer
-     */
-    public toArrayBuffer(): ArrayBuffer {
-        const arrayBuffer = new ArrayBuffer(this.length);
-        const view = new Uint8Array(arrayBuffer);
-        for (let i = 0; i < this.length; ++i) {
-            view[i] = this[i];
-        }
-        return arrayBuffer;
-    }
-
     //
     //
     // Overrides
@@ -216,16 +224,16 @@ export default class BufferReader extends Buffer {
     //     return this.#offset = super.writeUIntLE(value, this.#offset);
     // }
 
-    // public override writeUintLE(value: number) {
-    //     return this.#offset = super.writeUintLE(value, this.#offset);
+    // public override writeUIntLE(value: number) {
+    //     return this.#offset = super.writeUIntLE(value, this.#offset);
     // }
 
     // public override writeUIntBE(value: number) {
     //     return this.#offset = super.writeUIntBE(value, this.#offset);
     // }
 
-    // public override writeUintBE(value: number) {
-    //     return this.#offset = super.writeUintBE(value, this.#offset);
+    // public override writeUIntBE(value: number) {
+    //     return this.#offset = super.writeUIntBE(value, this.#offset);
     // }
 
     // public override writeIntLE(value: number) {
@@ -240,40 +248,20 @@ export default class BufferReader extends Buffer {
         return (this.#offset = super.writeUInt8(value, this.#offset));
     }
 
-    public override writeUint8(value: number) {
-        return (this.#offset = super.writeUint8(value, this.#offset));
-    }
-
     public override writeUInt16LE(value: number) {
         return (this.#offset = super.writeUInt16LE(value, this.#offset));
-    }
-
-    public override writeUint16LE(value: number) {
-        return (this.#offset = super.writeUint16LE(value, this.#offset));
     }
 
     public override writeUInt16BE(value: number) {
         return (this.#offset = super.writeUInt16BE(value, this.#offset));
     }
 
-    public override writeUint16BE(value: number) {
-        return (this.#offset = super.writeUint16BE(value, this.#offset));
-    }
-
     public override writeUInt32LE(value: number) {
         return (this.#offset = super.writeUInt32LE(value, this.#offset));
     }
 
-    public override writeUint32LE(value: number) {
-        return (this.#offset = super.writeUint32LE(value, this.#offset));
-    }
-
     public override writeUInt32BE(value: number) {
         return (this.#offset = super.writeUInt32BE(value, this.#offset));
-    }
-
-    public override writeUint32BE(value: number) {
-        return (this.#offset = super.writeUint32BE(value, this.#offset));
     }
 
     public override writeInt8(value: number) {
