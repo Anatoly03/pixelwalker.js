@@ -1,7 +1,7 @@
-import { APIServerLink } from '../client.js';
+import { GameServerLink } from '../protocol/client.js';
 import fs from 'node:fs';
 
-const data: Response = await fetch(`https://${APIServerLink}/listroomtypes`);
+const data: Response = await fetch(`https://${GameServerLink}/listroomtypes`);
 const map: string[] = await data.json();
 
 export const RoomTypes: string[] = map;

@@ -1,7 +1,7 @@
-import { APIServerLink } from '../client.js';
+import { GameServerLink } from '../protocol/client.js';
 import fs from 'node:fs';
 
-const data: Response = await fetch(`https://${APIServerLink}/mappings`);
+const data: Response = await fetch(`https://${GameServerLink}/mappings`);
 const map: { [keys: string]: number } = await data.json();
 
 export const BlockMappings: { [keys: string]: number } = map;
