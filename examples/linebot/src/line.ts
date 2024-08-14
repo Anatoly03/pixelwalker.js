@@ -1,7 +1,7 @@
 
 
 import 'dotenv/config'
-import Client, { Modules, Player } from '../../../dist/index.js'
+import Client, { Block, Modules, Player } from '../../../dist/index.js'
 
 process.on('SIGINT', () => {
     process.on('SIGINT', () => {
@@ -9,8 +9,7 @@ process.on('SIGINT', () => {
     })
 })
 
-const client = await Client.new({ token: process.env.TOKEN as string })
-export default client
+export const client = await Client.new({ token: process.env.TOKEN as string })
 
 import * as Map from './map.js'
 import * as Game from './game.js'
@@ -22,13 +21,13 @@ export function is_bot_admin(player: Player) {
 
 export const storedPlayers = new StoredPlayerManager('players.yaml', StoredPlayer)
 
-client.raw.on('*', ([ev, ...args]) => {
-    if (ev === 'PlayerMoved') return;
-    if (ev === 'PlayerGodMode') return;
-    if (ev === 'PlayerTouchPlayer') return;
-    // if (ev === 'WorldBlockPlaced') return;
-    // console.log(ev, args);
-})
+// client.raw.on('*', ([ev, ...args]) => {
+//     if (ev === 'PlayerMoved') return;
+//     if (ev === 'PlayerGodMode') return;
+//     if (ev === 'PlayerTouchPlayer') return;
+//     // if (ev === 'WorldBlockPlaced') return;
+//     console.log(ev, args);
+// })
 
 client
     .on('player:join', ([p]) => p.setGodRights(true)) // Give everyone god mode
@@ -40,3 +39,5 @@ client
     .include(new Modules.BanModule('bans.yaml', is_bot_admin))
     .include(storedPlayers)
     .connect(process.env.WORLD_ID as string)
+
+client.connection().on('ReceiveFormatted', console.log)

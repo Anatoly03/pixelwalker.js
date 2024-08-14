@@ -1,5 +1,5 @@
 
-export { default, default as Client } from './client.js'
+export { default, default as Client } from './client/client.js'
 export { default as World } from './types/world/world.js'
 export { default as Structure } from './types/world/structure.js'
 export { default as Block } from "./types/world/block/block.js"

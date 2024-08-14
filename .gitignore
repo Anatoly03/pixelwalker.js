@@ -1,9 +1,6 @@
 # Compilations
-dist
+dist*
 node_modules
 
 # All Environment files need to be in gitignore
 *.env
-
-# Temporary
-docs

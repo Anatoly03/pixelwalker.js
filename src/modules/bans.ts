@@ -1,4 +1,4 @@
-import Client from '../client.js'
+import Client from '../client/client.js'
 import { PlayerBase } from '../types/index.js';
 import Player from '../types/player/player.js'
 import SelfPlayer from '../types/player/self.js';

@@ -2,30 +2,29 @@
 import PocketBase from 'pocketbase'
 import { EventEmitter } from 'events'
 
-import RoomTypes from './data/room_types.js'
+import RoomTypes from '../data/room_types.js'
 
-import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from './data/consts.js'
-import { Bit7, Magic, String } from './types/message-bytes.js'
-import Block from './types/world/block/block.js'
+import { API_ACCOUNT_LINK, API_ROOM_LINK, LibraryEvents, RawGameEvents } from '../data/consts.js'
+import { Bit7, Magic, String } from '../types/message-bytes.js'
+import Block from '../types/world/block/block.js'
 
-import Player from './types/player/player.js'
-import PlayerEventArray from './types/player/events.js'
+import Player from '../types/player/player.js'
+import PlayerEventArray from '../types/player/events.js'
 
-import World from './types/world/world.js'
-import Structure from './types/world/structure.js'
+import World from '../types/world/world.js'
+import Structure from '../types/world/structure.js'
 
-import BotCommandModule from './modules/bot-command.js'
-import ChatModule from './modules/chat.js'
+import BotCommandModule from '../modules/bot-command.js'
+import ChatModule from '../modules/chat.js'
 // import SystemMessageModule from './modules/system-command.js'
 
-import BlockScheduler from './scheduler/scheduler-block.js'
-import { BlockMappings, BlockMappingsReverse } from './types/world/block/mappings.js'
-import { PlayerArray, GamePlayerArray } from './types/list/player.js'
-import { PublicProfile } from './types/player/profile.js'
-import { MessageTypes } from './data/message_types.js'
-import PaletteFix from './types/world/block/palette_fix.js'
-import SelfPlayer, { MoveArgs } from './types/player/self.js'
-import { BlockIdentifier, LayerId, Point } from './types/index.js'
+import BlockScheduler from '../scheduler/scheduler-block.js'
+import { BlockMappings, BlockMappingsReverse } from '../types/world/block/mappings.js'
+import { PlayerArray, GamePlayerArray } from '../types/list/player.js'
+import { PublicProfile } from '../types/player/profile.js'
+import PaletteFix from '../types/world/block/palette_fix.js'
+import SelfPlayer, { MoveArgs } from '../types/player/self.js'
+import { BlockIdentifier, LayerId, Point } from '../types/index.js'
 import Connection from './connection.js'
 
 /**
@@ -50,33 +49,6 @@ import Connection from './connection.js'
  * ```
  */
 export default class Client extends EventEmitter<LibraryEvents> {
-    /**
-     * Get an array of message typed sequenced integer → message name. Note,
-     * that the array below is not full, 
-     * 
-     * @example
-     * 
-     * ```ts
-     * import Client from 'pixelwalker.js'
-     * console.log(Client.MessageTypes); // ["PlayerInit", "UpdateRights", ...]
-     * ```
-     */
-    static MessageTypes = MessageTypes;
-
-    /**
-     * Get the id for the message. This can then be used with `Magic` to send the proper event header.
-     * 
-     * @example
-     * 
-     * ```ts
-     * import Client from 'pixelwalker.js'
-     * client.send(Client.MessageId('PlayerInit'));
-     * ```
-     */
-    static MessageId<Index extends number, MessageType extends (typeof MessageTypes)[Index]>(messageName: MessageType): Index {
-        return this.MessageTypes.findIndex(m => m === messageName)! as Index;
-    }
-
     /**
      * The list of all current block names (referred to as palette)
      * and their respective block id's.
@@ -107,6 +79,8 @@ export default class Client extends EventEmitter<LibraryEvents> {
      *     return Client.BlockMappings[Client.PaletteFix[block_name as keyof typeof Client.PaletteFix] ?? block_name];
      * }
      * ```
+     * 
+     * @ignore This is ignored because it's simply too large.
      */
     static PaletteFix = PaletteFix
 
@@ -298,12 +272,12 @@ export default class Client extends EventEmitter<LibraryEvents> {
      * client.connection().on('Receive', buffer => console.log(buffer))
      * ```
      * 
-     * @event Send The client is trying to send a packet to the server.
-     * @event Receive The server has sent the client a packet.
-     * @event Error An error occured during the communication.
-     * @event Close The socket was closed.
+     * @/event Send The client is trying to send a packet to the server.
+     * @/event Receive The server has sent the client a packet.
+     * @/event Error An error occured during the communication.
+     * @/event Close The socket was closed.
      */
-    public connection() {
+    public connection(): Connection<boolean> {
         return this.#connection
     }
 
@@ -573,7 +547,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
         const isPrivateMessage = content.startsWith('/pm')
 
         if (content.startsWith('/') && !isPrivateMessage) {
-            return this.send(Magic(0x6B), Bit7(Client.MessageId('ChatMessage')), String(content))
+            return this.send(Magic(0x6B), Bit7(Connection.MessageId('ChatMessage')), String(content))
         }
 
         let privateMessageHeader = /^\/pm\s+([\w\d]+|\#\d+)\s+(.+)$/i.exec(content)
@@ -600,7 +574,7 @@ export default class Client extends EventEmitter<LibraryEvents> {
             const chunk = content.substring(CONTENT_ALLOWED_SIZE * i, Math.min(CONTENT_ALLOWED_SIZE * (i + 1), content.length))
             // const separation_index = chunk.lastIndexOf(' ') // TODO regex
             if (chunk.trim().length == 0) break
-            this.send(Magic(0x6B), Bit7(Client.MessageId('ChatMessage')), String(preamble + chunk))
+            this.send(Magic(0x6B), Bit7(Connection.MessageId('ChatMessage')), String(preamble + chunk))
         }
 
         // TODO this should be scheduler response

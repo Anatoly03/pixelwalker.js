@@ -4,7 +4,7 @@ import Player from "../player/player"
 import Layer from "./layer"
 import { WorldPosition } from ".."
 import { BlockMappings } from './block/mappings'
-import Client from '../../client'
+import Client from '../../client/client'
 
 export type MapIdentifier = { [keys: number | string]: number | string | boolean | null | undefined  }
 
@@ -284,7 +284,7 @@ export default class Structure<Meta extends MapIdentifier = {}> {
     /**
      * @todo
      */
-    getWalkablePositionsFor(player: Player) {
+    getWalkablePositions(player?: Player) {
         
     }
 

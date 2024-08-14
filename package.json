@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "docs": "npx typedoc src",
+    "docs": "npx typedoc src --out dist_docs",
     "test": "jest --verbose ./test"
   },
   "keywords": [],

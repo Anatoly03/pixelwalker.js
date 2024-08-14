@@ -33,7 +33,7 @@ jobs:
         name: "Uploading Pages artifact"
         uses: "actions/upload-pages-artifact@v2"
         with:
-            path: "docs/"
+            path: "dist_docs/"
 
       - id: "deployment"
         name: "Deploy to GitHub Pages"

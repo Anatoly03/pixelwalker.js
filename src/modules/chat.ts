@@ -1,4 +1,4 @@
-import Client from "../client.js"
+import Client from "../client/client.js"
 import Player from "../types/player/player.js"
 
 /**

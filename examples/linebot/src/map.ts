@@ -1,6 +1,6 @@
 import Client, { Animation, Block, Structure, BlockProperties, Property } from '../../../dist/index.js'
 import { BlockIdentifier } from '../../../dist/types/index.js'
-import client, { is_bot_admin } from './line.js'
+import { client, is_bot_admin } from './line.js'
 import fs, { writeFileSync } from 'node:fs'
 import path from 'node:path'
 
@@ -408,9 +408,9 @@ export function module(client: Client) {
         //     })
         // }
 
-        if (!client.world) return
+        const world = await client.world()
 
-        const struct = client.world.copy(parseInt(x1), parseInt(y1), parseInt(x2), parseInt(y2))
+        const struct = world.copy(parseInt(x1), parseInt(y1), parseInt(x2), parseInt(y2))
 
         struct.meta = {
             left_y: 0,
@@ -436,8 +436,8 @@ export function module(client: Client) {
         return 'Saved'
     })
 
-    client.onCommand('*gallery', is_bot_admin, () => {
-        if (!client.world) return
+    client.onCommand('*gallery', is_bot_admin, async () => {
+        const world = await client.world()
 
         const tiles = Object
             .values(snapshots)
@@ -455,7 +455,7 @@ export function module(client: Client) {
         let joint: number[] = []
         let built: number[] = []
 
-        for (let i = 0; i < client.world.width; i++) {
+        for (let i = 0; i < world.width; i++) {
             joint.push(0)
             built.push(0)
         }

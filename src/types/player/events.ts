@@ -1,4 +1,4 @@
-import Client from "../../client";
+import Client from "../../client/client";
 import { GamePlayerArray } from "../list/player";
 import { Magic, Bit7 } from "../message-bytes";
 import Player from "./player";

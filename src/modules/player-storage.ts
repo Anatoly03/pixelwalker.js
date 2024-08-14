@@ -1,4 +1,4 @@
-import Client from '../client.js'
+import Client from '../client/client.js'
 import { PlayerBase } from '../types/index.js'
 import { PlayerArray } from '../types/list/player.js'
 

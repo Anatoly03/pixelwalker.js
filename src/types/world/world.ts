@@ -1,7 +1,7 @@
 import Structure, { MapIdentifier } from "./structure";
 import { WorldPosition } from "..";
 import Block from "./block/block.js";
-import Client from "../../client.js";
+import Client from "../../client/client.js";
 import { FIFO } from "../animation";
 
 export type WorldMeta = {
@@ -41,13 +41,6 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
         this.#switches = new Set() // TODO
     }
 
-    /**
-     * This method accesses the super instance of the object.
-     */
-    #super<K extends keyof Structure<T & WorldMeta>>(attr: K): Structure[K] {
-        return super[attr]
-    }
-
     //
     //
     // Static Methods
@@ -72,13 +65,21 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
             const world = await client.world()
             const block = new Block(bid)
             block.data = args
+            const positions = []
 
             for (let idx = 0; idx < coordinates.length; idx += 4) {
                 const x = coordinates[idx] | (coordinates[idx + 1] << 8);
                 const y = coordinates[idx + 2] | (coordinates[idx + 3] << 8);
                 world.getLayer(layer).set({ x, y }, block)
+                positions.push([x, y])
             }
             // TODO client emit
+
+            const player = client.players.byId(id)
+            if (!player) return
+
+            for (const [x, y] of positions)
+                client.emit('player:block', [player, { x, y, layer }, block])
         })
 
         /**
@@ -96,7 +97,7 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
          */
         client.raw.on('WorldCleared', async () => {
             const world = await client.world()
-            world.#super('clear')(true)
+            world.internalClear()
             // TODO emit?
         })
 
@@ -248,6 +249,13 @@ export default class World<T extends MapIdentifier = {}> extends Structure<T & W
 
     public switchState(id: number): boolean {
         return this.#switches.has(id)
+    }
+
+    /**
+     * 
+     */
+    private async internalClear() {
+        return super.clear(true)
     }
 }
 

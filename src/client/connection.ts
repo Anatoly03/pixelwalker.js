@@ -1,24 +1,24 @@
 import EventEmitter from "events"
 import WebSocket from 'ws'
 import Client from "./client.js"
-import { API_ROOM_LINK, RawGameEvents } from "./data/consts.js"
-import { Bit7, Magic, String } from './types/message-bytes.js'
-import { deserialise, read7BitInt } from "./types/math"
-import { MessageTypes } from "./data/message_types"
-import RoomTypes from "./data/room_types.js"
+import { API_ROOM_LINK, RawGameEvents } from "../data/consts.js"
+import { Bit7, Magic, String } from '../types/message-bytes.js'
+import { deserialise, read7BitInt } from "../types/math.js"
+import { MessageTypes } from "../data/message_types.js"
+import RoomTypes from "../data/room_types.js"
 import util from 'util'
 
 export type ConnectionEvents = {
     Send: [...Buffer[]],
     SendMessage: [...Buffer[]],
     Receive: [Buffer],
-    ReceiveMessage: [Buffer],
+    ReceiveFormatted: any[],
+    ReceivePing: [],
     Error: [Error],
     Close: [number, string],
     Disconnect: [],
     PromiseRejection: [Error],
     Debug: [string],
-    Ping: [],
 }
 
 export enum MagicByte {
@@ -27,9 +27,45 @@ export enum MagicByte {
 }
 
 /**
+ * The Connection class handles the lowest level of communication
+ * between the client and the server. It contains the socket and
+ * processes byte-level communication.
  * 
+ * The Connection class handles the ping handshake with the server,
+ * which is sending a ping byte response to every ping byte request
+ * from the server.
+ * 
+ * This class does not handle higher-layer events, for that see
+ * [ClientEvents](events.ts)
  */
 export default class Connection<Ready extends boolean = false> {
+    /**
+     * Get an array of message typed sequenced integer → message name. Note,
+     * that the array below is not full, 
+     * 
+     * @example
+     * 
+     * ```ts
+     * import Client from 'pixelwalker.js'
+     * console.log(Client.MessageTypes); // ["PlayerInit", "UpdateRights", ...]
+     * ```
+     */
+    static MessageTypes = MessageTypes;
+
+    /**
+     * Get the id for the message. This can then be used with `Magic` to send the proper event header.
+     * 
+     * @example
+     * 
+     * ```ts
+     * import Client from 'pixelwalker.js'
+     * client.send(Client.MessageId('PlayerInit'));
+     * ```
+     */
+    static MessageId<Index extends number, MessageType extends (typeof MessageTypes)[Index]>(messageName: MessageType): Index {
+        return this.MessageTypes.findIndex(m => m === messageName)! as Index;
+    }
+
     /**
      * 
      */
@@ -69,9 +105,19 @@ export default class Connection<Ready extends boolean = false> {
          */
         this.#socket.on('message', message => {
             const buffer = Buffer.from(message as WithImplicitCoercion<ArrayBuffer>)
-            this.emit('Receive', buffer)
-            if (buffer.length > 0 && buffer[0] === MagicByte.Message)
-                this.emit('ReceiveMessage', buffer)
+            if (buffer.length == 0)
+                return
+
+            switch (buffer[0]) {
+                case MagicByte.Message:
+                    this.emit('Receive', buffer.subarray(1))
+                    break
+                case MagicByte.Ping:
+                    this.emit('ReceivePing')
+                    break
+                default:
+                    return this.emit('Error', new Error(`Received unidentified magic byte from server: expected any of ${Object.values(MagicByte).map((key: string | MagicByte) => `0x${key.toString(16)} (${key})`).join()}, but got 0x${buffer[0].toString(16)}`))
+            }
         })
 
         /**
@@ -113,30 +159,23 @@ export default class Connection<Ready extends boolean = false> {
          * Receive and process incoming message.
          */
         this.on('Receive', buffer => {
-            if (buffer.length === 0)
-                return this.emit('Error', new Error('Receive an empty message from server.'))
+            const [event_id, offset] = read7BitInt(buffer, 0)
+            const event_name = MessageTypes[event_id] as keyof RawGameEvents
+            const data = deserialise(buffer, offset)
 
-            switch (buffer[0]) {
-                case MagicByte.Ping:
-                    this.emit('Send', Magic(MagicByte.Ping))
-                    this.emit('Ping')
-                    break
+            if (event_name == undefined)
+                return this.emit('Error', new Error(`Received unidentified protocol header 0x${event_id.toString(16)}. API may be out of date. Deserialised Data: ${data}`))
 
-                case MagicByte.Message:
-                    const [event_id, offset] = read7BitInt(buffer, 1)
-                    const event_name = MessageTypes[event_id] as keyof RawGameEvents
-                    const data = deserialise(buffer, offset)
+            this.#client.raw.emit('*', [event_name, ...data])
+            this.#client.raw.emit(event_name, data as any)
+            this.emit('ReceiveFormatted', event_name, ...data)
+        })
 
-                    if (event_name == undefined)
-                        return this.emit('Error', new Error(`Received unidentified protocol header 0x${event_id.toString(16)}. API may be out of date. Deserialised Data: ${data}`))
-
-                    this.#client.raw.emit('*', [event_name, ...data])
-                    this.#client.raw.emit(event_name, data as any)
-                    break
-
-                default:
-                    return this.emit('Error', new Error(`Received unidentified magic byte from server: expected any of ${Object.values(MagicByte).map((key: string | MagicByte) => `0x${key.toString(16)} (${key})`).join()}, but got 0x${buffer[0].toString(16)}`))
-            }
+        /**
+         * Receive and process incoming pings.
+         */
+        this.on('ReceivePing', () => {
+            this.emit('Send', Magic(MagicByte.Ping))
         })
 
         /**

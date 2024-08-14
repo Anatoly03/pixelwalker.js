@@ -1,4 +1,4 @@
-import Client from "../../client.js"
+import Client from "../../client/client.js"
 import Player, { PlayerInitArgs } from "./player"
 import { Bit7, Magic, Boolean, Int32, Double } from "../message-bytes.js"
 import { Point } from "../index.js"
