@@ -1,6 +1,9 @@
-import PocketBase from 'pocketbase';
+import PocketBase, { RecordService } from 'pocketbase';
 
 // import Connection from './connection.js';
+
+import { PublicProfile } from '../types/public-profile.js';
+import { PublicWorld } from '../types/public-world.js';
 
 export const APIServerLink = 'api.pixelwalker.net';
 export const GameServerLink = 'game.pixelwalker.net';
@@ -105,5 +108,21 @@ export default class PixelWalkerClient {
         throw new Error(
             'Invalid login options. Expected { token } or { username, password }, got a different object.'
         );
+    }
+
+    /**
+     * @todo
+     * Example: `https://api.pixelwalker.net/api/collections/public_profiles/records?perPage=500&page=1`
+     */
+    public profiles() {
+        this.pocketbase.collection('public_profiles') as RecordService<PublicProfile>
+    }
+
+    /**
+     * @todo
+     * Example: https://api.pixelwalker.net/api/collections/public_worlds/records?page=0&perPage=500
+     */
+    public worlds() {
+        this.pocketbase.collection('public_worlds') as RecordService<PublicWorld>
     }
 }
