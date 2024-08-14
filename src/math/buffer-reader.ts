@@ -184,10 +184,8 @@ export default class BufferReader extends Buffer {
 
     /**
      * https://stackoverflow.com/questions/8609289/convert-a-binary-nodejs-buffer-to-javascript-arraybuffer
-     * @param {Buffer} buffer
-     * @returns {ArrayBuffer}
      */
-    public toArrayBuffer() {
+    public toArrayBuffer(): ArrayBuffer {
         const arrayBuffer = new ArrayBuffer(this.length);
         const view = new Uint8Array(arrayBuffer);
         for (let i = 0; i < this.length; ++i) {
