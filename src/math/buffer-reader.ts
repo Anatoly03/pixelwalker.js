@@ -21,34 +21,18 @@ export enum ComponentTypeHeader {
 /**
  * A Buffer reader is a special buffer extension made to perform
  * game-specific tasks in the field of communication.
+ *
+ * @implements Buffer
  */
-export default class BufferReader extends Buffer {
-    #offset: number;
+export default class BufferReader {
+    #buffer: Buffer;
+    #offset: number = 0;
 
     /**
-     * On a given buffer create a reader that can perform
-     * game-specific bit magic. A buffer size can be provided
-     * to initialize an empty buffer
+     *
      */
-    constructor(bufferSize: number);
-
-    /**
-     * On a given buffer create a reader that can perform
-     * game-specific bit magic. Optionally specify the offset
-     * of the cursor.
-     */
-    constructor(
-        buffer: Buffer | WebSocket.RawData | WithImplicitCoercion<ArrayBuffer>,
-        offset?: number
-    );
-
-    constructor(
-        buffer: WebSocket.RawData | WithImplicitCoercion<ArrayBuffer> | number,
-        offset = 0
-    ) {
-        if (typeof buffer == 'number') buffer = Buffer.alloc(buffer);
-        super(Buffer.from(buffer as WithImplicitCoercion<ArrayBuffer>));
-        this.#offset = offset;
+    private constructor(buffer: Buffer) {
+        this.#buffer = buffer;
     }
 
     //
@@ -58,15 +42,20 @@ export default class BufferReader extends Buffer {
     //
 
     /**
-     * https://stackoverflow.com/questions/8609289/convert-a-binary-nodejs-buffer-to-javascript-arraybuffer
+     *
      */
-    public toArrayBuffer(): ArrayBuffer {
-        const arrayBuffer = new ArrayBuffer(this.length);
-        const view = new Uint8Array(arrayBuffer);
-        for (let i = 0; i < this.length; ++i) {
-            view[i] = this[i];
-        }
-        return arrayBuffer;
+    public static from(
+        from: WebSocket.RawData | WithImplicitCoercion<ArrayBuffer> | Buffer
+    ): BufferReader {
+        if (from instanceof Buffer) return new BufferReader(from);
+        return new BufferReader(Buffer.from(from as any));
+    }
+
+    /**
+     *
+     */
+    public static alloc(amount: number) {
+        return BufferReader.from(Buffer.alloc(amount));
     }
 
     //
@@ -83,12 +72,12 @@ export default class BufferReader extends Buffer {
         const stringByteLen = Buffer.byteLength(value);
         const lengthByteCount = this.length7BitInt(stringByteLen);
 
-        const buffer = new BufferReader(1 + lengthByteCount + stringByteLen);
+        const buffer = BufferReader.alloc(1 + lengthByteCount + stringByteLen);
         buffer.writeUInt8(ComponentTypeHeader.String);
         buffer.write7BitInt(lengthByteCount);
         buffer.write(value);
 
-        return buffer;
+        return buffer.toBuffer();
     }
 
     /**
@@ -96,10 +85,10 @@ export default class BufferReader extends Buffer {
      * @returns {Buffer}
      */
     public static Byte(value: number): Buffer {
-        const buffer = new BufferReader(2);
+        const buffer = BufferReader.alloc(2);
         buffer.writeUInt8(ComponentTypeHeader.Byte);
         buffer.writeUInt8(value);
-        return buffer;
+        return buffer.toBuffer();
     }
 
     /**
@@ -107,10 +96,10 @@ export default class BufferReader extends Buffer {
      * @returns {Buffer}
      */
     public static Int16(value: number): Buffer {
-        const buffer = new BufferReader(3);
+        const buffer = BufferReader.alloc(3);
         buffer.writeUInt8(ComponentTypeHeader.Int16);
         buffer.writeUInt16BE(value);
-        return buffer;
+        return buffer.toBuffer();
     }
 
     /**
@@ -118,10 +107,10 @@ export default class BufferReader extends Buffer {
      * @returns {Buffer}
      */
     public static Int32(value: number): Buffer {
-        const buffer = new BufferReader(5);
+        const buffer = BufferReader.alloc(5);
         buffer.writeUInt8(ComponentTypeHeader.Int32);
         buffer.writeInt32BE(value);
-        return buffer;
+        return buffer.toBuffer();
     }
 
     /**
@@ -129,10 +118,10 @@ export default class BufferReader extends Buffer {
      * @returns {Buffer}
      */
     public static Int64(value: bigint): Buffer {
-        const buffer = new BufferReader(9);
+        const buffer = BufferReader.alloc(9);
         buffer.writeUInt8(ComponentTypeHeader.Int64);
         buffer.writeBigInt64BE(value);
-        return buffer;
+        return buffer.toBuffer();
     }
 
     /**
@@ -140,10 +129,10 @@ export default class BufferReader extends Buffer {
      * @returns {Buffer}
      */
     public static Float(value: number): Buffer {
-        const buffer = new BufferReader(5);
+        const buffer = BufferReader.alloc(5);
         buffer.writeUInt8(ComponentTypeHeader.Float);
         buffer.writeFloatBE(value);
-        return buffer;
+        return buffer.toBuffer();
     }
 
     /**
@@ -151,10 +140,10 @@ export default class BufferReader extends Buffer {
      * @returns {Buffer}
      */
     public static Double(value: number): Buffer {
-        const buffer = new BufferReader(9);
+        const buffer = BufferReader.alloc(9);
         buffer.writeUInt8(ComponentTypeHeader.Double);
         buffer.writeDoubleBE(value);
-        return buffer;
+        return buffer.toBuffer();
     }
 
     /**
@@ -162,10 +151,10 @@ export default class BufferReader extends Buffer {
      * @returns {Buffer}
      */
     public static Boolean(value: boolean): Buffer {
-        const buffer = new BufferReader(2);
+        const buffer = BufferReader.alloc(2);
         buffer.writeUInt8(ComponentTypeHeader.Boolean);
         buffer.writeUInt8(value ? 1 : 0);
-        return buffer;
+        return buffer.toBuffer();
     }
 
     /**
@@ -183,11 +172,11 @@ export default class BufferReader extends Buffer {
         const stringByteLen = Buffer.byteLength(buffer);
         const lengthByteCount = this.length7BitInt(stringByteLen);
 
-        const prefix = new BufferReader(1 + lengthByteCount);
+        const prefix = BufferReader.alloc(1 + lengthByteCount);
         prefix.writeUInt8(ComponentTypeHeader.String);
         prefix.write7BitInt(lengthByteCount);
 
-        return Buffer.concat([prefix, buffer]);
+        return Buffer.concat([prefix.toBuffer(), buffer]);
     }
 
     /**
@@ -203,9 +192,9 @@ export default class BufferReader extends Buffer {
      * @returns {Buffer}
      */
     public static Bit7(value: number): Buffer {
-        const buffer = new BufferReader(this.length7BitInt(value));
+        const buffer = BufferReader.alloc(this.length7BitInt(value));
         buffer.write7BitInt(value);
-        return buffer;
+        return buffer.toBuffer();
     }
 
     //
@@ -214,256 +203,399 @@ export default class BufferReader extends Buffer {
     //
     //
 
-    public override write(value: string) {
-        return (this.#offset = super.write(value, this.#offset));
+    /**
+     *
+     */
+    public get length() {
+        return this.#buffer.length;
     }
 
-    public override writeBigInt64BE(value: bigint) {
-        return (this.#offset = super.writeBigInt64BE(value, this.#offset));
+    /**
+     *
+     */
+    public subarray(
+        start: number = this.#offset,
+        end: number = this.length - 1
+    ): BufferReader {
+        return new BufferReader(this.#buffer.subarray(start, end));
     }
 
-    public override writeBigInt64LE(value: bigint) {
-        return (this.#offset = super.writeBigInt64LE(value, this.#offset));
+    /**
+     *
+     */
+    public write(value: string) {
+        return (this.#offset = this.#buffer.write(value, this.#offset));
     }
 
-    // public override writeUIntLE(value: number) {
-    //     return this.#offset = super.writeUIntLE(value, this.#offset);
+    /**
+     *
+     */
+    public writeBigInt64BE(value: bigint) {
+        return (this.#offset = this.#buffer.writeBigInt64BE(
+            value,
+            this.#offset
+        ));
+    }
+
+    /**
+     *
+     */
+    public writeBigInt64LE(value: bigint) {
+        return (this.#offset = this.#buffer.writeBigInt64LE(
+            value,
+            this.#offset
+        ));
+    }
+
+    // public writeUIntLE(value: number) {
+    //     return this.#offset = this.#buffer.writeUIntLE(value, this.#offset);
     // }
 
-    // public override writeUintLE(value: number) {
+    // public writeUintLE(value: number) {
     //     throw new Error('The alias `writeUintLE` for the method `writeUIntLE` is banned on class `BufferReader`. Capitalize the letter `I` instead.');
     // }
 
-    // public override writeUIntBE(value: number) {
-    //     return this.#offset = super.writeUIntBE(value, this.#offset);
+    // public writeUIntBE(value: number) {
+    //     return this.#offset = this.#buffer.writeUIntBE(value, this.#offset);
     // }
 
-    // public override writeUintBE(value: number) {
+    // public writeUintBE(value: number) {
     //     throw new Error('The alias `writeUintBE` for the method `writeUIntBE` is banned on class `BufferReader`. Capitalize the letter `I` instead.');
     // }
 
-    // public override writeIntLE(value: number) {
-    //     return this.#offset = super.writeIntLE(value, this.#offset);
+    // public writeIntLE(value: number) {
+    //     return this.#offset = this.#buffer.writeIntLE(value, this.#offset);
     // }
 
-    // public override writeIntBE(value: number) {
-    //     return this.#offset = super.writeIntBE(value, this.#offset);
+    // public writeIntBE(value: number) {
+    //     return this.#offset = this.#buffer.writeIntBE(value, this.#offset);
     // }
 
-    public override writeUInt8(value: number) {
-        return (this.#offset = super.writeUInt8(value, this.#offset));
+    /**
+     *
+     */
+    public writeUInt8(value: number) {
+        return (this.#offset = this.#buffer.writeUInt8(value, this.#offset));
     }
 
-    public override writeUint8(_: number): number {
+    /**
+     *
+     */
+    public writeUint8(_: number): number {
         throw new Error(
             'The alias `writeUint8` for the method `writeUInt8` is banned on class `BufferReader`. Capitalize the letter `I` instead.'
         );
     }
 
-    public override writeUInt16LE(value: number) {
-        return (this.#offset = super.writeUInt16LE(value, this.#offset));
+    /**
+     *
+     */
+    public writeUInt16LE(value: number) {
+        return (this.#offset = this.#buffer.writeUInt16LE(value, this.#offset));
     }
 
-    public override writeUint16LE(_: number): number {
+    /**
+     *
+     */
+    public writeUint16LE(_: number): number {
         throw new Error(
             'The alias `writeUint16LE` for the method `writeUInt16LE` is banned on class `BufferReader`. Capitalize the letter `I` instead.'
         );
     }
 
-    public override writeUInt16BE(value: number) {
-        return (this.#offset = super.writeUInt16BE(value, this.#offset));
+    /**
+     *
+     */
+    public writeUInt16BE(value: number) {
+        return (this.#offset = this.#buffer.writeUInt16BE(value, this.#offset));
     }
 
-    public override writeUint16BE(_: number): number {
+    /**
+     *
+     */
+    public writeUint16BE(_: number): number {
         throw new Error(
             'The alias `writeUint16BE` for the method `writeUInt16BE` is banned on class `BufferReader`. Capitalize the letter `I` instead.'
         );
     }
 
-    public override writeUInt32LE(value: number) {
-        return (this.#offset = super.writeUInt32LE(value, this.#offset));
+    /**
+     *
+     */
+    public writeUInt32LE(value: number) {
+        return (this.#offset = this.#buffer.writeUInt32LE(value, this.#offset));
     }
 
-    public override writeUint32LE(_: number): number {
+    /**
+     *
+     */
+    public writeUint32LE(_: number): number {
         throw new Error(
             'The alias `writeUint32LE` for the method `writeUInt32LE` is banned on class `BufferReader`. Capitalize the letter `I` instead.'
         );
     }
 
-    public override writeUInt32BE(value: number) {
-        return (this.#offset = super.writeUInt32BE(value, this.#offset));
+    /**
+     *
+     */
+    public writeUInt32BE(value: number) {
+        return (this.#offset = this.#buffer.writeUInt32BE(value, this.#offset));
     }
 
-    public override writeUint32BE(_: number): number {
+    /**
+     *
+     */
+    public writeUint32BE(_: number): number {
         throw new Error(
             'The alias `writeUint32BE` for the method `writeUInt32BE` is banned on class `BufferReader`. Capitalize the letter `I` instead.'
         );
     }
 
-    public override writeInt8(value: number) {
-        return (this.#offset = super.writeInt8(value, this.#offset));
+    /**
+     *
+     */
+    public writeInt8(value: number) {
+        return (this.#offset = this.#buffer.writeInt8(value, this.#offset));
     }
 
-    public override writeInt16LE(value: number) {
-        return (this.#offset = super.writeInt16LE(value, this.#offset));
+    /**
+     *
+     */
+    public writeInt16LE(value: number) {
+        return (this.#offset = this.#buffer.writeInt16LE(value, this.#offset));
     }
 
-    public override writeInt16BE(value: number) {
-        return (this.#offset = super.writeInt16BE(value, this.#offset));
+    /**
+     *
+     */
+    public writeInt16BE(value: number) {
+        return (this.#offset = this.#buffer.writeInt16BE(value, this.#offset));
     }
 
-    public override writeInt32LE(value: number) {
-        return (this.#offset = super.writeInt32LE(value, this.#offset));
+    /**
+     *
+     */
+    public writeInt32LE(value: number) {
+        return (this.#offset = this.#buffer.writeInt32LE(value, this.#offset));
     }
 
-    public override writeInt32BE(value: number) {
-        return (this.#offset = super.writeInt32BE(value, this.#offset));
+    /**
+     *
+     */
+    public writeInt32BE(value: number) {
+        return (this.#offset = this.#buffer.writeInt32BE(value, this.#offset));
     }
 
-    public override writeFloatLE(value: number) {
-        return (this.#offset = super.writeFloatLE(value, this.#offset));
+    /**
+     *
+     */
+    public writeFloatLE(value: number) {
+        return (this.#offset = this.#buffer.writeFloatLE(value, this.#offset));
     }
 
-    public override writeFloatBE(value: number) {
-        return (this.#offset = super.writeFloatBE(value, this.#offset));
+    /**
+     *
+     */
+    public writeFloatBE(value: number) {
+        return (this.#offset = this.#buffer.writeFloatBE(value, this.#offset));
     }
 
-    public override writeDoubleLE(value: number) {
-        return (this.#offset = super.writeDoubleLE(value, this.#offset));
+    /**
+     *
+     */
+    public writeDoubleLE(value: number) {
+        return (this.#offset = this.#buffer.writeDoubleLE(value, this.#offset));
     }
 
-    public override writeDoubleBE(value: number) {
-        return (this.#offset = super.writeDoubleBE(value, this.#offset));
+    /**
+     *
+     */
+    public writeDoubleBE(value: number) {
+        return (this.#offset = this.#buffer.writeDoubleBE(value, this.#offset));
     }
 
-    public override readBigUInt64BE() {
-        const tmp = super.readBigUInt64BE(this.#offset);
+    /**
+     *
+     */
+    public readBigUInt64BE() {
+        const tmp = this.#buffer.readBigUInt64BE(this.#offset);
         this.#offset += 8;
         return tmp;
     }
 
-    public override readBigUInt64LE() {
-        const tmp = super.readBigUInt64LE(this.#offset);
+    /**
+     *
+     */
+    public readBigUInt64LE() {
+        const tmp = this.#buffer.readBigUInt64LE(this.#offset);
         this.#offset += 8;
         return tmp;
     }
 
-    public override readBigInt64BE() {
-        const tmp = super.readBigInt64BE(this.#offset);
+    /**
+     *
+     */
+    public readBigInt64BE() {
+        const tmp = this.#buffer.readBigInt64BE(this.#offset);
         this.#offset += 8;
         return tmp;
     }
 
-    public override readBigInt64LE() {
-        const tmp = super.readBigInt64LE(this.#offset);
+    /**
+     *
+     */
+    public readBigInt64LE() {
+        const tmp = this.#buffer.readBigInt64LE(this.#offset);
         this.#offset += 8;
         return tmp;
     }
 
-    // public override readUIntLE() {
-    //     const tmp = super.readUIntLE(this.#offset);
+    // public readUIntLE() {
+    //     const tmp = this.#buffer.readUIntLE(this.#offset);
     //     this.#offset += 1;
     //     return tmp;
     // }
 
-    // public override readUIntBE() {
-    //     const tmp = super.readUIntBE(this.#offset);
+    // public readUIntBE() {
+    //     const tmp = this.#buffer.readUIntBE(this.#offset);
     //     this.#offset += 1;
     //     return tmp;
     // }
 
-    // public override readIntLE() {
-    //     const tmp = super.readIntLE(this.#offset);
+    // public readIntLE() {
+    //     const tmp = this.#buffer.readIntLE(this.#offset);
     //     this.#offset += 1;
     //     return tmp;
     // }
 
-    // public override readIntBE() {
-    //     const tmp = super.readIntBE(this.#offset);
+    // public readIntBE() {
+    //     const tmp = this.#buffer.readIntBE(this.#offset);
     //     this.#offset += 1;
     //     return tmp;
     // }
 
-    public override readUInt8() {
-        const tmp = super.readUInt8(this.#offset);
+    /**
+     *
+     */
+    public readUInt8() {
+        const tmp = this.#buffer.readUInt8(this.#offset);
         this.#offset += 1;
         return tmp;
     }
 
-    public override readUInt16LE() {
-        const tmp = super.readUInt16LE(this.#offset);
+    /**
+     *
+     */
+    public readUInt16LE() {
+        const tmp = this.#buffer.readUInt16LE(this.#offset);
         this.#offset += 2;
         return tmp;
     }
 
-    public override readUInt16BE() {
-        const tmp = super.readUInt16BE(this.#offset);
+    /**
+     *
+     */
+    public readUInt16BE() {
+        const tmp = this.#buffer.readUInt16BE(this.#offset);
         this.#offset += 2;
         return tmp;
     }
 
-    public override readUInt32LE() {
-        const tmp = super.readUInt32LE(this.#offset);
+    /**
+     *
+     */
+    public readUInt32LE() {
+        const tmp = this.#buffer.readUInt32LE(this.#offset);
         this.#offset += 4;
         return tmp;
     }
 
-    public override readUInt32BE() {
-        const tmp = super.readUInt32BE(this.#offset);
+    /**
+     *
+     */
+    public readUInt32BE() {
+        const tmp = this.#buffer.readUInt32BE(this.#offset);
+        this.#offset += 4;
+        return tmp;
+    }
+
+    /**
+     *
+     */
+    public readInt8() {
+        const tmp = this.#buffer.readInt8(this.#offset);
         this.#offset += 1;
         return tmp;
     }
 
-    public override readInt8() {
-        const tmp = super.readInt8(this.#offset);
-        this.#offset += 1;
-        return tmp;
-    }
-
-    public override readInt16LE() {
-        const tmp = super.readInt16LE(this.#offset);
+    /**
+     *
+     */
+    public readInt16LE() {
+        const tmp = this.#buffer.readInt16LE(this.#offset);
         this.#offset += 2;
         return tmp;
     }
 
-    public override readInt16BE() {
-        const tmp = super.readInt16BE(this.#offset);
+    /**
+     *
+     */
+    public readInt16BE() {
+        const tmp = this.#buffer.readInt16BE(this.#offset);
         this.#offset += 2;
         return tmp;
     }
 
-    public override readInt32LE() {
-        const tmp = super.readInt32LE(this.#offset);
+    /**
+     *
+     */
+    public readInt32LE() {
+        const tmp = this.#buffer.readInt32LE(this.#offset);
         this.#offset += 4;
         return tmp;
     }
 
-    public override readInt32BE() {
-        const tmp = super.readInt32BE(this.#offset);
+    /**
+     *
+     */
+    public readInt32BE() {
+        const tmp = this.#buffer.readInt32BE(this.#offset);
         this.#offset += 4;
         return tmp;
     }
 
-    public override readFloatLE() {
-        const tmp = super.readFloatLE(this.#offset);
+    /**
+     *
+     */
+    public readFloatLE() {
+        const tmp = this.#buffer.readFloatLE(this.#offset);
         this.#offset += 4;
         return tmp;
     }
 
-    public override readFloatBE() {
-        const tmp = super.readFloatBE(this.#offset);
+    /**
+     *
+     */
+    public readFloatBE() {
+        const tmp = this.#buffer.readFloatBE(this.#offset);
         this.#offset += 4;
         return tmp;
     }
 
-    public override readDoubleLE() {
-        const tmp = super.readDoubleLE(this.#offset);
+    /**
+     *
+     */
+    public readDoubleLE() {
+        const tmp = this.#buffer.readDoubleLE(this.#offset);
         this.#offset += 8;
         return tmp;
     }
 
-    public override readDoubleBE() {
-        const tmp = super.readDoubleBE(this.#offset);
+    /**
+     *
+     */
+    public readDoubleBE() {
+        const tmp = this.#buffer.readDoubleBE(this.#offset);
         this.#offset += 8;
         return tmp;
     }
@@ -475,9 +607,35 @@ export default class BufferReader extends Buffer {
     //
 
     /**
+     *
+     */
+    public toBuffer(): Buffer {
+        return this.#buffer;
+    }
+
+    /**
+     * https://stackoverflow.com/questions/8609289/convert-a-binary-nodejs-buffer-to-javascript-arraybuffer
+     */
+    public toArrayBuffer(): ArrayBuffer {
+        const arrayBuffer = new ArrayBuffer(this.length);
+        const view = new Uint8Array(arrayBuffer);
+        for (let i = 0; i < this.length; ++i) {
+            view[i] = this.#buffer[i];
+        }
+        return arrayBuffer;
+    }
+
+    /**
+     *
+     */
+    public at(idx: number) {
+        return this.#buffer[idx];
+    }
+
+    /**
      * Advanced the buffer reader by pffset.
      */
-    advanceOffset(relativeOffset = 1): this {
+    public advanceOffset(relativeOffset = 1): this {
         this.#offset += relativeOffset;
         return this;
     }
@@ -534,12 +692,23 @@ export default class BufferReader extends Buffer {
     }
 
     /**
+     * Append a buffer to the current buffer. Asserts the cursor
+     * to be at the end of the current buffer.
+     */
+    public append(buffer: Buffer) {
+        if (this.#offset !== this.length - 1)
+            throw new Error("Cursor hasn't finished reading yet.");
+        this.#buffer = Buffer.concat([this.#buffer, buffer]);
+        return this;
+    }
+
+    /**
      * Keep Deserializing the buffer for typed data until
      * you reach the end of the buffer. Typed data consists
      * of a type indicator in 7-bit-encoding and data following
      * accordingly.
      */
-    deserialize() {
+    public deserialize() {
         const arr: (string | number | boolean | Buffer | bigint)[] = [];
 
         while (this.#offset < this.length) {
@@ -550,10 +719,9 @@ export default class BufferReader extends Buffer {
                     {
                         const length = this.read7BitInt();
                         arr.push(
-                            this.subarray(
-                                this.#offset,
-                                this.#offset + length
-                            ).toString('ascii')
+                            this.subarray(this.#offset, this.#offset + length)
+                                .toBuffer()
+                                .toString('ascii')
                         );
                         this.#offset += length;
                     }
@@ -583,7 +751,10 @@ export default class BufferReader extends Buffer {
                     {
                         const length = this.read7BitInt();
                         arr.push(
-                            this.subarray(this.#offset, this.#offset + length)
+                            this.subarray(
+                                this.#offset,
+                                this.#offset + length
+                            ).toBuffer()
                         );
                         this.#offset += length;
                     }
