@@ -1,4 +1,4 @@
-import { GameServerLink } from '../protocol/client.js';
+import { GameServerLink } from './config.js';
 import fs from 'node:fs';
 
 const data: Response = await fetch(`https://${GameServerLink}/message_types`);

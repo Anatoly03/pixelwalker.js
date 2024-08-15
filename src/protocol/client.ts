@@ -1,20 +1,20 @@
 import PocketBase, { RecordService } from 'pocketbase';
+import WebSocket from 'ws';
 
-// import Connection from './connection.js';
+import Connection from './connection.js';
 import RoomTypes from '../data/room-types.js';
 
 import { PublicProfile } from '../types/public-profile.js';
 import { PublicWorld } from '../types/public-world.js';
 
-export const APIServerLink = 'api.pixelwalker.net';
-export const GameServerLink = 'game.pixelwalker.net';
+import { APIServerLink, GameServerLink } from '../data/config.js';
 
 export default class PixelWalkerClient {
     /**
      * The connection instance. It handles communication
      * with the server.
      */
-    // protected connection = new Connection(this);
+    protected connection = new Connection(this);
 
     /**
      * PocketBase API
@@ -107,6 +107,9 @@ export default class PixelWalkerClient {
         password: string;
     }): Promise<PixelWalkerClient>;
 
+    /**
+     * The implementation of the new method.
+     */
     public static async new(data: any): Promise<PixelWalkerClient> {
         if (data.token) return this.withToken(data.token);
 
@@ -221,5 +224,62 @@ export default class PixelWalkerClient {
             {}
         );
         return token as string;
+    }
+
+    /**
+     * Given a `joinkey`, spawn a websocket
+     */
+    protected initSocket(joinkey: string) {
+        return new WebSocket(`wss://${GameServerLink}/room/${joinkey}`);
+    }
+
+    /**
+     *
+     */
+    public async connect(
+        world_id: string,
+        room_type?: (typeof RoomTypes)[0]
+    ): Promise<true>;
+
+    /**
+     *
+     */
+    public async connect(args: NodeJS.ProcessEnv): Promise<true>;
+
+    /**
+     *
+     */
+    public async connect(args: {
+        world_id: string;
+        room_type?: (typeof RoomTypes)[0];
+    }): Promise<true>;
+
+    /**
+     * The implementation of the connect method.
+     */
+    public async connect(
+        arg0:
+            | {
+                  world_id: string;
+                  room_type?: (typeof RoomTypes)[0];
+              }
+            | NodeJS.ProcessEnv
+            | string,
+        room_type: (typeof RoomTypes)[0] = RoomTypes[0]
+    ) {
+        if (typeof arg0 === 'string')
+            return this.connect({ world_id: arg0, room_type });
+
+        if (!arg0.world_id)
+            throw new Error('The argument `world_id` was not provided.');
+
+        arg0.room_type ||= RoomTypes[0];
+
+        const joinkey = await this.getJoinKey(arg0.world_id, arg0.room_type);
+        const socket = await this.initSocket(joinkey);
+
+        this.connection.init(socket);
+
+        return true;
     }
 }
