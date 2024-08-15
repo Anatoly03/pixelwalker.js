@@ -18,7 +18,7 @@ export default class PixelWalkerClient {
     /**
      * PocketBase API
      */
-    protected pocketbase: PocketBase = new PocketBase(`https://${APIServerLink}`);
+    public pocketbase: PocketBase = new PocketBase(`https://${APIServerLink}`);
 
     /**
      * Create a new Client instance, by logging in with a token.
@@ -137,7 +137,7 @@ export default class PixelWalkerClient {
      * `https://api.pixelwalker.net/api/collections/public_profiles/records?perPage=500&page=1`
      */
     public profiles() {
-        this.pocketbase.collection('public_profiles') as RecordService<PublicProfile>
+        return this.pocketbase.collection('public_profiles') as RecordService<PublicProfile>
     }
 
     /**
@@ -165,6 +165,6 @@ export default class PixelWalkerClient {
      * `https://api.pixelwalker.net/api/collections/public_worlds/records?page=0&perPage=500`
      */
     public worlds() {
-        this.pocketbase.collection('public_worlds') as RecordService<PublicWorld>
+        return this.pocketbase.collection('public_worlds') as RecordService<PublicWorld>
     }
 }
