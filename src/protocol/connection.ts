@@ -19,6 +19,7 @@ type SocketStateEvents = {
     Disconnect: [];
     PromiseRejection: [Error];
     Debug: [string];
+    '*': [(typeof MessageTypes)[number], ...any[]];
 };
 
 /**
@@ -205,11 +206,8 @@ export default class Connection<
 
             // console.log(event_name, data);
 
+            this.emit(`*`, event_name, ...data);
             this.emit(`*${event_name}`, ...data);
-
-            // this.#client.raw.emit('*', [event_name, ...data]);
-            // this.#client.raw.emit(event_name, data as any);
-            // this.emit('ReceiveFormatted', event_name, ...data);
         });
 
         /**
