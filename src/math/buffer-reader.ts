@@ -247,44 +247,11 @@ export default class BufferReader {
         ));
     }
 
-    // public writeUIntLE(value: number) {
-    //     return this.#offset = this.#buffer.writeUIntLE(value, this.#offset);
-    // }
-
-    // public writeUintLE(value: number) {
-    //     throw new Error('The alias `writeUintLE` for the method `writeUIntLE` is banned on class `BufferReader`. Capitalize the letter `I` instead.');
-    // }
-
-    // public writeUIntBE(value: number) {
-    //     return this.#offset = this.#buffer.writeUIntBE(value, this.#offset);
-    // }
-
-    // public writeUintBE(value: number) {
-    //     throw new Error('The alias `writeUintBE` for the method `writeUIntBE` is banned on class `BufferReader`. Capitalize the letter `I` instead.');
-    // }
-
-    // public writeIntLE(value: number) {
-    //     return this.#offset = this.#buffer.writeIntLE(value, this.#offset);
-    // }
-
-    // public writeIntBE(value: number) {
-    //     return this.#offset = this.#buffer.writeIntBE(value, this.#offset);
-    // }
-
     /**
      *
      */
     public writeUInt8(value: number) {
         return (this.#offset = this.#buffer.writeUInt8(value, this.#offset));
-    }
-
-    /**
-     *
-     */
-    public writeUint8(_: number): number {
-        throw new Error(
-            'The alias `writeUint8` for the method `writeUInt8` is banned on class `BufferReader`. Capitalize the letter `I` instead.'
-        );
     }
 
     /**
@@ -297,26 +264,8 @@ export default class BufferReader {
     /**
      *
      */
-    public writeUint16LE(_: number): number {
-        throw new Error(
-            'The alias `writeUint16LE` for the method `writeUInt16LE` is banned on class `BufferReader`. Capitalize the letter `I` instead.'
-        );
-    }
-
-    /**
-     *
-     */
     public writeUInt16BE(value: number) {
         return (this.#offset = this.#buffer.writeUInt16BE(value, this.#offset));
-    }
-
-    /**
-     *
-     */
-    public writeUint16BE(_: number): number {
-        throw new Error(
-            'The alias `writeUint16BE` for the method `writeUInt16BE` is banned on class `BufferReader`. Capitalize the letter `I` instead.'
-        );
     }
 
     /**
@@ -329,26 +278,8 @@ export default class BufferReader {
     /**
      *
      */
-    public writeUint32LE(_: number): number {
-        throw new Error(
-            'The alias `writeUint32LE` for the method `writeUInt32LE` is banned on class `BufferReader`. Capitalize the letter `I` instead.'
-        );
-    }
-
-    /**
-     *
-     */
     public writeUInt32BE(value: number) {
         return (this.#offset = this.#buffer.writeUInt32BE(value, this.#offset));
-    }
-
-    /**
-     *
-     */
-    public writeUint32BE(_: number): number {
-        throw new Error(
-            'The alias `writeUint32BE` for the method `writeUInt32BE` is banned on class `BufferReader`. Capitalize the letter `I` instead.'
-        );
     }
 
     /**
