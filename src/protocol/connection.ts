@@ -5,11 +5,14 @@ import Client from './client.js';
 import BufferReader from '../math/buffer-reader.js';
 import MessageTypes from '../data/message-types.js';
 
-export type ConnectionEvents = {
+/**
+ * All events related to the state of the socket, such as
+ * socket opening or closing.
+ */
+type SocketStateEvents = {
     Send: [...Buffer[]];
     SendMessage: [...Buffer[]];
-    Receive: [BufferReader];
-    ReceiveFormatted: any[];
+    ReceiveMessage: [BufferReader];
     ReceivePing: [];
     Error: [Error];
     Close: [number, string];
@@ -18,6 +21,14 @@ export type ConnectionEvents = {
     Debug: [string];
 };
 
+/**
+ *
+ */
+type MessageEvents = { [K in `*${(typeof MessageTypes)[number]}`]: any[] };
+
+/**
+ *
+ */
 export enum MagicByte {
     Ping = 0x3f,
     Message = 0x6b,
@@ -37,7 +48,7 @@ export enum MagicByte {
  */
 export default class Connection<
     Ready extends boolean = false
-> extends EventEmitter<ConnectionEvents> {
+> extends EventEmitter<SocketStateEvents & MessageEvents> {
     /**
      * Get an array of message typed sequenced integer → message name. Note,
      * that the array below is not full,
@@ -50,6 +61,20 @@ export default class Connection<
      * ```
      */
     static MessageTypes: typeof MessageTypes = MessageTypes;
+
+    /**
+     * Get the id for the message. This can then be used with `Magic` to send the proper event header.
+     * 
+     * @example
+     * 
+     * ```ts
+     * import Client from 'pixelwalker.js'
+     * client.send(Client.MessageId('PlayerInit'));
+     * ```
+     */
+    static MessageId<Index extends number, MessageType extends (typeof MessageTypes)[Index]>(messageName: MessageType): Index {
+        return this.MessageTypes.findIndex(m => m === messageName)! as Index;
+    }
 
     /**
      * Socket that connects with the game
@@ -90,7 +115,7 @@ export default class Connection<
 
             switch (buffer.readUInt8()) {
                 case MagicByte.Message:
-                    this.emit('Receive', buffer.subarray());
+                    this.emit('ReceiveMessage', buffer.subarray());
                     break;
                 case MagicByte.Ping:
                     this.emit('ReceivePing');
@@ -155,7 +180,7 @@ export default class Connection<
         /**
          * Receive and process incoming message.
          */
-        this.on('Receive', (buffer) => {
+        this.on('ReceiveMessage', (buffer) => {
             const event_id = buffer.read7BitInt();
             const event_name = MessageTypes[
                 event_id
@@ -172,11 +197,13 @@ export default class Connection<
                     )
                 );
 
-            console.log(event_name, data);
+            // console.log(event_name, data);
+
+            this.emit(`*${event_name}`, ...data);
 
             // this.#client.raw.emit('*', [event_name, ...data]);
             // this.#client.raw.emit(event_name, data as any);
-            this.emit('ReceiveFormatted', event_name, ...data);
+            // this.emit('ReceiveFormatted', event_name, ...data);
         });
 
         /**
