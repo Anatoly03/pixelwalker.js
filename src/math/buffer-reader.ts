@@ -629,7 +629,7 @@ export default class BufferReader {
     public readDynamicBuffer() {
         const length = this.read7BitInt();
         const value = this.subarray(this.#offset, this.#offset + length);
-        this.#offset += length + 1;
+        this.#offset += length;
         return value.toBuffer();
     }
 
@@ -686,9 +686,9 @@ export default class BufferReader {
                     break;
                 default:
                     throw new Error(
-                        `While serializing a buffer for data, an unexpected type ${type} was read. Expected one of ${Object.keys(
-                            ComponentTypeHeader
-                        ).filter(isNaN as any)}`
+                        `While serializing a buffer for data, an unexpected type 0x${type.toString(
+                            16
+                        )} was read. Expected one of 0-8`
                     );
             }
 
