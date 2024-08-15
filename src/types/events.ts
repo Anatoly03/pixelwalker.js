@@ -23,12 +23,12 @@ export type PlayerId = number;
  */
 export type BlockId = 0 | keyof typeof BlockMappingsReverse;
 
-export type BlockExtraData = 
-    [string] | // signs, world portals
-    [SwitchId, 0 | 1 | undefined] | // switches
-    [number] | // effects, coin/death gates
-    [PortalOrientation, PortalId, PortalId] | // portals
-    []
+export type BlockExtraData =
+    | [string] // signs, world portals
+    | [SwitchId, 0 | 1 | undefined] // switches
+    | [number] // effects, coin/death gates
+    | [PortalOrientation, PortalId, PortalId] // portals
+    | [];
 
 /**
  * A Player ConnectUserId captures a players' account id in the
@@ -106,7 +106,7 @@ export enum EffectId {
     Fire,
 
     // -- Visual --
-    Smiley
+    Smiley,
 }
 
 export type SwitchId = number;
@@ -182,7 +182,13 @@ export type WorldReloaded = [Buffer];
 /**
  * @event "WorldBlockPlaced"
  */
-export type WorldBlockPlaced = [PlayerId, number, number, BlockId, ...BlockExtraData];
+export type WorldBlockPlaced = [
+    PlayerId,
+    number,
+    number,
+    BlockId,
+    ...BlockExtraData
+];
 
 /**
  * @event "ChatMessage"
@@ -192,7 +198,9 @@ export type ChatMessage = [PlayerId, string];
 /**
  * @event "OldChatMessages"
  */
-export type OldChatMessages = [] | [PlayerUsername, string, number, ...OldChatMessages[]];
+export type OldChatMessages =
+    | []
+    | [PlayerUsername, string, number, ...OldChatMessages[]];
 
 /**
  * @event "SystemMessage"
@@ -278,12 +286,12 @@ export type PlayerTouchPlayer = [PlayerId, PlayerId, 0 | 1];
 /**
  * @event "PlayerAddEffect"
  */
-export type PlayerAddEffect = [PlayerId, boolean, EffectId, number]
+export type PlayerAddEffect = [PlayerId, boolean, EffectId, number];
 
 /**
  * @event "PlayerRemoveEffect"
  */
-export type PlayerRemoveEffect = [PlayerId, EffectId]
+export type PlayerRemoveEffect = [PlayerId, EffectId];
 
 /**
  * @event "PlayerTeam"
