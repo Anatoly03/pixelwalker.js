@@ -5,10 +5,6 @@ import Client from './client.js';
 import BufferReader from '../math/buffer-reader.js';
 import MessageTypes from '../data/message-types.js';
 
-// import { API_ROOM_LINK, RawGameEvents } from "../data/room-types.js"
-// import { Magic } from '../types/message-bytes.js'
-// import { deserialise, read7BitInt } from "../types/math.js"
-
 export type ConnectionEvents = {
     Send: [...Buffer[]];
     SendMessage: [...Buffer[]];
