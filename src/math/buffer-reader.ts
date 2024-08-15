@@ -224,16 +224,16 @@ export default class BufferReader extends Buffer {
     //     return this.#offset = super.writeUIntLE(value, this.#offset);
     // }
 
-    // public override writeUIntLE(value: number) {
-    //     return this.#offset = super.writeUIntLE(value, this.#offset);
+    // public override writeUintLE(value: number) {
+    //     throw new Error('The alias `writeUintLE` for the method `writeUIntLE` is banned on class `BufferReader`. Capitalize the letter `I` instead.')
     // }
 
     // public override writeUIntBE(value: number) {
     //     return this.#offset = super.writeUIntBE(value, this.#offset);
     // }
 
-    // public override writeUIntBE(value: number) {
-    //     return this.#offset = super.writeUIntBE(value, this.#offset);
+    // public override writeUintBE(value: number) {
+    //     throw new Error('The alias `writeUintBE` for the method `writeUIntBE` is banned on class `BufferReader`. Capitalize the letter `I` instead.')
     // }
 
     // public override writeIntLE(value: number) {
@@ -248,20 +248,40 @@ export default class BufferReader extends Buffer {
         return (this.#offset = super.writeUInt8(value, this.#offset));
     }
 
+    public override writeUint8(_: number): number {
+        throw new Error('The alias `writeUint8` for the method `writeUInt8` is banned on class `BufferReader`. Capitalize the letter `I` instead.')
+    }
+
     public override writeUInt16LE(value: number) {
         return (this.#offset = super.writeUInt16LE(value, this.#offset));
+    }
+
+    public override writeUint16LE(_: number): number {
+        throw new Error('The alias `writeUint16LE` for the method `writeUInt16LE` is banned on class `BufferReader`. Capitalize the letter `I` instead.')
     }
 
     public override writeUInt16BE(value: number) {
         return (this.#offset = super.writeUInt16BE(value, this.#offset));
     }
 
+    public override writeUint16BE(_: number): number {
+        throw new Error('The alias `writeUint16BE` for the method `writeUInt16BE` is banned on class `BufferReader`. Capitalize the letter `I` instead.')
+    }
+
     public override writeUInt32LE(value: number) {
         return (this.#offset = super.writeUInt32LE(value, this.#offset));
     }
 
+    public override writeUint32LE(_: number): number {
+        throw new Error('The alias `writeUint32LE` for the method `writeUInt32LE` is banned on class `BufferReader`. Capitalize the letter `I` instead.')
+    }
+
     public override writeUInt32BE(value: number) {
         return (this.#offset = super.writeUInt32BE(value, this.#offset));
+    }
+
+    public override writeUint32BE(_: number): number {
+        throw new Error('The alias `writeUint32BE` for the method `writeUInt32BE` is banned on class `BufferReader`. Capitalize the letter `I` instead.')
     }
 
     public override writeInt8(value: number) {
