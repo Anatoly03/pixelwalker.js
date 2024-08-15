@@ -14,7 +14,7 @@ export default class PixelWalkerClient {
      * The connection instance. It handles communication
      * with the server.
      */
-    protected connection = new Connection(this);
+    public connection = new Connection(this);
 
     /**
      * PocketBase API
