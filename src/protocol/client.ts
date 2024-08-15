@@ -31,7 +31,7 @@ export default class PixelWalkerClient {
      * const client2 = Client.new(process.env.TOKEN)
      * ```
      */
-    public static token(token: string): PixelWalkerClient {
+    public static withToken(token: string): PixelWalkerClient {
         const client = new PixelWalkerClient();
         client.pocketbase.authStore.save(token, { verified: true });
 
@@ -51,7 +51,7 @@ export default class PixelWalkerClient {
      * const client2 = Client.new({ user: 'user@example.com', pass: 'PixieWalkie' });
      * ```
      */
-    public static async auth(
+    public static async withAuth(
         username: string,
         password: string
     ): Promise<PixelWalkerClient> {
@@ -100,10 +100,10 @@ export default class PixelWalkerClient {
     public static async new(data: { username: string, password: string }): Promise<PixelWalkerClient>;
 
     public static async new(data: any): Promise<PixelWalkerClient> {
-        if (data.token) return this.token(data.token);
+        if (data.token) return this.withToken(data.token);
 
         if (data.username && data.password)
-            return this.auth(data.username, data.password);
+            return this.withAuth(data.username, data.password);
 
         throw new Error(
             'Invalid login options. Expected { token } or { username, password }, got a different object.'
