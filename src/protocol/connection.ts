@@ -77,6 +77,12 @@ export default class Connection<
     }
 
     /**
+     * The magic bytes used to start a packet. The two
+     * important magic bytes are for pings and messages.
+     */
+    static MagicByte: typeof MagicByte = MagicByte;
+
+    /**
      * Socket that connects with the game
      */
     #socket!: Ready extends true ? WebSocket : never;

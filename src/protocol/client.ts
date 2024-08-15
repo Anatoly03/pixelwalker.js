@@ -1,5 +1,6 @@
-import PocketBase, { RecordService } from 'pocketbase';
+import EventEmitter from 'events';
 import WebSocket from 'ws';
+import PocketBase, { RecordService } from 'pocketbase';
 
 import Connection from './connection.js';
 import RoomTypes from '../data/room-types.js';
@@ -9,7 +10,11 @@ import { PublicWorld } from '../types/public-world.js';
 
 import { APIServerLink, GameServerLink } from '../data/config.js';
 
-export default class PixelWalkerClient {
+export type PixelwalkerEvents = {
+    Init: [];
+};
+
+export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
     /**
      * The connection instance. It handles communication
      * with the server.
@@ -23,13 +28,13 @@ export default class PixelWalkerClient {
 
     /**
      * Create a new Client instance, by logging in with a token.
-     * 
+     *
      * @param {string} token The object holding the token which is used to sign into pocketbase.
-     * 
+     *
      * @example
-     * 
+     *
      * This is a standard way of creating a new Client instance
-     * 
+     *
      * ```ts
      * import 'dotenv/config'
      * const client = Client.new({ token: process.env.TOKEN as string })
@@ -48,12 +53,12 @@ export default class PixelWalkerClient {
 
     /**
      * Create a new Client instance, by logging in with a username and a password.
-     * 
+     *
      * @param {string} username The username of the player you are trying to connect with.
      * @param {string} password The password that belongs to this player.
-     * 
+     *
      * @example
-     * 
+     *
      * ```ts
      * import 'dotenv/config'
      * const client = Client.auth('user@example.com', 'PixieWalkie');
@@ -73,11 +78,11 @@ export default class PixelWalkerClient {
 
     /**
      * Create a new Client instance, by logging in with data defined in the
-     * 
+     *
      * @param {NodeJS.ProcessEnv} args The constant `process.env`
-     * 
+     *
      * @example
-     * 
+     *
      * This is a standart way of creating a new Client instance
      * ```ts
      * import 'dotenv/config'
@@ -195,6 +200,67 @@ export default class PixelWalkerClient {
     }
 
     /**
+     * Implement a module functionality with a callback. This method
+     * is called with `this` as parameter and can extend the client.
+     *
+     * @example
+     *
+     * ```ts
+     * import PixelWalkerClient from 'pixelwalker.js`;
+     *
+     * function (client: PixelWalkerClient) {
+     *   client.on('PlayerInit', () => console.log('Connected'));
+     *   return client & { ext: 'This variable is extended!' };
+     * }
+     *
+     * const client = PixelWalkerClient.fromToken('bla bla');
+     * client.include(extension);
+     * console.log(client.ext); // 'This variable is extended!'
+     * ```
+     */
+    public include<T>(
+        callback: (c: PixelWalkerClient) => PixelWalkerClient & T
+    ): PixelWalkerClient & T;
+
+    /**
+     * Include a module from an object. Per default its' set to find
+     * the method `module` which is called with `this` as parameter
+     * and can be extended.
+     *
+     * @example
+     *
+     * ```ts
+     * import PixelWalkerClient from 'pixelwalker.js`;
+     *
+     * class CustomModule {
+     *   module(client: PixelWalkerClient) {
+     *     client.on('PlayerInit', () => console.log('Connected'));
+     *     return client & { ext: 'This variable is extended!' };
+     *   }
+     * }
+     *
+     * const client = PixelWalkerClient.fromToken('bla bla');
+     * client.include(new CustomModule());
+     * console.log(client.ext); // 'This variable is extended!'
+     * ```
+     */
+    public include<T>(module: {
+        module: (c: PixelWalkerClient) => PixelWalkerClient & T;
+    }): PixelWalkerClient & T;
+
+    /**
+     *  The implementation of the include method.
+     */
+    public include<T>(
+        callback:
+            | ((c: PixelWalkerClient) => PixelWalkerClient & T)
+            | { module: (c: PixelWalkerClient) => PixelWalkerClient & T }
+    ): PixelWalkerClient & T {
+        if (typeof callback == 'function') return callback(this);
+        else return callback.module(this);
+    }
+
+    /**
      * Generate a join key for a specific world id. Optionally overwrite room type.
      * This key can then be used to connect to a websocket on the game server.
      *
@@ -300,13 +366,13 @@ export default class PixelWalkerClient {
      * Send a raw message to the server. Read more about the
      * static properties in [BufferReader](../math/buffer-reader.ts),
      * which automatically create the correct types for you.
-     * 
+     *
      * @example
-     * 
+     *
      * ```ts
      * import { BufferReader, Connection } from 'pixelwalker.js'
      * const { Magic } = BufferReader;
-     * 
+     *
      * client.connection.on('*PlayerInit', () => {
      *     // Maintain a stable connection with the server: Accept the handshake and initialise.
      *     client.send(Magic(MagicByte.Message), Magic(Connection.MessageId('PlayerInit')));
@@ -317,5 +383,19 @@ export default class PixelWalkerClient {
         if (!this.connection.connected()) return false;
         this.connection.emit('Send', Buffer.concat(buffer));
         return true;
+    }
+
+    /**
+     * Accept an incoming initialization handshake. If this is
+     * sent twice per instance, the connection will close.
+     */
+    public init() {
+        this.connection.emit(
+            'Send',
+            Buffer.from([
+                Connection.MagicByte.Message,
+                Connection.MessageId('PlayerInit'),
+            ])
+        );
     }
 }
