@@ -692,6 +692,17 @@ export default class BufferReader {
     }
 
     /**
+     * Reads a dynamic buffer which is prepended by its' length
+     * in 7-bit encoding.
+     */
+    public readDynamicBuffer() {
+        const length = this.read7BitInt();
+        const value = this.subarray(this.#offset, this.#offset + length);
+        this.#offset += length + 1;
+        return value.toBuffer();
+    }
+
+    /**
      * Append a buffer to the current buffer. Asserts the cursor
      * to be at the end of the current buffer.
      */
@@ -716,15 +727,7 @@ export default class BufferReader {
 
             switch (type) {
                 case ComponentTypeHeader.String:
-                    {
-                        const length = this.read7BitInt();
-                        arr.push(
-                            this.subarray(this.#offset, this.#offset + length)
-                                .toBuffer()
-                                .toString('ascii')
-                        );
-                        this.#offset += length;
-                    }
+                    arr.push(this.readDynamicBuffer().toString('ascii'));
                     break;
                 case ComponentTypeHeader.Byte:
                     arr.push(this.readUInt8());
@@ -748,16 +751,7 @@ export default class BufferReader {
                     arr.push(!!this.readUInt8()); // !! is truthy
                     break;
                 case ComponentTypeHeader.ByteArray:
-                    {
-                        const length = this.read7BitInt();
-                        arr.push(
-                            this.subarray(
-                                this.#offset,
-                                this.#offset + length
-                            ).toBuffer()
-                        );
-                        this.#offset += length;
-                    }
+                    arr.push(this.readDynamicBuffer());
                     break;
                 default:
                     throw new Error(
@@ -766,6 +760,8 @@ export default class BufferReader {
                         ).filter(isNaN as any)}`
                     );
             }
+
+            console.log(this.#offset, type, arr);
         }
 
         return arr;
