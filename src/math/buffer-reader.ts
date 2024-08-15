@@ -215,7 +215,7 @@ export default class BufferReader {
      */
     public subarray(
         start: number = this.#offset,
-        end: number = this.length - 1
+        end: number = this.length
     ): BufferReader {
         return new BufferReader(this.#buffer.subarray(start, end));
     }
@@ -691,8 +691,6 @@ export default class BufferReader {
                         )} was read. Expected one of 0-8`
                     );
             }
-
-            console.log(this.#offset, type, arr);
         }
 
         return arr;
