@@ -23,6 +23,13 @@ export type PlayerId = number;
  */
 export type BlockId = 0 | keyof typeof BlockMappingsReverse;
 
+export type BlockExtraData = 
+    [string] | // signs, world portals
+    [SwitchId, 0 | 1 | undefined] | // switches
+    [number] | // effects, coin/death gates
+    [PortalOrientation, PortalId, PortalId] | // portals
+    []
+
 /**
  * A Player ConnectUserId captures a players' account id in the
  * entire game. Every player is uniquely correlated with one CUID.
@@ -81,6 +88,31 @@ export type TeamIdentifier =
     | 'yellow'
     | 'none'
     | TeamId;
+
+export enum EffectId {
+    // -- Action Effects --
+    HighJump,
+    Fly,
+    Speed,
+    Invulnerability,
+    Curse,
+    Zombie,
+    GreenZombie,
+    GravityForce,
+    MultiJump,
+    GravityDirection,
+
+    // -- Other Effects --
+    Fire,
+
+    // -- Visual --
+    Smiley
+}
+
+export type SwitchId = number;
+
+export type PortalId = number;
+export type PortalOrientation = Enumerate<3>;
 
 /**
  * The title of the world.
@@ -150,7 +182,7 @@ export type WorldReloaded = [Buffer];
 /**
  * @event "WorldBlockPlaced"
  */
-export type WorldBlockPlaced = [PlayerId, number, number, BlockId];
+export type WorldBlockPlaced = [PlayerId, number, number, BlockId, ...BlockExtraData];
 
 /**
  * @event "ChatMessage"
@@ -236,16 +268,22 @@ export type PlayerReset = [PlayerId, number, number] | [PlayerId];
 /**
  * @event "PlayerTouchBlock"
  */
-export type PlayerTouchBlock = [PlayerId, number, number];
+export type PlayerTouchBlock = [PlayerId, number, number, BlockId];
 
 /**
  * @event "PlayerTouchPlayer"
  */
 export type PlayerTouchPlayer = [PlayerId, PlayerId, 0 | 1];
 
-// TODO "PlayerAddEffect",
-// TODO "PlayerRemoveEffect",
-// TODO "PlayerResetEffects",
+/**
+ * @event "PlayerAddEffect"
+ */
+export type PlayerAddEffect = [PlayerId, boolean, EffectId, number]
+
+/**
+ * @event "PlayerRemoveEffect"
+ */
+export type PlayerRemoveEffect = [PlayerId, EffectId]
 
 /**
  * @event "PlayerTeam"
@@ -253,14 +291,34 @@ export type PlayerTouchPlayer = [PlayerId, PlayerId, 0 | 1];
 export type PlayerTeam = [PlayerId, TeamId];
 
 /**
+ * @event "PlayerResetEffects"
+ */
+export type PlayerResetEffects = [PlayerId, boolean];
+
+/**
  * @event "PlayerCounters"
  */
 export type PlayerCounters = [PlayerId, number, number, number];
 
-// TODO "PlayerLocalSwitchChanged",
-// TODO "PlayerLocalSwitchReset",
-// TODO "GlobalSwitchChanged",
-// TODO "GlobalSwitchReset",
+/**
+ * @event "PlayerLocalSwitchChanged"
+ */
+export type PlayerLocalSwitchChanged = [PlayerId, SwitchId, 0 | 1];
+
+/**
+ * @event "PlayerLocalSwitchReset"
+ */
+export type PlayerLocalSwitchReset = [PlayerId, 0 | 1];
+
+/**
+ * @event "GlobalSwitchChanged"
+ */
+export type GlobalSwitchChanged = PlayerLocalSwitchChanged;
+
+/**
+ * @event "GlobalSwitchReset"
+ */
+export type GlobalSwitchReset = PlayerLocalSwitchReset;
 
 /**
  * @event "PlayerDirectMessage"
