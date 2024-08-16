@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import WebSocket from 'ws';
 
 import Client from './client.js';
-import BufferReader from '../math/buffer-reader.js';
+import BufferReader from '../util/buffer-reader.js';
 import MessageTypes from '../data/message-types.js';
 
 /**
