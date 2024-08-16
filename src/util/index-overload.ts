@@ -70,5 +70,5 @@ export default abstract class IndexOverload<T> {
      * @param idx Index of search
      * @param value New value
      */
-    protected abstract set(idx: number, value: T): any;
+    protected abstract set(idx: number, value: T): T;
 }
