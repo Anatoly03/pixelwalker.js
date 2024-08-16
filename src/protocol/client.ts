@@ -9,7 +9,7 @@ import { PublicProfile } from '../types/public-profile.js';
 import { PublicWorld } from '../types/public-world.js';
 
 import { APIServerLink, GameServerLink } from '../data/config.js';
-// import PlayerManager from '../players/array.js';
+import PlayerManager from '../players/manager.js';
 
 export type PixelwalkerEvents = {
     Init: [];
@@ -32,7 +32,7 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
     /**
      * Players connected in the world.
      */
-    // public readonly players = new PlayerManager(this);
+    public readonly players = new PlayerManager(this);
 
     /**
      * Create a new Client instance, by logging in with a token.
