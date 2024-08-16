@@ -10,7 +10,7 @@ export { default as RoomTypes } from './data/room-types.js';
 // Client
 
 export { default as default, default as PixelWalkerClient } from './protocol/client.js';
-// export { default as Connection } from './protocol/connection.js';
+export { default as Connection } from './protocol/connection.js';
 
 // Localhost Exports
 

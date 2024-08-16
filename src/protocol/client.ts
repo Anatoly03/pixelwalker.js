@@ -9,6 +9,7 @@ import { PublicProfile } from '../types/public-profile.js';
 import { PublicWorld } from '../types/public-world.js';
 
 import { APIServerLink, GameServerLink } from '../data/config.js';
+// import PlayerManager from '../players/array.js';
 
 export type PixelwalkerEvents = {
     Init: [];
@@ -19,12 +20,19 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
      * The connection instance. It handles communication
      * with the server.
      */
-    public connection = new Connection(this);
+    public readonly connection = new Connection(this);
 
     /**
      * PocketBase API
      */
-    public pocketbase: PocketBase = new PocketBase(`https://${APIServerLink}`);
+    public readonly pocketbase: PocketBase = new PocketBase(
+        `https://${APIServerLink}`
+    );
+
+    /**
+     * Players connected in the world.
+     */
+    // public readonly players = new PlayerManager(this);
 
     /**
      * Create a new Client instance, by logging in with a token.
@@ -363,6 +371,42 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
     }
 
     /**
+     * Listens to raw, unprocessed events. This method is not
+     * guaraneteed to be compatible with future api versions
+     * of the game or renewed prortocols, however is customly
+     * adjustable before this SDK is ready to update, which makes
+     * it good for experiencing with the api.
+     * 
+     * ```ts
+     * public listen(event: ..., callback: ...){
+     *     this.connection.on(`Receive*${event}`, callback);
+     *     return this;
+     * }
+     * ```
+     * 
+     * To listen to all message events you can use the event
+     * name `*` which is an alias for
+     * 
+     * ```ts
+     * public listen(event: '*', callback: ...){
+     *     this.connection.on(`*`, callback);
+     *     return this;
+     * }
+     * ```
+     */
+    public listen(
+        event: (typeof Connection.MessageTypes)[number] | '*',
+        callback: (...args: any[]) => any
+    ) {
+        if (event === '*') {
+            this.connection.on(`*`, callback);
+        } else {
+            this.connection.on(`Receive*${event}`, callback);
+        }
+        return this;
+    }
+
+    /**
      * Send a raw message to the server. Read more about the
      * static properties in [BufferReader](../math/buffer-reader.ts),
      * which automatically create the correct types for you.
@@ -379,23 +423,24 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
      * })
      * ```
      */
-    public send(buffer: Buffer[]) {
+    public send(
+        event: (typeof Connection.MessageTypes)[number],
+        ...buffer: Buffer[]
+    ) {
         if (!this.connection.connected()) return false;
-        this.connection.emit('Send', Buffer.concat(buffer));
-        return true;
+        this.connection.emit(`Send*${event}`, ...buffer);
     }
 
     /**
      * Accept an incoming initialization handshake. If this is
-     * sent twice per instance, the connection will close.
+     * sent twice per instance, the connection will close. This
+     * method is an alias for
+     *
+     * ```ts
+     * client.send('PlayerInit');
+     * ```
      */
     public init() {
-        this.connection.emit(
-            'Send',
-            Buffer.from([
-                Connection.MagicByte.Message,
-                Connection.MessageId('PlayerInit'),
-            ])
-        );
+        this.send('PlayerInit');
     }
 }

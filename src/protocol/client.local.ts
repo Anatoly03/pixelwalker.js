@@ -6,9 +6,9 @@ import WebSocket from 'ws';
 import PixelWalkerClient from './client.js';
 
 export default class LocalhostPixelWalkerClient extends PixelWalkerClient {
-    override pocketbase: PocketBase = new PocketBase(`http://${APIServerLink}`);
+    public override readonly pocketbase: PocketBase = new PocketBase(`http://${APIServerLink}`);
 
-    override initSocket(joinkey: string) {
+    public override initSocket(joinkey: string) {
         return new WebSocket(`ws://${GameServerLink}/room/${joinkey}`);
     }
 }
