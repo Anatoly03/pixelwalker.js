@@ -18,7 +18,7 @@ export default class PlayerArray extends IndexOverload<Player> {
      * The PlayerArray does not provide setters, hence
      * this method is not to be implemented.
      */
-    protected set(idx: number, value: Player) {
+    protected set(idx: number, value: Player): Player {
         throw new Error('Method not implemented.');
     }
 }
