@@ -4,6 +4,13 @@ export default abstract class IndexOverload<T> {
     [idx: number]: T;
 
     /**
+     * Gets the length of the data structure.
+     */
+    public get length() {
+        return this.toArray().length;
+    }
+
+    /**
      * Generates two protected abstract methods
      * `get` and `set` that are aliases for numeric
      * indexed search.
@@ -24,17 +31,22 @@ export default abstract class IndexOverload<T> {
      *
      * @link https://stackoverflow.com/a/57634753/16002144
      */
-    constructor() {
-        return new Proxy(this, {
+    protected constructor() {
+        return new Proxy<this>(this, {
             get: (obj: this, key) => {
                 if (typeof key === 'string' && Number.isInteger(Number(key)))
                     return obj.get(key as any);
-                else return obj[key as keyof this];
+                return obj[key as keyof this];
             },
             set: (obj: this, key, value) => {
                 if (typeof key === 'string' && Number.isInteger(Number(key)))
                     return obj.set(key as any, value as any);
-                else return (obj[key as keyof this] = value);
+                return (obj[key as keyof this] = value);
+            },
+            deleteProperty: (obj: this, key) => {
+                if (typeof key === 'string' && Number.isInteger(Number(key)))
+                    return obj.delete(key as any);
+                return false;
             },
         });
     }
@@ -75,11 +87,32 @@ export default abstract class IndexOverload<T> {
     protected abstract set(idx: number, value: T): T;
 
     /**
+     * Method provided by `IndexOverload` class, acts as
+     * a redirect for the `delete` operator.
+     *
+     * @example
+     *
+     * ```ts
+     * let indexable: IndexOverload
+     *
+     * indexable[0] = 5
+     * delete indexable[0]
+     * ```
+     *
+     * @param idx Index of search
+     */
+    protected delete(idx: number): boolean {
+        const hath = !!this[idx];
+        this[idx] = undefined!;
+        return hath;
+    }
+
+    /**
      * A method that returns the default iterator for
      * an object. Called by the semantics of the for-of
      * statement.
      */
-    [Symbol.iterator]() {
+    public [Symbol.iterator]() {
         return this.iter();
     }
 
@@ -98,7 +131,7 @@ export default abstract class IndexOverload<T> {
      *     this[1] = 3;
      *     this[2] = 6;
      *   }
-     * 
+     *
      *   public override *iter() {
      *     let i = 0;
      *     while (this[i] !== undefined)
@@ -106,7 +139,7 @@ export default abstract class IndexOverload<T> {
      *     return i;
      *   }
      * }
-     * 
+     *
      * for (const element of new Collection()) {
      *   console.log(element);
      * }
@@ -121,7 +154,25 @@ export default abstract class IndexOverload<T> {
      * @link https://stackoverflow.com/a/40699119/16002144
      */
     public [util.inspect.custom](): string {
-        return this.toString();
+        const limit = 10;
+        const inspect = this.toArray()
+            .splice(0, limit)
+            .filter((k: any) => k[util.inspect.custom])
+            .join();
+        return `[${inspect}${this.length > limit ? ', ...' : ''}]`;
+    }
+
+    /**
+     * Returns an array of the data structure.
+     *
+     * @example
+     *
+     * ```
+     * const arr = object.toArray(); // [T1, T2, ...]
+     * ```
+     */
+    protected toArray(): T[] {
+        return Array.from(this.iter());
     }
 
     /**
@@ -139,6 +190,6 @@ export default abstract class IndexOverload<T> {
      * ```
      */
     public toString(): string {
-        return Array.from(this.iter()).toString();
+        return this.toArray().toString();
     }
 }

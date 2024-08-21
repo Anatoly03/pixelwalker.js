@@ -4,6 +4,7 @@ import WebSocket from 'ws';
 import Client from './client.js';
 import BufferReader from '../util/buffer-reader.js';
 import MessageTypes from '../data/message-types.js';
+import PixelwalkerEvents from '../types/events.js';
 
 /**
  * The Magic Bytes. All incoming messages start with
@@ -25,18 +26,14 @@ type SocketStateEvents = {
     Disconnect: [];
 } & {
     [K in `Receive${keyof typeof MagicByte}`]: [BufferReader];
-} & {
-    [K in `Send${keyof typeof MagicByte}`]: Buffer[];
 };
 
 /**
  * All events stored in `receive` which keep the formatted
  * variants of the events.
  */
-type ConnectionReceiveEvents = {
+type ConnectionReceiveEvents = PixelwalkerEvents & {
     '*': [(typeof MessageTypes)[number], ...any[]];
-} & {
-    [K in (typeof MessageTypes)[number]]: any[];
 };
 
 /**
@@ -51,7 +48,7 @@ type ConnectionReceiveEvents = {
  * The events follow a hierarchic, layered structure. The bottom-most
  * layer is hidden within the `WebSocket` instance and cannot be
  * accessed.
- * 
+ *
  * The Connection handles the second layer with the `Receive$1` events,
  * where `$1` is to be replaced with the distributions of the messages,
  * based on the first magic byte.
@@ -59,7 +56,7 @@ type ConnectionReceiveEvents = {
  * Pings don't contain any information. Messages are transmitted
  * to the 3rd and top-most layer within another event emitter instance
  * that can be accessed with `receive()`
- * 
+ *
  * Messages follow by their message type in 7-bit encoding. The events
  * are then broadcasted to the event emitter with the message name.
  *
@@ -142,7 +139,7 @@ export default class Connection<
 
     /**
      * Registers the event handlers.
-     * 
+     *
      * - On socket open, emits `Open`.
      * - On socket message, scan in the magic byte and
      *   distribute the buffer to the respective events.
@@ -227,15 +224,8 @@ export default class Connection<
             ] as (typeof MessageTypes)[number];
             const data = buffer.deserialize();
 
-            if (!event_name)
-                return this.error(
-                    `Received unidentified protocol header 0x${event_id.toString(
-                        16
-                    )}. API may be out of date. Deserialised Data: ${data}`
-                );
-
             this.receive().emit(`*`, event_name, ...data);
-            this.receive().emit(event_name, ...data);
+            (this.receive().emit as any)(event_name, ...data);
         });
 
         /**

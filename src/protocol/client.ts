@@ -11,13 +11,16 @@ import { PublicWorld } from '../types/public-world.js';
 import { APIServerLink, GameServerLink } from '../data/config.js';
 import PlayerManager from '../players/manager.js';
 import BufferReader from '../util/buffer-reader.js';
+import Player from '../players/player.js';
 
-export type PixelwalkerEvents = {
+export type PixelwalkerClientEvents = {
     Init: [];
+    PlayerWin: [Player];
+    PlayerCrown: [Player, Player | undefined];
     Error: [Error];
 };
 
-export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
+export default class PixelWalkerClient extends EventEmitter<PixelwalkerClientEvents> {
     /**
      * The connection instance. It handles communication
      * with the server.
@@ -54,6 +57,8 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
     public static withToken(token: string): PixelWalkerClient {
         const client = new PixelWalkerClient();
         client.pocketbase.authStore.save(token, { verified: true });
+
+        console.log([token]);
 
         if (!client.pocketbase.authStore.isValid)
             throw new Error('Invalid Token');
@@ -149,11 +154,13 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
 
     /**
      * The PixelWalker Client constructor. This method
-     * is not accessible to allow static async
-     * constructors.
+     * should not be accessible to allow static async
+     * constructors. It is marked as deprecated because
+     * it's not supposed to be directly called.
      */
-    private constructor() {
+    protected constructor() {
         super();
+        this.registerEvents();
     }
 
     /**
@@ -173,6 +180,18 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
                     new Error('Unhandled Rejection: No Error provided')
                 );
             this.emit('Error', error);
+        });
+
+        /**
+         * @event
+         *
+         * Interupt signal. Disconnect the websocket on interupt
+         * signal. This is mainly used to signal instant closing
+         * of the socket tunnel, so the player instances don't
+         * flood the world.
+         */
+        process.on('SIGINT', (signals) => {
+            this.disconnect();
         });
     }
 
@@ -402,39 +421,31 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
     }
 
     /**
-     * Listens to raw, unprocessed events. This method is not
-     * guaraneteed to be compatible with future api versions
-     * of the game or renewed prortocols, however is customly
-     * adjustable before this SDK is ready to update, which makes
-     * it good for experiencing with the api.
+     * Disconnect the client connection.
+     */
+    public disconnect() {
+        this.connection.disconnect();
+    }
+
+    /**
+     * Returns the event listener for unprocessed events. This
+     * listener is not guaraneteed to be compatible with future
+     * api versions of the game or renewed prortocols, however
+     * is customly adjustable before this SDK is ready to update,
+     * which makes it good for experiencing with the api.
+     *
+     * To listen to all events, the asterisk `*` can be used. The
+     * arguments it will receive then will be `EventName, ...Args`
      *
      * ```ts
-     * public listen(event: ..., callback: ...){
-     *     this.connection.on(`Receive*${event}`, callback);
-     *     return this;
-     * }
-     * ```
-     *
-     * To listen to all message events you can use the event
-     * name `*` which is an alias for
-     *
-     * ```ts
-     * public listen(event: '*', callback: ...){
-     *     this.connection.on(`*`, callback);
-     *     return this;
-     * }
+     * client.raw()
+     *     .on('PlayerInit', callback1)
+     *     .on('PlayerMoved', callback2)
+     *     // ...
      * ```
      */
-    public listen(
-        event: (typeof Connection.MessageTypes)[number] | '*',
-        callback: (...args: any[]) => any
-    ) {
-        if (event === '*') {
-            this.connection.receive().on(`*`, callback);
-        } else {
-            this.connection.receive().on(`Receive*${event}`, callback);
-        }
-        return this;
+    public raw() {
+        return this.connection.receive();
     }
 
     /**
@@ -469,7 +480,7 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
     /**
      * Accept an incoming initialization handshake. If this is
      * sent twice per instance, the connection will close.
-     * 
+     *
      * @alias
      *
      * ```ts

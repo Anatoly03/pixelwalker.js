@@ -1,61 +1,95 @@
 import EventEmitter from 'events';
 import PixelWalkerClient from '../protocol/client.js';
-import { PlayerEvents } from './player.js';
+import Player, { PlayerEvents } from './player.js';
 import PlayerArray from './array.js';
+import PixelwalkerEvents from '../types/events.js';
+
+export const BroadcastEvents = [
+    'PlayerInit',
+    'UpdateRights',
+    'ChatMessage',
+    'PlayerJoined',
+    'PlayerLeft',
+    'PlayerMoved',
+    'PlayerTeleported',
+    'PlayerFace',
+    'PlayerGodMode',
+    'PlayerModMode',
+    'PlayerRespawn',
+    'PlayerReset',
+    'PlayerTouchBlock',
+    'PlayerTouchPlayer',
+    'PlayerEffect',
+    'PlayerRemoveEffect',
+    'PlayerResetEffects',
+    'PlayerTeam',
+    'PlayerCounters',
+    'PlayerLocalSwitchChanged',
+    'PlayerLocalSwitchReset',
+] as const;
 
 export type PlayerArrayEvents = {
-    [K in keyof PlayerEvents]: [number, ...PlayerEvents[K]];
+    [K in keyof PixelwalkerEvents &
+        (typeof BroadcastEvents)[number]]: PixelwalkerEvents[K];
 };
 
 export default class PlayerManager extends PlayerArray {
-    /**
-     *
-     */
-    #players: [] = [];
-
-    /**
-     *
-     * @param client
-     */
     #events: EventEmitter<PlayerArrayEvents> = new EventEmitter();
 
-    constructor(private client: PixelWalkerClient) {
-        super()
+    #selfPlayer!: Player;
 
-        const events = [
-            'UpdateRights',
-            'ChatMessage',
-            'PlayerMoved',
-            'PlayerTeleported',
-            'PlayerFace',
-            'PlayerGodMode',
-            'PlayerModMode',
-            'PlayerRespawn',
-            'PlayerReset',
-            'PlayerTouchBlock',
-            'PlayerTouchPlayer',
-            'PlayerEffect',
-            'PlayerRemoveEffect',
-            'PlayerResetEffects',
-            'PlayerTeam',
-            'PlayerCounters',
-            'PlayerLocalSwitchChanged',
-            'PlayerLocalSwitchReset',
-        ] as const;
+    /**
+     * Retrieves the player who wears the golden crown. If
+     * no one wears the silver crown, returns `undefined`.
+     */
+    public get crown() {
+        return this.players.find((p) => p.hasCrown);
+    }
 
-        events.forEach((event) => {
-            client.listen(event, (...args) => {
-                this.emit(event, ...(args as any));
+    /**
+     * Returns the reference of the players' self. i.e. the
+     * bot itself.
+     */
+    public get self() {
+        return this.#selfPlayer;
+    }
+
+    /**
+     *
+     */
+    constructor(protected client: PixelWalkerClient) {
+        super();
+        this.registerEvents();
+    }
+
+    /**
+     * Register events.
+     */
+    private registerEvents() {
+        this.client.raw().once('PlayerInit', (id, ...args) => {
+            this[id] = new Player(this.client);
+            this[id].emit('PlayerInit', ...args);
+        });
+
+        this.client.raw().on('PlayerJoined', (id, ...args) => {
+            this[id] = new Player(this.client);
+            this[id].emit('PlayerJoined', ...args);
+        });
+
+        BroadcastEvents.forEach((event) => {
+            this.client.raw().on<any>(event, (...args) => {
+                (this.emit as any)(event, ...args);
             });
 
-            this.on(event, (id, ...args) => {
-                console.log(
-                    `Broadcast ${event} to ${this.#players.length} players`
-                );
-                console.log(this[id])
+            this.on<any>(event, (id: number, ...args: any[]) => {
+                this[id].emit<any>(event, ...args);
             });
         });
     }
+
+    //
+    // Events
+    //
 
     /**
      * @ignore
@@ -89,4 +123,8 @@ export default class PlayerManager extends PlayerArray {
         this.#events.emit(event, ...(args as any));
         return this;
     }
+
+    //
+    // Methods
+    //
 }
