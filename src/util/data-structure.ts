@@ -1,3 +1,5 @@
+import util from 'util';
+
 export default abstract class IndexOverload<T> {
     [idx: number]: T;
 
@@ -15,7 +17,7 @@ export default abstract class IndexOverload<T> {
      * console.log(indexable[0])
      * console.log(indexable.get(0)) // Is the same
      * ```
-     * 
+     *
      * To expose any of the methods, the visibility
      * needs to be set to `public` from `protected`,
      * or can be kept hidden from outside access.
@@ -40,9 +42,9 @@ export default abstract class IndexOverload<T> {
     /**
      * Method provided by `IndexOverload` class, acts as
      * a redirect for indexed getters.
-     * 
+     *
      * @example
-     * 
+     *
      * ```ts
      * let indexable: IndexOverload
      *
@@ -57,9 +59,9 @@ export default abstract class IndexOverload<T> {
     /**
      * Method provided by `IndexOverload` class, acts as
      * a redirect for indexed setters.
-     * 
+     *
      * @example
-     * 
+     *
      * ```ts
      * let indexable: IndexOverload
      *
@@ -71,4 +73,72 @@ export default abstract class IndexOverload<T> {
      * @param value New value
      */
     protected abstract set(idx: number, value: T): T;
+
+    /**
+     * A method that returns the default iterator for
+     * an object. Called by the semantics of the for-of
+     * statement.
+     */
+    [Symbol.iterator]() {
+        return this.iter();
+    }
+
+    /**
+     * A method that returns an iterator for the current
+     * class. This is used by the iterator symbol to generate
+     * a for loop from the data structure.
+     *
+     * @example
+     *
+     * ```ts
+     * class Collection extends DataStructure<number> {
+     *   constructor() {
+     *     super();
+     *     this[0] = 1;
+     *     this[1] = 3;
+     *     this[2] = 6;
+     *   }
+     * 
+     *   public override *iter() {
+     *     let i = 0;
+     *     while (this[i] !== undefined)
+     *       yield this[i++];
+     *     return i;
+     *   }
+     * }
+     * 
+     * for (const element of new Collection()) {
+     *   console.log(element);
+     * }
+     * ```
+     */
+    protected abstract iter(): Generator<T, unknown, unknown>;
+
+    /**
+     * Per default this function is called when printing
+     * out the object to the console.
+     *
+     * @link https://stackoverflow.com/a/40699119/16002144
+     */
+    public [util.inspect.custom](): string {
+        return this.toString();
+    }
+
+    /**
+     * Returns a string representation of the data structure.
+     * The return string can either by array like or entirely
+     * different.
+     *
+     * The same method is called when printing out to the
+     * console.
+     *
+     * @example
+     *
+     * ```
+     * console.log(object.toString()); // [T1, T2, ...]
+     * ```
+     */
+    public toString(): string {
+        return Array.from(this.iter()).toString();
+    }
 }
