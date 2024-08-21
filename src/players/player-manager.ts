@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import PixelWalkerClient from '../protocol/client.js';
 import Player, { PlayerEvents } from './player.js';
-import PlayerArray from './array.js';
+import PlayerArray from './player-array.js';
 import PixelwalkerEvents from '../types/events.js';
 
 export const BroadcastEvents = [

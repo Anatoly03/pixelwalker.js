@@ -9,7 +9,7 @@ import { PublicProfile } from '../types/public-profile.js';
 import { PublicWorld } from '../types/public-world.js';
 
 import { APIServerLink, GameServerLink } from '../data/config.js';
-import PlayerManager from '../players/manager.js';
+import PlayerManager from '../players/player-manager.js';
 import BufferReader from '../util/buffer-reader.js';
 import Player from '../players/player.js';
 

@@ -4,7 +4,7 @@ import { PublicProfile } from '../types/public-profile.js';
 
 import { BlockMappingsReverse } from '../data/block-mappings.js';
 import PixelWalkerClient from '../protocol/client.js';
-import { PlayerArrayEvents } from './manager.js';
+import { PlayerArrayEvents } from './player-manager.js';
 
 export type PlayerEvents = {
     [Ev in keyof PlayerArrayEvents]: PlayerArrayEvents[Ev] extends [
