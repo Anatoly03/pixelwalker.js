@@ -10,3 +10,5 @@ export type PublicProfile = RecordModel & {
     face: number;
     username: Uppercase<string>;
 };
+
+export default PublicProfile;

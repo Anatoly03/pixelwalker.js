@@ -13,3 +13,5 @@ export type PublicWorld = RecordModel & {
     width: number;
     height: number;
 };
+
+export default PublicWorld;

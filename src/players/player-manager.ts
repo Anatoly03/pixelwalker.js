@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import PixelWalkerClient from '../protocol/client.js';
 import Player, { PlayerEvents } from './player.js';
-import PlayerArray from './player-array.js';
+import PlayerMap from './player-map.js';
 import PixelwalkerEvents from '../types/events.js';
 
 export const BroadcastEvents = [
@@ -33,7 +33,7 @@ export type PlayerArrayEvents = {
         (typeof BroadcastEvents)[number]]: PixelwalkerEvents[K];
 };
 
-export default class PlayerManager extends PlayerArray {
+export default class PlayerManager extends PlayerMap {
     #events: EventEmitter<PlayerArrayEvents> = new EventEmitter();
 
     #selfPlayer!: Player;
@@ -43,7 +43,7 @@ export default class PlayerManager extends PlayerArray {
      * no one wears the silver crown, returns `undefined`.
      */
     public get crown() {
-        return this.players.find((p) => p.hasCrown);
+        return this.find((p) => p.hasCrown);
     }
 
     /**
@@ -67,13 +67,15 @@ export default class PlayerManager extends PlayerArray {
      */
     private registerEvents() {
         this.client.raw().once('PlayerInit', (id, ...args) => {
-            this[id] = new Player(this.client);
-            this[id].emit('PlayerInit', ...args);
+            const player = new Player(this.client);
+            this.players.set(id, player);
+            player.emit('PlayerInit', ...args);
         });
 
         this.client.raw().on('PlayerJoined', (id, ...args) => {
-            this[id] = new Player(this.client);
-            this[id].emit('PlayerJoined', ...args);
+            const player = new Player(this.client);
+            this.players.set(id, player);
+            player.emit('PlayerJoined', ...args);
         });
 
         BroadcastEvents.forEach((event) => {
@@ -82,7 +84,7 @@ export default class PlayerManager extends PlayerArray {
             });
 
             this.on<any>(event, (id: number, ...args: any[]) => {
-                this[id].emit<any>(event, ...args);
+                this.players.get(id)!.emit<any>(event, ...args);
             });
         });
     }

@@ -1,59 +1,24 @@
-import DataStructure from '../util/data-structure.js';
 import Player from './player.js';
 
-export default class PlayerArray extends DataStructure<Player> {
+export default class PlayerMap {
     /**
-     * An internal array collection of players.
+     * @param players The direct reference of the player array.
      */
-    protected players: Player[] = [];
+    constructor(protected players: Map<number, Player> = new Map()) {}
 
     /**
-     *
+     * Returns the value of the player element in the list
+     * where the id is the same, and undefined otherwise.
      */
-    constructor() {
-        super();
+    public get(id: number) {
+        return this.players.get(id);
     }
 
     /**
-     * @param pid The Player identifier (numeric id)
+     * Returns an array representation of the map.
      */
-    protected override get(pid: number): Player {
-        console.log('Get player ' + pid);
-        return this.players.find((p) => p.id === pid)!;
-    }
-
-    /**
-     * @param pid The Player identifier (numeric id)
-     */
-    protected override set(pid: number, value: Player): Player {
-        console.log('Set player ' + pid);
-
-        const player = this.get(pid);
-        if (player) return player;
-
-        if (!value) {
-            this.players = this.players.filter((p) => p.id !== pid);
-            return undefined!;
-        }
-
-        this.players.push(value);
-        return value;
-    }
-
-    /**
-     *
-     */
-    public override *iter() {
-        for (const player of this.players) {
-            yield player;
-        }
-    }
-
-    /**
-     * Retrieve the array reference  directly.
-     */
-    public override toArray(): Player[] {
-        return this.players;
+    public toArray() {
+        return [...this.players.values()];
     }
 
     /**
@@ -75,7 +40,7 @@ export default class PlayerArray extends DataStructure<Player> {
      * Performs the specified action for each player in a player array.
      */
     public forEach(callback: (p: Player) => void): this {
-        this.toArray().forEach(callback);
+        this.players.forEach(callback);
         return this;
     }
 
@@ -84,13 +49,8 @@ export default class PlayerArray extends DataStructure<Player> {
      * specified separator string. Optionally, define the constants which
      * the string should start and end with.
      */
-    public join(
-        separator: string = ', ',
-        startWith: string = '',
-        endWith: string = ''
-    ): string {
-        const string = this.toArray().join(separator);
-        return startWith + string + endWith;
+    public join(separator: string = ', '): string {
+        return this.toArray().join(separator);
     }
 
     // /**
@@ -111,9 +71,9 @@ export default class PlayerArray extends DataStructure<Player> {
     // /**
     //  * Find the first player that matches the predicate.
     //  */
-    // public find(callback: (p: P) => boolean): P | undefined {
-    //     for (const p of this.data.values()) if (callback(p)) return p;
-    // }
+    public find(callback: (p: Player) => boolean): Player | undefined {
+        for (const p of this.players.values()) if (callback(p)) return p;
+    }
 
     // /**
     //  * Determines wether a player object is in the array or not.
@@ -221,5 +181,4 @@ export default class PlayerArray extends DataStructure<Player> {
     //     if (this.length == 0) return
     //     return this.data[Math.floor(this.length * Math.random())]
     // }
-
 }
