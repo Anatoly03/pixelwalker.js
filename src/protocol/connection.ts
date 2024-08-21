@@ -6,7 +6,8 @@ import BufferReader from '../util/buffer-reader.js';
 import MessageTypes from '../data/message-types.js';
 
 /**
- *
+ * The Magic Bytes. All incoming messages start with
+ * either of the magic bytes.
  */
 export enum MagicByte {
     Ping = 0x3f,
@@ -18,22 +19,24 @@ export enum MagicByte {
  * socket opening or closing.
  */
 type SocketStateEvents = {
-    Receive: BufferReader[];
-    Send: Buffer[];
     Error: [Error];
+    Open: [];
     Close: [number, string];
     Disconnect: [];
-    PromiseRejection: [Error];
-    Debug: [string];
-    '*': [(typeof MessageTypes)[number], ...any[]];
 } & {
     [K in `Receive${keyof typeof MagicByte}`]: [BufferReader];
 } & {
     [K in `Send${keyof typeof MagicByte}`]: Buffer[];
+};
+
+/**
+ * All events stored in `receive` which keep the formatted
+ * variants of the events.
+ */
+type ConnectionReceiveEvents = {
+    '*': [(typeof MessageTypes)[number], ...any[]];
 } & {
-    [K in `Receive*${(typeof MessageTypes)[number]}`]: any[];
-} & {
-    [K in `Send*${(typeof MessageTypes)[number]}`]: Buffer[];
+    [K in (typeof MessageTypes)[number]]: any[];
 };
 
 /**
@@ -46,50 +49,45 @@ type SocketStateEvents = {
  * from the server.
  *
  * The events follow a hierarchic, layered structure. The bottom-most
- * layer, which handles pure byte to byte transfer are the events
- * `Receive` and `Send` which directly submit byte data to the socket.
+ * layer is hidden within the `WebSocket` instance and cannot be
+ * accessed.
  * 
- * The second layer after direct communication consists of a header
- * the size of one byte (reffered to as magic byte below) The two
- * different magic bytes are for messages and pings. On this layer,
- * the events `ReceiveMessage`, `ReceivePing`, `SendMessage` and
- * `SendPing`.
+ * The Connection handles the second layer with the `Receive$1` events,
+ * where `$1` is to be replaced with the distributions of the messages,
+ * based on the first magic byte.
+ *
+ * Pings don't contain any information. Messages are transmitted
+ * to the 3rd and top-most layer within another event emitter instance
+ * that can be accessed with `receive()`
  * 
- * Pings don't contain any information, but messages are transmitted
- * to the 3rd and top-most layer within the `Connection` class.
  * Messages follow by their message type in 7-bit encoding. The events
- * are then broadcasted to the events `Send*$1` and `Receive*$1`
- * where `$1` is replaced with the message name respectively.
- * 
+ * are then broadcasted to the event emitter with the message name.
+ *
  * @example
- * 
+ *
  * Here is an example of a ping message being processed.
- * 
+ *
  * ```
- * // Socket receives [MagicPing]
- * 'Receive': [MagicPing]
- * 'ReceivePing': []
- * 'SendPing': []
- * 'Send': [MagicPing]
- * // Socket sends [MagicPing]
+ * 1. Socket receives [MagicPing]
+ * 2. 'ReceivePing' with rest buffer []
+ * 3. 'send' is called with arguments. [MagicPing]
+ * 4. Socket sends [MagicPing]
  * ```
- * 
+ *
  * @example
- * 
+ *
  * Here is an example of a more complex message being processed.
- * 
+ *
  * ```
- * // Socket receives [MagicMessage, ChatMessage, 1, 'Hello, World!']
- * 'Receive': [MagicMessage, ChatMessage, 1, 'Hello, World!']
- * 'ReceiveMessage': [ChatMessage, 1, 'Hello, World!']
- * 'Receive*ChatMessage': [1, 'Hello, World!']]
- * // Processing, assume we send 'Hi!' as a return
- * 'Send*ChatMessage': ['Hi!']
- * 'SendMessage': [ChatMessage, 'Hi!']
- * 'Send': [MagicMessage, ChatMessage, 'Hi!']
- * // Socket sends [MagicMessage, ChatMessage, 'Hi!']
+ * 1. Socket receives [MagicMessage, ChatMessage, 1, 'Hello, World!']
+ * 2. 'ReceiveMessage' with rest buffer [ChatMessage, 1, 'Hello, World!']
+ * 3. The upper-layer event 'ChatMessage' is emitted with rest buffer [1, 'Hello, World!']]
+ * 4. Processing, assume we send 'Hi!' as a return
+ * 5. Client 'send' is called with arguments event='ChatMessage' and arguments = ['Hi!]
+ * 6. 'send' is called with arguments. [MagicMessage, ChatMessage, 'Hi!']
+ * 7. Socket sends [MagicMessage, ChatMessage, 'Hi!']
  * ```
- * 
+ *
  * @param {boolean} Ready A generic parameter signaling a connected
  * socket. As of now this is unused.
  */
@@ -107,7 +105,7 @@ export default class Connection<
      * console.log(Connection.MessageTypes); // ["PlayerInit", "UpdateRights", ...]
      * ```
      */
-    static MessageTypes: typeof MessageTypes = MessageTypes;
+    public static MessageTypes: typeof MessageTypes = MessageTypes;
 
     /**
      * Get the id for the message. This can then be used with `Magic` to send the proper event header.
@@ -130,116 +128,60 @@ export default class Connection<
      * The magic bytes used to start a packet. The two
      * important magic bytes are for pings and messages.
      */
-    static MagicByte: typeof MagicByte = MagicByte;
+    public static MagicByte: typeof MagicByte = MagicByte;
 
     /**
-     * Socket that connects with the game
+     * Socket that connects with the game.
      */
     #socket!: Ready extends true ? WebSocket : never;
 
     /**
-     * Registers the following event handlers.
      *
-     * - `process.'unhandledRejection'`
+     */
+    #receive: EventEmitter<ConnectionReceiveEvents> = new EventEmitter();
+
+    /**
+     * Registers the event handlers.
+     * 
+     * - On socket open, emits `Open`.
+     * - On socket message, scan in the magic byte and
+     *   distribute the buffer to the respective events.
+     *   The events are `ReceivePing`, `ReceiveMessage`.
+     * - On `ReceivePing`, respond with a ping to server.
+     * - On `ReceiveMessage`, scan in integer in 7-bit
+     *   notation, which corresponds to the message type
+     *   and distribute the buffer rest to the `receive()`
+     *   event emitter.
+     * - On socket close, emit `Close`.
+     * - On socket errors, or unexpected response when
+     *   connecting, emit `Error` with the error message.
      */
     private registerEvents() {
         /**
-         * @event
+         * @event Socket.Open
          *
-         * Report unhandled promises. This will log all unhandled
-         * promise rejections to the event emitter.
+         * On socket opened.
          */
-        process.on('unhandledRejection', (error) => {
-            if (!(error instanceof Error))
-                throw new Error(
-                    'Receive unexpected type while logging unhandled rejections: ' +
-                        error
-                );
-            this.emit('PromiseRejection', error);
+        this.#socket.on('open', () => {
+            this.emit('Open');
         });
 
         /**
-         * @event
+         * @event Socket.Message
          *
          * Receive a binary buffer from server. This function
-         * preprocessed the array buffer that is received and
-         * broadcasts a buffer reader to the `Receive` event.
+         * preprocesses the array buffer that is received to a
+         * buffer reader and distributes the message based on
+         * the first magic byte identified.
          *
-         * The `Receive` event will apply logic on the message
-         * and distribute among different event handlers.
+         * The distribution can either be the `ReceivePing` or
+         * `ReceiveMessage` events.
          */
         this.#socket.on('message', (message) => {
             const buffer = BufferReader.from(
                 message as WithImplicitCoercion<ArrayBuffer>
             );
 
-            this.emit('Receive', buffer);
-        });
-
-        /**
-         * @event
-         *
-         * Check on connection error.
-         */
-        this.#socket.on('error', (error) => {
-            try {
-                this.emit('Error', error);
-                this.disconnect();
-            } catch (e) {
-                this.emit(
-                    'Error',
-                    new Error(
-                        'An unexpected error occured while closing the websocket.'
-                    )
-                );
-            }
-        });
-
-        /**
-         * @event
-         *
-         * Got an unexpected response from the server.
-         */
-        this.#socket.on('unexpected-response', (request, message) => {
-            this.emit(
-                'Error',
-                new Error(
-                    `Received an unexpected response.\nRequest ${request.method} "${request.host}/${request.path}" was received by response:\n(${message.statusCode}) ${message.statusMessage}`
-                )
-            );
-            this.disconnect();
-        });
-
-        /**
-         * @event
-         *
-         * On socket opened.
-         */
-        this.#socket.on('open', () => {
-            this.emit('Debug', `Socket opened!`);
-        });
-
-        /**
-         * @event
-         *
-         * On socket is closed.
-         */
-        this.#socket.on('close', (code, reason) => {
-            this.emit('Close', code, reason.toString('ascii'));
-            this.disconnect();
-        });
-
-        /**
-         * @event Receive
-         *
-         * This event is called directly from the socket event
-         * for message events. The `Receive` event distributes
-         * the message to an upper layer of abstraction by reading
-         * the first byte from the buffer reader. The distribution
-         * is applied to the `ReceivePing` and `ReceiveMessage`
-         * events.
-         */
-        this.on('Receive', (buffer) => {
             if (buffer.length == 0) return;
             const magicByte = buffer.readUInt8();
 
@@ -247,22 +189,18 @@ export default class Connection<
                 const header = e as keyof typeof MagicByte;
                 const byte = MagicByte[header];
                 if (byte != magicByte) continue;
-                this.emit(`Receive${header}`, buffer);
-                return;
+                return this.emit(`Receive${header}`, buffer);
             }
 
-            this.emit(
-                'Error',
-                new Error(
-                    `Received unidentified magic byte from server: 0x${buffer
-                        .at(0)
-                        .toString(16)}`
-                )
+            this.error(
+                `Received unidentified magic byte from server: ${buffer
+                    .at(0)
+                    .toString(16)}`
             );
         });
 
         /**
-         * @event ReceivePing
+         * @event Connection.ReceivePing
          *
          * This event is called when a ping was received. A ping
          * is a message from the socket consisting only of the
@@ -274,7 +212,7 @@ export default class Connection<
          * buffer.
          */
         this.on('ReceivePing', () => {
-            this.emit('SendPing', Buffer.alloc(0));
+            this.send(Connection.MagicByte.Ping);
         });
 
         /**
@@ -290,84 +228,46 @@ export default class Connection<
             const data = buffer.deserialize();
 
             if (!event_name)
-                return this.emit(
-                    'Error',
-                    new Error(
-                        `Received unidentified protocol header 0x${event_id.toString(
-                            16
-                        )}. API may be out of date. Deserialised Data: ${data}`
-                    )
+                return this.error(
+                    `Received unidentified protocol header 0x${event_id.toString(
+                        16
+                    )}. API may be out of date. Deserialised Data: ${data}`
                 );
 
-            this.emit(`*`, event_name, ...data);
-            this.emit(`Receive*${event_name}`, ...data);
+            this.receive().emit(`*`, event_name, ...data);
+            this.receive().emit(event_name, ...data);
         });
 
-        // /**
-        //  * Receive and process incoming pings.
-        //  */
-        // this.on('ReceivePing', () => {
-        //     this.emit('Send', BufferReader.Magic(MagicByte.Ping));
-        // });
+        /**
+         * @event Socket.Close
+         *
+         * On socket is closed.
+         */
+        this.#socket.on('close', (code, reason) => {
+            this.emit('Close', code, reason.toString('ascii'));
+            this.disconnect();
+        });
 
         /**
-         * @event Send*PlayerInit
-         * @event Send*UpdateRights
-         * @event ...
+         * @event Socket.Error
          *
-         * The following piece of code generates event handlers for
-         * message events. The event handler only does two things:
-         *
-         * First, append the respective header byte at the start of
-         * the buffer, then broadcast to the lower communication layer,
-         * emitting `SendMessage`, which then broadcasts the message
-         * to the lowest layer at `Send`.
+         * Disconnect on connection error.
          */
-        for (const e of MessageTypes) {
-            const header = e as (typeof MessageTypes)[number];
-            this.on(`Send*${header}`, (...buffer) => {
-                const messageId = Connection.MessageId(header);
-                const messageIdBuffer = BufferReader.Bit7(messageId);
-
-                this.emit('SendMessage', messageIdBuffer, ...buffer);
-            });
-        }
+        this.#socket.on('error', (error) => {
+            this.error(error);
+            this.disconnect();
+        });
 
         /**
-         * @event SendMessage
-         * @event SendPing
+         * @event Socket.UnexpectedResponse
          *
-         * The following piece of code generates event handlers for
-         * magic byte events. The event handler only does two things:
-         *
-         * First, append the respective magic byte at the start of the
-         * buffer, then broadcast to the lowest communication layer,
-         * emitting `Send`, which then broadcasts the message to the
-         * server.
+         * Got an unexpected response from the server.
          */
-        for (const e of Object.keys(MagicByte).filter(isNaN as any)) {
-            const header = e as keyof typeof MagicByte;
-            this.on(`Send${header}`, (...buffer) => {
-                this.emit(
-                    'Send',
-                    BufferReader.Magic(MagicByte[header]),
-                    ...buffer
-                );
-            });
-        }
-
-        /**
-         * @event Send
-         *
-         * Send a binary buffer to the server.
-         */
-        this.on('Send', (...buffers) => {
-            const buffer = Buffer.concat(buffers);
-            this.#socket.send(
-                buffer,
-                {},
-                (error) => error && this.emit('Error', error)
+        this.#socket.on('unexpected-response', (request, message) => {
+            this.error(
+                `Received an unexpected response.\nRequest ${request.method} "${request.host}/${request.path}" was received by response:\n(${message.statusCode}) ${message.statusMessage}`
             );
+            this.disconnect();
         });
     }
 
@@ -386,6 +286,53 @@ export default class Connection<
     }
 
     /**
+     * Retrieve the event manager for sending signals to
+     * the server. Listening on `send()` will emit all
+     * message requests that the client is sending.
+     *
+     * @example
+     *
+     * ```ts
+     * client.connection.send().emit('PlayerInit');
+     * ```
+     */
+    public send(...args: (Buffer | number[] | number)[]): this {
+        const processed = args.map((b) => {
+            if (b instanceof Buffer) return b;
+            if (typeof b == 'number') return Buffer.from([b]);
+            return Buffer.from(b);
+        });
+        this.#socket.send(Buffer.concat(processed));
+        return this;
+    }
+
+    /**
+     * Retrieve the event manager for receiving signals
+     * from the server. Listening on `receive()` will emit
+     * all incoming message requests that the server is
+     * sending.
+     *
+     * @example
+     *
+     * ```ts
+     * client.connection.receive().on('PlayerInit',
+     *   (...args) =>
+     *     console.log(args));
+     * ```
+     */
+    public receive() {
+        return this.#receive;
+    }
+
+    /**
+     * Emit an error.
+     */
+    private error(err: string | Error) {
+        if (err instanceof Error) return this.emit('Error', err);
+        return this.emit('Error', new Error(err));
+    }
+
+    /**
      * Initialize the connection with the
      */
     public init(socket: WebSocket): Connection<true> {
@@ -393,7 +340,6 @@ export default class Connection<
         this.#socket.binaryType = 'arraybuffer';
 
         this.registerEvents();
-        this.emit('Debug', `Connecting...`);
 
         return this as Connection<true>;
     }

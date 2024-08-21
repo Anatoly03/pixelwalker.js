@@ -10,9 +10,11 @@ import { PublicWorld } from '../types/public-world.js';
 
 import { APIServerLink, GameServerLink } from '../data/config.js';
 import PlayerManager from '../players/manager.js';
+import BufferReader from '../util/buffer-reader.js';
 
 export type PixelwalkerEvents = {
     Init: [];
+    Error: [Error];
 };
 
 export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
@@ -143,6 +145,35 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
         throw new Error(
             'Invalid login options. Expected { token } or { username, password }, got a different object.'
         );
+    }
+
+    /**
+     * The PixelWalker Client constructor. This method
+     * is not accessible to allow static async
+     * constructors.
+     */
+    private constructor() {
+        super();
+    }
+
+    /**
+     *
+     */
+    private registerEvents() {
+        /**
+         * @event
+         *
+         * Report unhandled promises. This will log all unhandled
+         * promise rejections to the event emitter.
+         */
+        process.on('unhandledRejection', (error) => {
+            if (!(error instanceof Error))
+                return this.emit(
+                    'Error',
+                    new Error('Unhandled Rejection: No Error provided')
+                );
+            this.emit('Error', error);
+        });
     }
 
     /**
@@ -376,17 +407,17 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
      * of the game or renewed prortocols, however is customly
      * adjustable before this SDK is ready to update, which makes
      * it good for experiencing with the api.
-     * 
+     *
      * ```ts
      * public listen(event: ..., callback: ...){
      *     this.connection.on(`Receive*${event}`, callback);
      *     return this;
      * }
      * ```
-     * 
+     *
      * To listen to all message events you can use the event
      * name `*` which is an alias for
-     * 
+     *
      * ```ts
      * public listen(event: '*', callback: ...){
      *     this.connection.on(`*`, callback);
@@ -399,9 +430,9 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
         callback: (...args: any[]) => any
     ) {
         if (event === '*') {
-            this.connection.on(`*`, callback);
+            this.connection.receive().on(`*`, callback);
         } else {
-            this.connection.on(`Receive*${event}`, callback);
+            this.connection.receive().on(`Receive*${event}`, callback);
         }
         return this;
     }
@@ -428,13 +459,18 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerEvents> {
         ...buffer: Buffer[]
     ) {
         if (!this.connection.connected()) return false;
-        this.connection.emit(`Send*${event}`, ...buffer);
+        this.connection.send(
+            Connection.MagicByte.Message,
+            BufferReader.Bit7(Connection.MessageId(event)),
+            ...buffer
+        );
     }
 
     /**
      * Accept an incoming initialization handshake. If this is
-     * sent twice per instance, the connection will close. This
-     * method is an alias for
+     * sent twice per instance, the connection will close.
+     * 
+     * @alias
      *
      * ```ts
      * client.send('PlayerInit');
