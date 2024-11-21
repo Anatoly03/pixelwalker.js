@@ -8,7 +8,7 @@ import {
 /**
  * A player id as defined per
  */
-export type Player = {
+export type PlayerType = {
     id: PlayerId;
     cuid: PlayerConnectUserId;
 
@@ -35,9 +35,9 @@ export type Player = {
     checkpoint?: { x: number; y: number };
 };
 
-export type SelfPlayer = Player & {
+export type SelfPlayer = PlayerType & {
     isSelf: true;
     tickId: number;
 };
 
-export default Player;
+export default PlayerType;

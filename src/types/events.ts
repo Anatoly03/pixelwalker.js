@@ -44,7 +44,7 @@ export type PlayerUsername = Uppercase<string>;
 /**
  * A Player Face Id. The smiley which is played with by the player.
  */
-export type PlayerFaceId = Enumerate<19>;
+export type PlayerFaceId = number; // Enumerate<19>;
 
 /**
  * The player admin state. If set, the player is an admim.
@@ -337,37 +337,37 @@ export type PlayerDirectMessage = [PlayerId, string];
  *
  */
 export type PixelwalkerEvents = {
-    'PlayerInit': PlayerInit;
-    'UpdateRights': UpdateRights;
-    'UpdateWorldMetadata': UpdateWorldMetadata;
-    'PerformWorldAction': PerformWorldAction;
-    'WorldCleared': WorldCleared;
-    'WorldReloaded': WorldReloaded;
-    'WorldBlockPlaced': WorldBlockPlaced;
-    'ChatMessage': ChatMessage;
-    'OldChatMessages': OldChatMessages;
-    'SystemMessage': SystemMessage;
-    'PlayerJoined': PlayerJoined;
-    'PlayerLeft': PlayerLeft;
-    'PlayerMoved': PlayerMoved;
-    'PlayerTeleported': PlayerTeleported;
-    'PlayerFace': PlayerFace;
-    'PlayerGodMode': PlayerGodMode;
-    'PlayerModMode': PlayerModMode;
-    'PlayerRespawn': PlayerRespawn;
-    'PlayerReset': PlayerReset;
-    'PlayerTouchBlock': PlayerTouchBlock;
-    'PlayerTouchPlayer': PlayerTouchPlayer;
-    'PlayerAddEffect': PlayerAddEffect;
-    'PlayerRemoveEffect': PlayerRemoveEffect;
-    'PlayerResetEffects': PlayerResetEffects;
-    'PlayerTeam': PlayerTeam;
-    'PlayerCounters': PlayerCounters;
-    'PlayerLocalSwitchChanged': PlayerLocalSwitchChanged;
-    'PlayerLocalSwitchReset': PlayerLocalSwitchReset;
-    'GlobalSwitchChanged': GlobalSwitchChanged;
-    'GlobalSwitchReset': GlobalSwitchReset;
-    'PlayerDirectMessage': PlayerDirectMessage;
+    PlayerInit: PlayerInit;
+    UpdateRights: UpdateRights;
+    UpdateWorldMetadata: UpdateWorldMetadata;
+    PerformWorldAction: PerformWorldAction;
+    WorldCleared: WorldCleared;
+    WorldReloaded: WorldReloaded;
+    WorldBlockPlaced: WorldBlockPlaced;
+    ChatMessage: ChatMessage;
+    OldChatMessages: OldChatMessages;
+    SystemMessage: SystemMessage;
+    PlayerJoined: PlayerJoined;
+    PlayerLeft: PlayerLeft;
+    PlayerMoved: PlayerMoved;
+    PlayerTeleported: PlayerTeleported;
+    PlayerFace: PlayerFace;
+    PlayerGodMode: PlayerGodMode;
+    PlayerModMode: PlayerModMode;
+    PlayerRespawn: PlayerRespawn;
+    PlayerReset: PlayerReset;
+    PlayerTouchBlock: PlayerTouchBlock;
+    PlayerTouchPlayer: PlayerTouchPlayer;
+    PlayerAddEffect: PlayerAddEffect;
+    PlayerRemoveEffect: PlayerRemoveEffect;
+    PlayerResetEffects: PlayerResetEffects;
+    PlayerTeam: PlayerTeam;
+    PlayerCounters: PlayerCounters;
+    PlayerLocalSwitchChanged: PlayerLocalSwitchChanged;
+    PlayerLocalSwitchReset: PlayerLocalSwitchReset;
+    GlobalSwitchChanged: GlobalSwitchChanged;
+    GlobalSwitchReset: GlobalSwitchReset;
+    PlayerDirectMessage: PlayerDirectMessage;
 };
 
 export default PixelwalkerEvents;

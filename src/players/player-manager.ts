@@ -3,11 +3,10 @@ import PixelWalkerClient from '../protocol/client.js';
 import Player, { PlayerEvents } from './player.js';
 import PlayerMap from './player-map.js';
 import PixelwalkerEvents from '../types/events.js';
+import Connection, { ConnectionReceiveEvents } from '../protocol/connection.js';
 
 export const BroadcastEvents = [
-    'PlayerInit',
     'UpdateRights',
-    'ChatMessage',
     'PlayerJoined',
     'PlayerLeft',
     'PlayerMoved',
@@ -34,10 +33,6 @@ export type PlayerArrayEvents = {
 };
 
 export default class PlayerManager extends PlayerMap {
-    #events: EventEmitter<PlayerArrayEvents> = new EventEmitter();
-
-    #selfPlayer!: Player;
-
     /**
      * Retrieves the player who wears the golden crown. If
      * no one wears the silver crown, returns `undefined`.
@@ -50,14 +45,12 @@ export default class PlayerManager extends PlayerMap {
      * Returns the reference of the players' self. i.e. the
      * bot itself.
      */
-    public get self() {
-        return this.#selfPlayer;
-    }
+    public self: Player;
 
     /**
      *
      */
-    constructor(protected client: PixelWalkerClient) {
+    constructor(protected events: EventEmitter<ConnectionReceiveEvents>) {
         super();
         this.registerEvents();
     }
@@ -66,20 +59,20 @@ export default class PlayerManager extends PlayerMap {
      * Register events.
      */
     private registerEvents() {
-        this.client.raw().once('PlayerInit', (id, ...args) => {
-            const player = new Player(this.client);
+        this.events.once('PlayerInit', (id, ...args) => {
+            const player = new Player();
             this.players.set(id, player);
             player.emit('PlayerInit', ...args);
         });
 
-        this.client.raw().on('PlayerJoined', (id, ...args) => {
-            const player = new Player(this.client);
+        this.on('PlayerJoined', (id, ...args) => {
+            const player = new Player();
             this.players.set(id, player);
             player.emit('PlayerJoined', ...args);
         });
 
         BroadcastEvents.forEach((event) => {
-            this.client.raw().on<any>(event, (...args) => {
+            this.on<any>(event, (...args) => {
                 (this.emit as any)(event, ...args);
             });
 

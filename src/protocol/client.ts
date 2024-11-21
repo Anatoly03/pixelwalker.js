@@ -25,7 +25,7 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerClientEve
      * The connection instance. It handles communication
      * with the server.
      */
-    public readonly connection = new Connection(this);
+    public readonly connection = new Connection();
 
     /**
      * PocketBase API
@@ -37,7 +37,7 @@ export default class PixelWalkerClient extends EventEmitter<PixelwalkerClientEve
     /**
      * Players connected in the world.
      */
-    public readonly players = new PlayerManager(this);
+    public readonly players = new PlayerManager(this.connection.receive());
 
     /**
      * Create a new Client instance, by logging in with a token.

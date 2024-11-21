@@ -5,6 +5,14 @@ import { PublicProfile } from '../types/public-profile.js';
 import { BlockMappingsReverse } from '../data/block-mappings.js';
 import PixelWalkerClient from '../protocol/client.js';
 import { PlayerArrayEvents } from './player-manager.js';
+import { ConnectionReceiveEvents } from '../protocol/connection.js';
+import {
+    EffectId,
+    IsPlayerAdmin,
+    PlayerEditRights,
+    PlayerGodRights,
+    TeamId,
+} from '../types/events.js';
 
 export type PlayerEvents = {
     [Ev in keyof PlayerArrayEvents]: PlayerArrayEvents[Ev] extends [
@@ -12,41 +20,42 @@ export type PlayerEvents = {
         ...infer V
     ]
         ? A extends number
-            ? V
+            ? (...args: V) => void
             : never
         : never;
 };
 
-export default class Player {
-    /**
-     * The local event listener ofthe player. It  can be accessed
-     * by the `Player` methods `on`, `once` and `emit`
-     */
-    #events: EventEmitter<PlayerEvents> = new EventEmitter();
-
+export default class Player implements PlayerType, PlayerEvents {
     /**
      * The numeric Player identifier. It is unique per world.
      */
-    public readonly id: number = 0;
+    public readonly id: number;
 
     /**
      * The string Player identifier. It is unique per profile.
      */
-    public get cuid() {
-        return this.#cuid;
-    }
-
-    #cuid: string = 'unknown';
+    public readonly cuid: string;
 
     /**
      * The username of the Player. It is mostly assumed to be
      * unique per profile, but it's not guaranteed to be persistant.
      */
-    public get username() {
-        return this.#username;
-    }
+    public readonly username: string;
 
-    #username: string = 'unknown';
+    /**
+     *
+     */
+    public readonly isAdmin: boolean;
+
+    /**
+     *
+     */
+    public readonly isSelf: boolean;
+
+    /**
+     *
+     */
+    public face: number = 0;
 
     /**
      * Is true, if the player has a gold crown. There is only one
@@ -54,27 +63,39 @@ export default class Player {
      * a player touches the crown,the player who wore it before
      * loses the rights to it.
      */
-    public get hasCrown() {
-        return this.#hasCrown;
-    }
-
-    #hasCrown: boolean = false;
+    public hasCrown: boolean = false;
 
     /**
      * Is true, if the player has a silver crown. Any player who
      * touches the trophy block will get a silver crown. If the
      * player has a gold crown, but won, this will still be true.
      */
-    public get winner() {
-        return this.#hasSilverCrown;
-    }
-
-    #hasSilverCrown: boolean = false;
+    public isWinner: boolean = false;
 
     /**
      *
      */
-    constructor(protected client: PixelWalkerClient) {
+    public teamId: TeamId = 0;
+
+    /**
+     *
+     */
+    public coins: number = 0;
+
+    /**
+     *
+     */
+    public blueCoins: number = 0;
+
+    /**
+     *
+     */
+    public deathCount: number = 0;
+
+    /**
+     *
+     */
+    constructor() {
         this.registerEvents();
     }
 
@@ -129,43 +150,6 @@ export default class Player {
     }
 
     //
-    // Events
-    //
-
-    /**
-     * @ignore
-     */
-    public on<K extends keyof PlayerEvents>(
-        event: K,
-        callback: (...args: PlayerEvents[K]) => void
-    ): this {
-        this.#events.on(event, callback as any);
-        return this;
-    }
-
-    /**
-     * @ignore
-     */
-    public once<K extends keyof PlayerEvents>(
-        event: K,
-        callback: (...args: PlayerEvents[K]) => void
-    ): this {
-        this.#events.once(event, callback as any);
-        return this;
-    }
-
-    /**
-     * @ignore
-     */
-    public emit<K extends keyof PlayerEvents>(
-        event: K,
-        ...args: PlayerEvents[K]
-    ): this {
-        this.#events.emit(event, ...(args as any));
-        return this;
-    }
-
-    //
     // Methods
     //
 
@@ -176,4 +160,30 @@ export default class Player {
     public async profile(): Promise<PublicProfile> {
         return this.client.profiles().getFirstListItem(`cuid~${this.cuid}`);
     }
+
+    //
+    // Events
+    //
+
+    public UpdateRights (canEdit: PlayerEditRights, canGod: PlayerGodRights): void {
+        
+    }
+
+    PlayerMoved: never;
+    PlayerTeleported: (args_0: number, args_1: number) => void;
+    PlayerFace: (
+        args_0: number
+    ) => void;
+    PlayerGodMode: (args_0: boolean) => void;
+    PlayerModMode: (args_0: boolean) => void;
+    PlayerRespawn: (args_0: number, args_1: number) => void;
+    PlayerReset;
+    PlayerTouchBlock: (args_0: number, args_1: number, args_2: number) => void;
+    PlayerTouchPlayer: (args_0: number, args_1: 0 | 1) => void;
+    PlayerRemoveEffect: (args_0: EffectId) => void;
+    PlayerResetEffects: (args_0: boolean) => void;
+    PlayerTeam: (args_0: 0 | 1 | 2 | 3 | 4 | 5 | 6) => void;
+    PlayerCounters: (args_0: number, args_1: number, args_2: number) => void;
+    PlayerLocalSwitchChanged: (args_0: number, args_1: 0 | 1) => void;
+    PlayerLocalSwitchReset: (args_0: 0 | 1) => void;
 }

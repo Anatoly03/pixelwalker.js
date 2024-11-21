@@ -32,7 +32,7 @@ type SocketStateEvents = {
  * All events stored in `receive` which keep the formatted
  * variants of the events.
  */
-type ConnectionReceiveEvents = PixelwalkerEvents & {
+export type ConnectionReceiveEvents = PixelwalkerEvents & {
     '*': [(typeof MessageTypes)[number], ...any[]];
 };
 
@@ -259,13 +259,6 @@ export default class Connection<
             );
             this.disconnect();
         });
-    }
-
-    /**
-     * Creates a new connection manager.
-     */
-    constructor(private client: Client) {
-        super();
     }
 
     /**
