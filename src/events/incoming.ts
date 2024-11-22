@@ -81,6 +81,30 @@ export type PlayerJoined = [
     Buffer // Switch Buffer
 ];
 
+/**
+ * The `PlayerLeft` event is emitted when a player leaves the room.
+ * 
+ * | Index | Type | Description |
+ * | --- | --- | --- |
+ * | 0 | `number` | Player Id |
+ */
+export type PlayerLeft = [
+    number, // Player Id
+];
+
+/**
+ * The `PlayerFace` event is emitted when a player leaves the room.
+ * 
+ * | Index | Type | Description |
+ * | --- | --- | --- |
+ * | 0 | `number` | Player Id |
+ * | 1 | `number` | Face Id |
+ */
+export type PlayerFace = [
+    number, // Player Id
+    number, // Face Id
+];
+
 export type ReceiveEvents = {
     PlayerInit: PlayerInit;
 
@@ -105,14 +129,13 @@ export type ReceiveEvents = {
     SystemMessage: [];
 
     PlayerJoined: PlayerJoined;
-
-    PlayerLeft: [];
+    PlayerLeft: PlayerLeft;
 
     PlayerMoved: [];
 
     PlayerTeleported: [];
 
-    PlayerFace: [];
+    PlayerFace: PlayerFace;
 
     PlayerGodMode: [];
 

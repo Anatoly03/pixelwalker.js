@@ -5,8 +5,21 @@ import Player, { SelfPlayer } from "../types/player.js";
 export type PlayerMapEvents = {
     Init: [SelfPlayer];
     Add: [Player];
+    Leave: [Player];
+    Face: [Player, number];
 };
 
+/**
+ * The `PlayerMap` class is a wrapper around a map of players in the room.
+ * It provides some methods to interact with the event manager.
+ * 
+ * | Event | Arguments | Description |
+ * | --- | --- | --- |
+ * | `Init` | `new selfPlayer` | The client is initialized. |
+ * | `Add` | `new player` | A player joins the room. |
+ * | `Face` | `old player`, `new face` | A player changes their face. The old face is stored under `arg0.face`, and the new face is stored under `face` |
+ * | `Leave` | `old player` | A player leaves the room. |
+ */
 export default class PlayerMap {
     [id: number]: Player | undefined;
 
@@ -94,7 +107,19 @@ export default class PlayerMap {
                 deaths: 0,
             };
 
+            this.players.set(id, player);
             this.emit("Add", player);
+        });
+
+        connection.on('PlayerLeft', (id) => {
+            this.emit('Leave', this.players.get(id)!);
+            this.players.delete(id);
+        });
+
+        connection.on('PlayerFace', (id, face) => {
+            const player = this.players.get(id)!;
+            this.emit('Face', player, face);
+            player.face = face;
         });
 
         return new Proxy(this, {
