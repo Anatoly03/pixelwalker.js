@@ -199,7 +199,7 @@ export default class BufferReader {
      * @param tt
      * @param value
      */
-    public static Dynamic(tt: ComponentTypeHeader, value: boolean | number | bigint | string | Buffer) {
+    public static Dynamic(tt: ComponentTypeHeader, value: boolean | number | bigint | string | Buffer): Buffer {
         switch (tt) {
             case ComponentTypeHeader.String:
                 return this.String(value as string);

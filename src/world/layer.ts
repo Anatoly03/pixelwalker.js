@@ -16,6 +16,29 @@ export default class Layer {
         }
     }
 
+    //
+    //
+    // METHODS
+    //
+    //
+
+    /**
+     * Clears the layer.
+     */
+    public clear() {
+        for (let x = 0; x < this.width; x++) {
+            for (let y = 0; y < this.height; y++) {
+                (this as any)[x][y] = new Block(0);
+            }
+        }
+    }
+
+    //
+    //
+    // STORAGE I/O
+    //
+    //
+
     /**
      * Deserialize the current layer from the buffer reader.
      */
@@ -27,17 +50,5 @@ export default class Layer {
         };
 
         return this;
-    }
-
-
-    /**
-     * Clears the layer.
-     */
-    public clear() {
-        for (let x = 0; x < this.width; x++) {
-            for (let y = 0; y < this.height; y++) {
-                (this as any)[x][y] = new Block(0);
-            }
-        }
     }
 }

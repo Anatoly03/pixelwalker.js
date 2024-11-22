@@ -11,24 +11,6 @@ export class Block {
     static [id: number]: Block;
 
     /**
-     * Deserialize a block from the buffer reader.
-     */
-    public static deserialize(buffer: BufferReader): Block {
-        const blockId = buffer.readUInt32LE();
-        const block = new Block(blockId);
-
-        if ((BlockData as any)[block.name]) {
-            block.args_t = (BlockData as any)[block.name];
-
-            for (const type of block.args_t) {
-                block.args.push(buffer.read(type));
-            }
-        }
-
-        return block;
-    }
-
-    /**
      * The unique id of a block. Block ID changes accross updates.
      * If you want to save persistant data, refer the block mapping.
      */
@@ -63,7 +45,17 @@ export class Block {
             default:
                 throw new Error('Unreachable: Invalid block id despite type hint.');
         }
+
+        if ((BlockData as any)[this.name]) {
+            this.args_t = (BlockData as any)[this.name];
+        }
     }
+
+    //
+    //
+    // METHODS
+    //
+    //
 
     /**
      * Retrieves the mapping name of the block based on its' id.
@@ -78,6 +70,77 @@ export class Block {
      */
     [Symbol.for('nodejs.util.inspect.custom')]() {
         return `Block[\x1b[0;33m${this.name ?? this.id}\x1b[0;0m]`;
+    }
+
+    //
+    //
+    // STORAGE I/O
+    //
+    //
+
+    /**
+     * Deserialize a block from the buffer reader.
+     */
+    public static deserialize(buffer: BufferReader): Block {
+        const blockId = buffer.readUInt32LE();
+        const block = new Block(blockId);
+
+        if ((BlockData as any)[block.name]) {
+            block.args_t = (BlockData as any)[block.name];
+
+            for (const type of block.args_t) {
+                block.args.push(buffer.read(type));
+            }
+        }
+
+        return block;
+    }
+
+    /**
+     * Serialize block arguments to the buffer writer.
+     */
+    public serialize_args(): Buffer {
+        const buffers: Buffer[] = [];
+
+        for (let i = 0; i < this.args.length; i++) {
+            buffers.push(BufferReader.Dynamic(this.args_t[i], this.args[i]));
+        }
+
+        return Buffer.concat(buffers);
+    }
+
+    /**
+     * Deserialize the block from the string.
+     */
+    public static fromString(value: string): Block {
+        const parts = value.split('.');
+        const blockId = parseInt(parts[0], 16);
+        const block = new Block(blockId);
+
+        if (parts.length > 1) {
+            const args = parts[1];
+            const buffer = BufferReader.from(Buffer.from(args, 'hex'));
+
+            if ((BlockData as any)[block.name]) {
+                block.args_t = (BlockData as any)[block.name];
+    
+                for (const type of block.args_t) {
+                    block.args.push(buffer.read(type));
+                }
+            }
+        }
+
+        return block;
+    }
+
+    /**
+     * Returns a string representation of the block as understood by the API.
+     */
+    public toString(): string {
+        let s = this.id.toString(16).padStart(2, "0");
+        if (this.args.length) s += '.' + this.serialize_args().toString('hex');
+        s += ';';
+        return s;
     }
 };
 
