@@ -1,7 +1,7 @@
 import PocketBase, { RecordService } from "pocketbase";
-import Config from "../data/config.js";
-import PublicProfile from "../types/public-profile.js";
-import PublicWorld from "../types/public-world.js";
+import Config from "./data/config.js";
+import PublicProfile from "./types/public-profile.js";
+import PublicWorld from "./types/public-world.js";
 
 export default class PixelWalkerClient {
     /**
