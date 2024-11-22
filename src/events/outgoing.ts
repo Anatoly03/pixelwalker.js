@@ -10,7 +10,6 @@ import { ComponentTypeHeader } from "../util/buffer-reader";
  */
 export const PlayerInit = [] as const;
 
-
 /**
  * The `PlayerChatMessage` can be sent to write to the chat.
  *
@@ -85,9 +84,7 @@ export type FormatType<K> = K extends readonly []
     : never;
 
 export type SendEvents = {
-    [K in keyof typeof SendEventsFormat]: FormatType<
-        (typeof SendEventsFormat)[K]
-    >;
+    [K in keyof typeof SendEventsFormat]: FormatType<(typeof SendEventsFormat)[K]>;
 };
 
 export default SendEvents;

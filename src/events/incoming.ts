@@ -6,6 +6,7 @@
  * | 0 | `number` | Player Id |
  * | 1 | `string` | Connected User Id |
  * | 2 | `string` | Player Username |
+ * | 3 | `number` | Player Face Id |
  */
 export type PlayerInit = [
     number, // Player Id
@@ -42,7 +43,42 @@ export type PlayerInit = [
  */
 export type PlayerChatMessage = [
     number, // Player Id
-    string, // Message
+    string // Message
+];
+
+/**
+ * The `PlayerJoined` event is emitted when a player joins the room.
+ * 
+ * | Index | Type | Description |
+ * | --- | --- | --- |
+ * | 0 | `number` | Player Id |
+ * | 1 | `string` | Connected User Id |
+ * | 2 | `string` | Player Username |
+ * | 3 | `number` | Player Face Id |
+ */
+export type PlayerJoined = [
+    number, // Player Id
+    string, // Connected User Id
+    Uppercase<string>, // Player Username
+    number, // Player Face Id
+    boolean, // Is Admin
+    boolean, // Is Friend
+    boolean, // Is Owner
+    boolean, // Has God
+    boolean, // Has Edit
+    number, // Player X
+    number, // Player Y
+    number, // Chat Colour
+    number, // Coins
+    number, // Blue Coins
+    number, // Deaths
+    Buffer, // Collected Items
+    boolean, // Godmode
+    boolean, // Modmode
+    boolean, // Has Crown
+    boolean, // Has Completed World
+    number, // Team
+    Buffer // Switch Buffer
 ];
 
 export type ReceiveEvents = {
@@ -68,7 +104,7 @@ export type ReceiveEvents = {
 
     SystemMessage: [];
 
-    PlayerJoined: [];
+    PlayerJoined: PlayerJoined;
 
     PlayerLeft: [];
 

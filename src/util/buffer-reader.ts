@@ -44,9 +44,7 @@ export default class BufferReader {
     /**
      *
      */
-    public static from(
-        from: WebSocket.RawData | WithImplicitCoercion<ArrayBuffer> | Buffer
-    ): BufferReader {
+    public static from(from: WebSocket.RawData | WithImplicitCoercion<ArrayBuffer> | Buffer): BufferReader {
         if (from instanceof Buffer) return new BufferReader(from);
         return new BufferReader(Buffer.from(from as any));
     }
@@ -198,8 +196,8 @@ export default class BufferReader {
     }
 
     /**
-     * @param tt 
-     * @param value 
+     * @param tt
+     * @param value
      */
     public static Dynamic(tt: ComponentTypeHeader, value: boolean | number | bigint | string | Buffer) {
         switch (tt) {
@@ -240,10 +238,7 @@ export default class BufferReader {
     /**
      *
      */
-    public subarray(
-        start: number = this.#offset,
-        end: number = this.length
-    ): BufferReader {
+    public subarray(start: number = this.#offset, end: number = this.length): BufferReader {
         return new BufferReader(this.#buffer.subarray(start, end));
     }
 
@@ -258,20 +253,14 @@ export default class BufferReader {
      *
      */
     public writeBigInt64BE(value: bigint) {
-        return (this.#offset = this.#buffer.writeBigInt64BE(
-            value,
-            this.#offset
-        ));
+        return (this.#offset = this.#buffer.writeBigInt64BE(value, this.#offset));
     }
 
     /**
      *
      */
     public writeBigInt64LE(value: bigint) {
-        return (this.#offset = this.#buffer.writeBigInt64LE(
-            value,
-            this.#offset
-        ));
+        return (this.#offset = this.#buffer.writeBigInt64LE(value, this.#offset));
     }
 
     /**
@@ -665,8 +654,7 @@ export default class BufferReader {
      * to be at the end of the current buffer.
      */
     public append(buffer: Buffer) {
-        if (this.#offset !== this.length - 1)
-            throw new Error("Cursor hasn't finished reading yet.");
+        if (this.#offset !== this.length - 1) throw new Error("Cursor hasn't finished reading yet.");
         this.#buffer = Buffer.concat([this.#buffer, buffer]);
         return this;
     }
@@ -712,11 +700,7 @@ export default class BufferReader {
                     arr.push(this.readDynamicBuffer());
                     break;
                 default:
-                    throw new Error(
-                        `While serializing a buffer for data, an unexpected type 0x${type.toString(
-                            16
-                        )} was read. Expected one of 0-8`
-                    );
+                    throw new Error(`While serializing a buffer for data, an unexpected type 0x${type.toString(16)} was read. Expected one of 0-8`);
             }
         }
 

@@ -1,8 +1,6 @@
 import Config from "./config.js";
 
-const data: Response = await fetch(
-    `https://${Config.GameServerLink}/message_types`
-);
+const data: Response = await fetch(`https://${Config.GameServerLink}/message_types`);
 const map: string[] = await data.json();
 
 export const MessageTypes: string[] = map;

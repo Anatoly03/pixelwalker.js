@@ -69,9 +69,7 @@ export default class PixelWalkerClient {
      * ```
      */
     public profiles() {
-        return this.pocketbase.collection(
-            "public_profiles"
-        ) as RecordService<PublicProfile>;
+        return this.pocketbase.collection("public_profiles") as RecordService<PublicProfile>;
     }
 
     /**
@@ -99,9 +97,7 @@ export default class PixelWalkerClient {
      * ```
      */
     public worlds() {
-        return this.pocketbase.collection(
-            "public_worlds"
-        ) as RecordService<PublicWorld>;
+        return this.pocketbase.collection("public_worlds") as RecordService<PublicWorld>;
     }
 
     /**
@@ -136,14 +132,8 @@ export default class PixelWalkerClient {
      * placed after the magic byte `Message = 0x6B`. Read about the byte-level protocol
      * in the [Connection](./connection.ts) class.
      */
-    public async getJoinKey(
-        world_id: string,
-        room_type: (typeof RoomTypes)[0] = RoomTypes[0]
-    ) {
-        const { token } = await this.pocketbase.send(
-            `/api/joinkey/${room_type}/${world_id}`,
-            {}
-        );
+    public async getJoinKey(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]) {
+        const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {});
         return token as string;
     }
 
@@ -152,10 +142,7 @@ export default class PixelWalkerClient {
      * @param world_id
      * @param room_type
      */
-    public async createConnection(
-        world_id: string,
-        room_type: (typeof RoomTypes)[0] = RoomTypes[0]
-    ): Promise<GameConnection> {
+    public async createConnection(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]): Promise<GameConnection> {
         const join_key = await this.getJoinKey(world_id, room_type);
         const connection = new GameConnection(join_key);
 

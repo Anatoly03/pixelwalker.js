@@ -70,10 +70,7 @@ export default class GameConnection<Ready extends boolean = false> {
      * `eventNameand` listener will result in the listener being added, and called,
      * multiple times.
      */
-    public on<
-        Index extends number,
-        Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents
-    >(eventName: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
+    public on<Index extends number, Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents>(eventName: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
 
     public on(event: string, callee: (...args: any[]) => void): this {
         this.#receiver.on(event as any, callee);
@@ -84,10 +81,7 @@ export default class GameConnection<Ready extends boolean = false> {
      * Adds a **one-time** listener function for the event named `eventName`. The
      * next time `eventName` is triggered, this listener is removed and then invoked.
      */
-    public once<
-        Index extends number,
-        Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents
-    >(eventName: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
+    public once<Index extends number, Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents>(eventName: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
 
     public once(event: string, callee: (...args: any[]) => void): this {
         this.#receiver.once(event as any, callee);
@@ -98,10 +92,7 @@ export default class GameConnection<Ready extends boolean = false> {
      * Synchronously calls each of the listeners registered for the event named `eventName`,
      * in the order they were registered, passing the supplied arguments to each.
      */
-    public emit<
-        Index extends number,
-        Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents
-    >(eventName: Event, ...args: ReceiveEvents[Event]): this;
+    public emit<Index extends number, Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents>(eventName: Event, ...args: ReceiveEvents[Event]): this;
 
     public emit(event: string, ...args: any[]): this {
         this.#receiver.emit(event as any, ...args);
@@ -112,22 +103,12 @@ export default class GameConnection<Ready extends boolean = false> {
      * Synchronously sends a message to the game server, evaluating the header
      * bytes and argument format based on `eventName`.
      */
-    public send<
-        Index extends number,
-        Event extends (typeof MessageTypes)[Index] & keyof SendEvents
-    >(eventName: Event, ...args: SendEvents[Event]): this;
+    public send<Index extends number, Event extends (typeof MessageTypes)[Index] & keyof SendEvents>(eventName: Event, ...args: SendEvents[Event]): this;
 
     public send(event: string, ...args: (boolean | number | bigint | string | Buffer)[]): this {
-        const format: ComponentTypeHeader[] = SendEventsFormat[
-            event as keyof typeof SendEventsFormat
-        ] as any;
+        const format: ComponentTypeHeader[] = SendEventsFormat[event as keyof typeof SendEventsFormat] as any;
 
-        const buffer = [
-            Buffer.from([
-                GameConnection.HeaderBytes.Message,
-                GameConnection.MessageTypes.findIndex((m) => m === event),
-            ]),
-        ];
+        const buffer = [Buffer.from([GameConnection.HeaderBytes.Message, GameConnection.MessageTypes.findIndex((m) => m === event)])];
 
         for (let i = 0; i < format.length; i++) {
             buffer.push(BufferReader.Dynamic(format[i], args[i]));
@@ -141,9 +122,7 @@ export default class GameConnection<Ready extends boolean = false> {
      *
      */
     public bind(): GameConnection<true> {
-        this.#socket = new WebSocket(
-            `wss://${Config.GameServerLink}/room/${this.#joinkey}`
-        ) as any;
+        this.#socket = new WebSocket(`wss://${Config.GameServerLink}/room/${this.#joinkey}`) as any;
         this.#socket.binaryType = "arraybuffer";
 
         /**
@@ -154,9 +133,7 @@ export default class GameConnection<Ready extends boolean = false> {
          * established.
          */
         this.#socket.on("unexpected-response", (request, response) => {
-            throw new Error(
-                `Could not connect to ${request.method} "${request.host}/${request.path}": ${response.statusCode} ${response.statusMessage}`
-            );
+            throw new Error(`Could not connect to ${request.method} "${request.host}/${request.path}": ${response.statusCode} ${response.statusMessage}`);
         });
 
         /**
@@ -164,30 +141,21 @@ export default class GameConnection<Ready extends boolean = false> {
          *
          * The message event is received for every incoming socket message.
          */
-        this.#socket.on(
-            "message",
-            (message: WithImplicitCoercion<ArrayBuffer>) => {
-                const buffer = BufferReader.from(message);
-                if (buffer.length == 0) return;
+        this.#socket.on("message", (message: WithImplicitCoercion<ArrayBuffer>) => {
+            const buffer = BufferReader.from(message);
+            if (buffer.length == 0) return;
 
-                switch (buffer.readUInt8()) {
-                    case GameConnection.HeaderBytes.Ping:
-                        return this.#socket.send(
-                            Buffer.from([GameConnection.HeaderBytes.Ping]),
-                            {}
-                        );
+            switch (buffer.readUInt8()) {
+                case GameConnection.HeaderBytes.Ping:
+                    return this.#socket.send(Buffer.from([GameConnection.HeaderBytes.Ping]), {});
 
-                    case GameConnection.HeaderBytes.Message:
-                        const messageId = buffer.read7BitInt();
-                        const args = buffer.deserialize();
-                        this.emit(
-                            GameConnection.MessageTypes[messageId] as any,
-                            ...args
-                        );
-                        break;
-                }
+                case GameConnection.HeaderBytes.Message:
+                    const messageId = buffer.read7BitInt();
+                    const args = buffer.deserialize();
+                    this.emit(GameConnection.MessageTypes[messageId] as any, ...args);
+                    break;
             }
-        );
+        });
 
         /**
          * @event
@@ -196,12 +164,9 @@ export default class GameConnection<Ready extends boolean = false> {
          * promise rejections to the event emitter.
          */
         process.on("unhandledRejection", (error) => {
-            if (!(error instanceof Error))
-                return console.error("Unhandled Rejection:", error);
+            if (!(error instanceof Error)) return console.error("Unhandled Rejection:", error);
 
-            console.error(
-                `Unhandled Rejection: ${error.name}: ${error.message}\n${error.stack}`
-            );
+            console.error(`Unhandled Rejection: ${error.name}: ${error.message}\n${error.stack}`);
         });
 
         /**
