@@ -43,7 +43,7 @@ export default class PixelWalkerClient {
     }
 
     protected constructor() {
-        this.pocketbase = new PocketBase(`https://${Config.APIServerLink}`);
+        this.pocketbase = new PocketBase(Config.APIServerLink);
     }
 
     /**

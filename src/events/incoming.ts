@@ -32,6 +32,19 @@ export type PlayerInit = [
     number[] // World Data
 ];
 
+/**
+ * The `PlayerChatMessage` event is emitted on every chat message.
+ *
+ * | Index | Type | Description |
+ * | --- | --- | --- |
+ * | 0 | `number` | Player Id |
+ * | 1 | `string` | Content |
+ */
+export type PlayerChatMessage = [
+    number, // Player Id
+    string, // Message
+];
+
 export type ReceiveEvents = {
     PlayerInit: PlayerInit;
 
@@ -49,7 +62,7 @@ export type ReceiveEvents = {
 
     WorldBlockFilled: [];
 
-    PlayerChatMessage: [];
+    PlayerChatMessage: PlayerChatMessage;
 
     OldChatMessages: [];
 

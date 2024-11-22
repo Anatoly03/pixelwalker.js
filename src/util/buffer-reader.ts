@@ -74,7 +74,7 @@ export default class BufferReader {
 
         const buffer = BufferReader.alloc(1 + lengthByteCount + stringByteLen);
         buffer.writeUInt8(ComponentTypeHeader.String);
-        buffer.write7BitInt(lengthByteCount);
+        buffer.write7BitInt(stringByteLen);
         buffer.write(value);
 
         return buffer.toBuffer();
@@ -195,6 +195,33 @@ export default class BufferReader {
         const buffer = BufferReader.alloc(this.length7BitInt(value));
         buffer.write7BitInt(value);
         return buffer.toBuffer();
+    }
+
+    /**
+     * @param tt 
+     * @param value 
+     */
+    public static Dynamic(tt: ComponentTypeHeader, value: boolean | number | bigint | string | Buffer) {
+        switch (tt) {
+            case ComponentTypeHeader.String:
+                return this.String(value as string);
+            case ComponentTypeHeader.Byte:
+                return this.Byte(value as number);
+            case ComponentTypeHeader.Int16:
+                return this.Int16(value as number);
+            case ComponentTypeHeader.Int32:
+                return this.Int32(value as number);
+            case ComponentTypeHeader.Int64:
+                return this.Int64(value as bigint);
+            case ComponentTypeHeader.Float:
+                return this.Float(value as number);
+            case ComponentTypeHeader.Double:
+                return this.Double(value as number);
+            case ComponentTypeHeader.Boolean:
+                return this.Boolean(value as boolean);
+            case ComponentTypeHeader.ByteArray:
+                return this.ByteArray(value as Buffer);
+        }
     }
 
     //

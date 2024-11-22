@@ -3,9 +3,9 @@ import WebSocket from "ws";
 
 import Config from "./data/config.js";
 import MessageTypes from "./data/message-types.js";
-import BufferReader from "./util/buffer-reader.js";
+import BufferReader, { ComponentTypeHeader } from "./util/buffer-reader.js";
 import ReceiveEvents from "./events/incoming.js";
-import SendEvents from "./events/outgoing.js";
+import SendEvents, { SendEventsFormat } from "./events/outgoing.js";
 
 export default class GameConnection<Ready extends boolean = false> {
     /**
@@ -94,24 +94,29 @@ export default class GameConnection<Ready extends boolean = false> {
      */
     public send<
         Index extends number,
-        Event extends (typeof MessageTypes)[Index] & keyof typeof SendEvents
-    >(event: Event, ...args: (Buffer | number[] | number)[]): this;
+        Event extends (typeof MessageTypes)[Index] & keyof SendEvents
+    >(event: Event, ...args: SendEvents[Event]): this;
 
-    public send(event: string, ...args: (Buffer | number[] | number)[]): this {
-        const header = Buffer.from([
-            GameConnection.HeaderBytes.Message,
-            GameConnection.MessageTypes.findIndex((m) => m === event),
-        ]);
+    public send(event: string, ...args: (boolean | number | bigint | string | Buffer)[]): this {
+        const format: ComponentTypeHeader[] = SendEventsFormat[
+            event as keyof typeof SendEventsFormat
+        ] as any;
 
-        args.unshift(header);
+        const buffer = [
+            Buffer.from([
+                GameConnection.HeaderBytes.Message,
+                GameConnection.MessageTypes.findIndex((m) => m === event),
+            ]),
+        ];
 
-        const processed = args.map((b) => {
-            if (b instanceof Buffer) return b;
-            if (typeof b == "number") return Buffer.from([b]);
-            return Buffer.from(b);
-        });
+        for (let i = 0; i < format.length; i++) {
+            console.log(format[i], args[i]);
+            buffer.push(BufferReader.Dynamic(format[i], args[i]));
+        }
 
-        this.#socket.send(Buffer.concat(processed));
+        console.log(buffer);
+
+        this.#socket.send(Buffer.concat(buffer));
         return this;
     }
 
@@ -124,16 +129,24 @@ export default class GameConnection<Ready extends boolean = false> {
         ) as any;
         this.#socket.binaryType = "arraybuffer";
 
-        // Unexpected Response is received usually when the server is down. In
-        // general, it is received when the opening connection could not be
-        // established.
+        /**
+         * @event
+         *
+         * Unexpected Response is received usually when the server is down. In
+         * general, it is received when the opening connection could not be
+         * established.
+         */
         this.#socket.on("unexpected-response", (request, response) => {
             throw new Error(
                 `Could not connect to ${request.method} "${request.host}/${request.path}": ${response.statusCode} ${response.statusMessage}`
             );
         });
 
-        // The message event is received for every incoming socket message.
+        /**
+         * @event
+         *
+         * The message event is received for every incoming socket message.
+         */
         this.#socket.on(
             "message",
             (message: WithImplicitCoercion<ArrayBuffer>) => {
@@ -165,13 +178,14 @@ export default class GameConnection<Ready extends boolean = false> {
          * Report unhandled promises. This will log all unhandled
          * promise rejections to the event emitter.
          */
-        process.on('unhandledRejection', (error) => {
+        process.on("unhandledRejection", (error) => {
             if (!(error instanceof Error))
-                return console.error('Unhandled Rejection:', error);
+                return console.error("Unhandled Rejection:", error);
 
-            console.error(`Unhandled Rejection: ${error.name}: ${error.message}\n${error.stack}`);
+            console.error(
+                `Unhandled Rejection: ${error.name}: ${error.message}\n${error.stack}`
+            );
         });
-
 
         /**
          * @event
@@ -181,7 +195,7 @@ export default class GameConnection<Ready extends boolean = false> {
          * of the socket tunnel, so the player instances don't
          * flood the world.
          */
-        process.on('SIGINT', (signals) => {
+        process.on("SIGINT", (signals) => {
             this.disconnect();
         });
 

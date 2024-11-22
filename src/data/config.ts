@@ -5,8 +5,8 @@ export default {
      * accounts, and persistant storage.
      */
     get APIServerLink() {
-        if (process.env.LOCALHOST) return "127.0.0.1:8090";
-        return "api.pixelwalker.net";
+        if (process.env.LOCALHOST) return "http://127.0.0.1:8090";
+        return "https://api.pixelwalker.net";
     },
 
     /**
