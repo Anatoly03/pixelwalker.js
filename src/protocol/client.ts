@@ -1,6 +1,7 @@
 import PocketBase, { RecordService } from "pocketbase";
 import Config from "../data/config.js";
 import PublicProfile from "../types/public-profile.js";
+import PublicWorld from "../types/public-world.js";
 
 export default class PixelWalkerClient {
     /**
@@ -47,20 +48,17 @@ export default class PixelWalkerClient {
      * @example
      *
      * ```json
-     * // https://api.pixelwalker.net/api/collections/public_profiles/records?perPage=1&page=1
-     * // yields the following object
+     * // Test it out: https://api.pixelwalker.net/api/collections/public_profiles/records?perPage=500&page=1
+     * 
      * {
-     *   ...
-     *   "items": [{
-     *     "admin": true,
-     *     "banned": false,
-     *     "collectionId": "0wl44rzm22wuf2q",
-     *     "collectionName": "public_profiles",
-     *     "created": "2024-01-16 07:51:33.724Z",
-     *     "face": 6,
-     *     "id": "129zur8t6e88m4b",
-     *     "username": "PRIDDLE"
-     *   }]
+     *   "admin": false,
+     *   "banned": false,
+     *   "collectionId": "0wl44rzm22wuf2q",
+     *   "collectionName": "public_profiles",
+     *   "created": "2024-04-17 08:50:37.671Z",
+     *   "face": 15,
+     *   "id": "5cy5r7za1r3splc",
+     *   "username": "ANATOLY"
      * }
      * ```
      */
@@ -68,5 +66,35 @@ export default class PixelWalkerClient {
         return this.pocketbase.collection(
             "public_profiles"
         ) as RecordService<PublicProfile>;
+    }
+
+    /**
+     * Returns a Pocketbase [RecordService](https://github.com/pocketbase/js-sdk/blob/master/src/services/RecordService.ts).
+     * See usage at the [PocketBase](https://pocketbase.io/) website for [searching records](https://pocketbase.io/docs/api-records#listsearch-records).
+     * This method returns a collection handler that allows you to search through all public worlds.
+     *
+     * @example
+     *
+     * ```
+     * // Test it out: https://api.pixelwalker.net/api/collections/public_worlds/records?perPage=500&page=1
+     * 
+     * {
+     *   "collectionId": "rhrbt6wqhc4s0cp",
+     *   "collectionName": "public_worlds",
+     *   "description": "This is a 200x200 world",
+     *   "height": 200,
+     *   "id": "djtqrcjn4fzyhi8",
+     *   "minimap": "djtqrcjn4fzyhi8_dsTobiFBDM.png",
+     *   "owner": "5cy5r7za1r3splc",
+     *   "plays": 243,
+     *   "title": "200x200 World",
+     *   "width": 200
+     * }
+     * ```
+     */
+    public worlds() {
+        return this.pocketbase.collection(
+            'public_worlds'
+        ) as RecordService<PublicWorld>;
     }
 }
