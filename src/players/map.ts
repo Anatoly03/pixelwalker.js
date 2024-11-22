@@ -1,6 +1,7 @@
 import EventEmitter from "events";
 import GameConnection from "../connection.js";
 import Player, { SelfPlayer } from "../types/player.js";
+import { BlockMappingsReverse } from "../data/block-mappings.js";
 
 export type PlayerMapEvents = {
     Init: [SelfPlayer];
@@ -10,18 +11,25 @@ export type PlayerMapEvents = {
     GodMode: [Player, boolean];
     ModMode: [Player, boolean];
     Respawn: [Player];
+    Crown: [Player | undefined, Player | undefined];
+    Trophy: [Player];
 };
 
 /**
  * The `PlayerMap` class is a wrapper around a map of players in the room.
  * It provides some methods to interact with the event manager.
- * 
+ *
  * | Event | Arguments | Description |
  * | --- | --- | --- |
  * | `Init` | `new selfPlayer` | The client is initialized. |
  * | `Add` | `new player` | A player joins the room. |
  * | `Face` | `old player`, `new face` | A player changes their face. The old face is stored under `arg0.face`, and the new face is stored under `face` |
  * | `Leave` | `old player` | A player leaves the room. |
+ * | `GodMode` | `player`, `god` | A player enables or disables god mode. |
+ * | `ModMode` | `player`, `mod` | A player enables or disables moderator mode. |
+ * | `Respawn` | `player` | A player respawns. |
+ * | `Crown` | `old crown`, `new crown` | The crown is passed from one player to another. |
+ * | `Trophy` | `player` | A player wins a trophy. |
  */
 export default class PlayerMap {
     [id: number]: Player | undefined;
@@ -35,6 +43,11 @@ export default class PlayerMap {
      * The self player is the player that is the client itself.
      */
     public self: SelfPlayer | undefined;
+
+    /**
+     * The public crown is the player that is holding the golden crown.
+     */
+    public crown: Player | undefined;
 
     /**
      * The event event attributes are the internal event emitters for the
@@ -114,51 +127,69 @@ export default class PlayerMap {
             this.emit("Add", player);
         });
 
-        connection.on('PlayerLeft', (id) => {
-            this.emit('Leave', this.players.get(id)!);
+        connection.on("PlayerLeft", (id) => {
+            this.emit("Leave", this.players.get(id)!);
             this.players.delete(id);
         });
 
-        connection.on('PlayerFace', (id, face) => {
+        connection.on("PlayerFace", (id, face) => {
             const player = this.players.get(id)!;
-            this.emit('Face', player, face);
+            this.emit("Face", player, face);
             player.face = face;
         });
 
-        connection.on('PlayerGodMode', (id, god) => {
+        connection.on("PlayerGodMode", (id, god) => {
             const player = this.players.get(id)!;
-            this.emit('GodMode', player, god);
+            this.emit("GodMode", player, god);
             player.isInGod = god;
         });
 
-        connection.on('PlayerModMode', (id, mod) => {
+        connection.on("PlayerModMode", (id, mod) => {
             const player = this.players.get(id)!;
-            this.emit('ModMode', player, mod);
+            this.emit("ModMode", player, mod);
             player.isInMod = mod;
         });
 
-        connection.on('PlayerRespawn', (id, x, y) => {
+        connection.on("PlayerRespawn", (id, x, y) => {
             const player = this.players.get(id)!;
             player.x = x;
             player.y = y;
-            this.emit('Respawn', player);
-        })
+            this.emit("Respawn", player);
+        });
 
-        connection.on('PlayerReset', (...args) => {
+        connection.on("PlayerReset", (...args) => {
             const [id] = args;
             const player = this.players.get(id)!;
 
-            console.log('TODO RESET PLAYER: ' + player.username)
-            
+            console.log("TODO RESET PLAYER: " + player.username);
+
             if (args.length === 3) {
                 const [_, x, y] = args;
 
                 player.x = x;
                 player.y = y;
 
-                this.emit('Respawn', player);
+                this.emit("Respawn", player);
             }
-        })
+        });
+
+        connection.on("PlayerTouchBlock", (id, x, y, blockId) => {
+            const player = this.players.get(id)!;
+
+            switch (BlockMappingsReverse[blockId]) {
+                case "crown_gold":
+                    if (this.crown) this.crown.crown = false;
+                    player.crown = true;
+                    this.emit("Crown", this.crown, player);
+                    break;
+                case "crown_silver":
+                    player.win = true;
+                    this.emit("Trophy", player);
+                    break;
+                default:
+                    console.log("TODO TOUCH BLOCK: " + blockId);
+            }
+        });
 
         return new Proxy(this, {
             get: (target, prop: string) => {

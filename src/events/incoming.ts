@@ -170,6 +170,23 @@ export type PlayerReset = [
     number, // Player Y
 ]
 
+/**
+ * The `PlayerTouchBlock` event is emitted when a player touches a block.
+ * 
+ * | Index | Type | Description |
+ * | --- | --- | --- |
+ * | 0 | `number` | Player Id |
+ * | 1 | `number` | Block X |
+ * | 2 | `number` | Block Y |
+ * | 3 | `number` | Block Id |
+ */
+export type PlayerTouchBlock = [
+    number, // Player Id
+    number, // Block X
+    number, // Block Y
+    number, // Block Id
+];
+
 export type ReceiveEvents = {
     PlayerInit: PlayerInit;
 
@@ -205,8 +222,7 @@ export type ReceiveEvents = {
     PlayerModMode: PlayerModMode;
     PlayerRespawn: PlayerRespawn;
     PlayerReset: PlayerReset;
-
-    PlayerTouchBlock: [];
+    PlayerTouchBlock: PlayerTouchBlock;
 
     PlayerTouchPlayer: [];
 
