@@ -9,6 +9,7 @@ export type PlayerMapEvents = {
     Face: [Player, number];
     GodMode: [Player, boolean];
     ModMode: [Player, boolean];
+    Respawn: [Player];
 };
 
 /**
@@ -135,6 +136,29 @@ export default class PlayerMap {
             this.emit('ModMode', player, mod);
             player.isInMod = mod;
         });
+
+        connection.on('PlayerRespawn', (id, x, y) => {
+            const player = this.players.get(id)!;
+            player.x = x;
+            player.y = y;
+            this.emit('Respawn', player);
+        })
+
+        connection.on('PlayerReset', (...args) => {
+            const [id] = args;
+            const player = this.players.get(id)!;
+
+            console.log('TODO RESET PLAYER: ' + player.username)
+            
+            if (args.length === 3) {
+                const [_, x, y] = args;
+
+                player.x = x;
+                player.y = y;
+
+                this.emit('Respawn', player);
+            }
+        })
 
         return new Proxy(this, {
             get: (target, prop: string) => {

@@ -131,6 +131,45 @@ export type PlayerModMode = [
     boolean, // Mod Mode Enabled
 ];
 
+/**
+ * The `PlayerRespawn` event is emitted when a player respawns.
+ * 
+ * | Index | Type | Description |
+ * | --- | --- | --- |
+ * | 0 | `number` | Player Id |
+ * | 1 | `number` | Player X |
+ * | 2 | `number` | Player Y |
+ */
+export type PlayerRespawn = [
+    number, // Player Id
+    number, // Player X
+    number, // Player Y
+];
+
+/**
+ * The `PlayerReset` event is emitted when a player resets. This
+ * event has several overloads depending on wether the player also
+ * respawns or not. The player is reset without coordinates in god
+ * or mod mode.
+ * 
+ * | Index | Type | Description |
+ * | --- | --- | --- |
+ * | 0 | `number` | Player Id |
+ * 
+ * | Index | Type | Description |
+ * | --- | --- | --- |
+ * | 0 | `number` | Player Id |
+ * | 1 | `number` | Player X |
+ * | 2 | `number` | Player Y |
+ */
+export type PlayerReset = [
+    number, // Player Id
+] | [
+    number, // Player Id
+    number, // Player X
+    number, // Player Y
+]
+
 export type ReceiveEvents = {
     PlayerInit: PlayerInit;
 
@@ -164,10 +203,8 @@ export type ReceiveEvents = {
     PlayerFace: PlayerFace;
     PlayerGodMode: PlayerGodMode;
     PlayerModMode: PlayerModMode;
-
-    PlayerRespawn: [];
-
-    PlayerReset: [];
+    PlayerRespawn: PlayerRespawn;
+    PlayerReset: PlayerReset;
 
     PlayerTouchBlock: [];
 
