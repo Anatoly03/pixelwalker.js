@@ -1,10 +1,14 @@
 import PocketBase, { RecordService } from "pocketbase";
+import GameConnection from "./connection.js";
 
 import Config from "./data/config.js";
 import RoomTypes from "./data/room-types.js";
 import PublicProfile from "./types/public-profile.js";
 import PublicWorld from "./types/public-world.js";
 
+/**
+ *
+ */
 export default class PixelWalkerClient {
     /**
      * The PixelWalker backend consists of several servers, and the API
@@ -141,5 +145,20 @@ export default class PixelWalkerClient {
             {}
         );
         return token as string;
+    }
+
+    /**
+     *
+     * @param world_id
+     * @param room_type
+     */
+    public async createConnection(
+        world_id: string,
+        room_type: (typeof RoomTypes)[0] = RoomTypes[0]
+    ): Promise<GameConnection> {
+        const join_key = await this.getJoinKey(world_id, room_type);
+        const connection = new GameConnection(join_key);
+
+        return connection;
     }
 }

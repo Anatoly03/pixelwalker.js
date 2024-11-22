@@ -5,7 +5,20 @@
 
 #### Example
 
-TODO
+```ts
+import "dotenv/config"
+import Client from 'pixelwalker.js'
+
+const client = Client.withToken(process.env.token)
+const connection = await client.createConnection('r450e0e380a815a');
+
+connection.on('PlayerInit', (...args) => {
+    connection.send('PlayerInit');
+    console.log(args);
+})
+
+connection.bind();
+```
 
 ## Installation
 
