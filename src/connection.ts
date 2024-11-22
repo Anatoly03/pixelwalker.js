@@ -64,12 +64,16 @@ export default class GameConnection<Ready extends boolean = false> {
     }
 
     /**
-     * Adds the listener function to the end of the listeners array for the event named eventName. No checks are made to see if the listener has already been added. Multiple calls passing the same combination of eventNameand listener will result in the listener being added, and called, multiple times.
+     * Adds the listener function to the end of the listeners array for the
+     * event named `eventName`. No checks are made to see if the listener has
+     * already been added. Multiple calls passing the same combination of
+     * `eventNameand` listener will result in the listener being added, and called,
+     * multiple times.
      */
     public on<
         Index extends number,
         Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents
-    >(event: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
+    >(eventName: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
 
     public on(event: string, callee: (...args: any[]) => void): this {
         this.#receiver.on(event as any, callee);
@@ -77,12 +81,27 @@ export default class GameConnection<Ready extends boolean = false> {
     }
 
     /**
-     * Synchronously calls each of the listeners registered for the event namedeventName, in the order they were registered, passing the supplied arguments to each.
+     * Adds a **one-time** listener function for the event named `eventName`. The
+     * next time `eventName` is triggered, this listener is removed and then invoked.
+     */
+    public once<
+        Index extends number,
+        Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents
+    >(eventName: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
+
+    public once(event: string, callee: (...args: any[]) => void): this {
+        this.#receiver.once(event as any, callee);
+        return this;
+    }
+
+    /**
+     * Synchronously calls each of the listeners registered for the event named `eventName`,
+     * in the order they were registered, passing the supplied arguments to each.
      */
     public emit<
         Index extends number,
         Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents
-    >(event: Event, ...args: ReceiveEvents[Event]): this;
+    >(eventName: Event, ...args: ReceiveEvents[Event]): this;
 
     public emit(event: string, ...args: any[]): this {
         this.#receiver.emit(event as any, ...args);
@@ -90,12 +109,13 @@ export default class GameConnection<Ready extends boolean = false> {
     }
 
     /**
-     * Synchronously calls each of the listeners registered for the event namedeventName, in the order they were registered, passing the supplied arguments to each.
+     * Synchronously sends a message to the game server, evaluating the header
+     * bytes and argument format based on `eventName`.
      */
     public send<
         Index extends number,
         Event extends (typeof MessageTypes)[Index] & keyof SendEvents
-    >(event: Event, ...args: SendEvents[Event]): this;
+    >(eventName: Event, ...args: SendEvents[Event]): this;
 
     public send(event: string, ...args: (boolean | number | bigint | string | Buffer)[]): this {
         const format: ComponentTypeHeader[] = SendEventsFormat[
@@ -110,11 +130,8 @@ export default class GameConnection<Ready extends boolean = false> {
         ];
 
         for (let i = 0; i < format.length; i++) {
-            console.log(format[i], args[i]);
             buffer.push(BufferReader.Dynamic(format[i], args[i]));
         }
-
-        console.log(buffer);
 
         this.#socket.send(Buffer.concat(buffer));
         return this;
