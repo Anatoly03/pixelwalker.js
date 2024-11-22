@@ -128,30 +128,41 @@ export default class PlayerMap {
         });
 
         connection.on("PlayerLeft", (id) => {
-            this.emit("Leave", this.players.get(id)!);
+            const player = this.players.get(id);
+            if (!player) return;
+
+            this.emit("Leave", player);
             this.players.delete(id);
         });
 
         connection.on("PlayerFace", (id, face) => {
-            const player = this.players.get(id)!;
+            const player = this.players.get(id);
+            if (!player) return;
+
             this.emit("Face", player, face);
             player.face = face;
         });
 
         connection.on("PlayerGodMode", (id, god) => {
-            const player = this.players.get(id)!;
+            const player = this.players.get(id);
+            if (!player) return;
+
             this.emit("GodMode", player, god);
             player.isInGod = god;
         });
 
         connection.on("PlayerModMode", (id, mod) => {
-            const player = this.players.get(id)!;
+            const player = this.players.get(id);
+            if (!player) return;
+
             this.emit("ModMode", player, mod);
             player.isInMod = mod;
         });
 
         connection.on("PlayerRespawn", (id, x, y) => {
-            const player = this.players.get(id)!;
+            const player = this.players.get(id);
+            if (!player) return;
+
             player.x = x;
             player.y = y;
             this.emit("Respawn", player);
@@ -159,7 +170,8 @@ export default class PlayerMap {
 
         connection.on("PlayerReset", (...args) => {
             const [id] = args;
-            const player = this.players.get(id)!;
+            const player = this.players.get(id);
+            if (!player) return;
 
             console.log("TODO RESET PLAYER: " + player.username);
 
@@ -174,7 +186,8 @@ export default class PlayerMap {
         });
 
         connection.on("PlayerTouchBlock", (id, x, y, blockId) => {
-            const player = this.players.get(id)!;
+            const player = this.players.get(id);
+            if (!player) return;
 
             switch (BlockMappingsReverse[blockId]) {
                 case "crown_gold":
