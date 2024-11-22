@@ -1,5 +1,7 @@
 import PocketBase, { RecordService } from "pocketbase";
+
 import Config from "./data/config.js";
+import RoomTypes from "./data/room-types.js";
 import PublicProfile from "./types/public-profile.js";
 import PublicWorld from "./types/public-world.js";
 
@@ -49,7 +51,7 @@ export default class PixelWalkerClient {
      *
      * ```json
      * // Test it out: https://api.pixelwalker.net/api/collections/public_profiles/records?perPage=500&page=1
-     * 
+     *
      * {
      *   "admin": false,
      *   "banned": false,
@@ -77,7 +79,7 @@ export default class PixelWalkerClient {
      *
      * ```
      * // Test it out: https://api.pixelwalker.net/api/collections/public_worlds/records?perPage=500&page=1
-     * 
+     *
      * {
      *   "collectionId": "rhrbt6wqhc4s0cp",
      *   "collectionName": "public_worlds",
@@ -94,7 +96,50 @@ export default class PixelWalkerClient {
      */
     public worlds() {
         return this.pocketbase.collection(
-            'public_worlds'
+            "public_worlds"
         ) as RecordService<PublicWorld>;
+    }
+
+    /**
+     * Generate a join key for a specific world id. Optionally overwrite room type.
+     * This key can then be used to connect to a websocket on the game server.
+     *
+     * @example
+     *
+     * In this example you can set up a custom socket connection with the server.
+     * After logging in with [PocketBase](https://pocketbase.io/), you retrieve
+     * the join key, which then can be used at the game server at endpoint
+     * `/room/:joinkey` to establish a websocket connection. The code below
+     * demonstrates a simple client responding to pings and logging all other
+     * received packages. Note, that since you don't send the `PlayerInit = 0`
+     * message here, you will be disconnected in some seconds after connecting.
+     *
+     * ```ts
+     * const joinkey = await client.getJoinKey('4naaehf4xxexavv');
+     * const socket = new WebSocket(`wss://game.pixelwalker.net/room/${joinkey}`);
+     * socket.binaryType = 'arraybuffer';
+     *
+     * socket.on('message', (buffer) => {
+     *     buffer = Buffer.from(message as WithImplicitCoercion<ArrayBuffer>);
+     *     if (buffer.length == 0) return;
+     *     if (buffer[0] == 0x3F) return socket.send(Buffer.from([0x3F]), {});
+     *     console.log(buffer.subarray(1));
+     * })
+     * ```
+     *
+     * To keep an indefinite connection running, you will have to accept the `PlayerInit`
+     * handshake. This does not require any further arguments, however needs to be
+     * placed after the magic byte `Message = 0x6B`. Read about the byte-level protocol
+     * in the [Connection](./connection.ts) class.
+     */
+    public async getJoinKey(
+        world_id: string,
+        room_type: (typeof RoomTypes)[0] = RoomTypes[0]
+    ) {
+        const { token } = await this.pocketbase.send(
+            `/api/joinkey/${room_type}/${world_id}`,
+            {}
+        );
+        return token as string;
     }
 }
