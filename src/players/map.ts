@@ -32,7 +32,7 @@ export type PlayerMapEvents = {
  * | `Trophy` | `player` | A player wins a trophy. |
  */
 export default class PlayerMap {
-    [id: number]: Player | undefined;
+    readonly [id: number]: Player | undefined;
 
     /**
      * The Player map contains an updated map of players in the room.
