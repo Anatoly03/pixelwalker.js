@@ -41,8 +41,8 @@ export class Block {
     /**
      * Block arguments are additional data that is sent with the block.
     */
-   public args: (string | number | bigint | boolean | Buffer)[] = [];
-   private args_t: ComponentTypeHeader[] = [];
+    public args: (string | number | bigint | boolean | Buffer)[] = [];
+    private args_t: ComponentTypeHeader[] = [];
 
     /**
      * Create a new block instance based on its' block id.

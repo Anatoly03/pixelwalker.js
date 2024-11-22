@@ -38,6 +38,17 @@ export default class Structure<Meta extends { [keys: number | string]: number | 
     }
 
     /**
+     * Clears the layer completely.
+     */
+    public clear(): this {
+        for (let i = 0; i < Structure.LAYER_COUNT; i++) {
+            this[i].clear();
+        }
+
+        return this;
+    }
+
+    /**
      * Provides a custom string representation of the block which
      * is used for printing the block to stdout.
      */

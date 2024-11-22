@@ -2,11 +2,13 @@ import EventEmitter from "events";
 import GameConnection from "../connection";
 import BufferReader from "../util/buffer-reader";
 import Structure from "./structure";
+import Block from "./block";
 
 export type WorldMeta = {
     title: string;
     owner: string;
     plays: number;
+    description: string;
 };
 
 export type WorldEvents = {
@@ -39,7 +41,7 @@ export default class World {
         connection.on("PlayerInit", (_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, title, plays, owner, description, visibility, isUnsaved, hasUnsavedChanges, globalSwitchStates, width, height, worldData) => {
             const buffer = BufferReader.from(worldData);
 
-            this.meta = { title, owner, plays };
+            this.meta = { title, owner, plays, description };
             this.structure = new Structure(width, height).deserialize(buffer);
 
             if (buffer.subarray().length) throw new Error(`World data buffer has ${buffer.subarray().length} remaining bytes.`);
