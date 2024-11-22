@@ -32,7 +32,7 @@ export type PlayerInit = [
     number[] // World Data
 ];
 
-export type PixelWalkerEvents = {
+export type ReceiveEvents = {
     PlayerInit: PlayerInit;
 
     PlayerUpdateRights: [];
@@ -98,4 +98,4 @@ export type PixelWalkerEvents = {
     PlayerDirectMessage: [];
 };
 
-export default PixelWalkerEvents;
+export default ReceiveEvents;

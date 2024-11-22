@@ -4,7 +4,8 @@ import WebSocket from "ws";
 import Config from "./data/config.js";
 import MessageTypes from "./data/message-types.js";
 import BufferReader from "./util/buffer-reader.js";
-import PixelWalkerEvents from "./events.js";
+import ReceiveEvents from "./events/incoming.js";
+import SendEvents from "./events/outgoing.js";
 
 export default class GameConnection<Ready extends boolean = false> {
     /**
@@ -44,7 +45,7 @@ export default class GameConnection<Ready extends boolean = false> {
      * The event event attributes are the internal event emitters for the
      * game connection. They are used as an abstraction layer to append events.
      */
-    #receiver: EventEmitter<PixelWalkerEvents> = new EventEmitter();
+    #receiver: EventEmitter<ReceiveEvents> = new EventEmitter();
 
     /**
      * **NOTE**: Creating a `GameConnection` is not enough to connect to the game.
@@ -67,8 +68,8 @@ export default class GameConnection<Ready extends boolean = false> {
      */
     public on<
         Index extends number,
-        Event extends (typeof MessageTypes)[Index] & keyof PixelWalkerEvents
-    >(event: Event, cb: (...args: PixelWalkerEvents[Event]) => void): this;
+        Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents
+    >(event: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
 
     public on(event: string, callee: (...args: any[]) => void): this {
         this.#receiver.on(event as any, callee);
@@ -80,8 +81,8 @@ export default class GameConnection<Ready extends boolean = false> {
      */
     public emit<
         Index extends number,
-        Event extends (typeof MessageTypes)[Index] & keyof PixelWalkerEvents
-    >(event: Event, ...args: PixelWalkerEvents[Event]): this;
+        Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents
+    >(event: Event, ...args: ReceiveEvents[Event]): this;
 
     public emit(event: string, ...args: any[]): this {
         this.#receiver.emit(event as any, ...args);
@@ -93,7 +94,7 @@ export default class GameConnection<Ready extends boolean = false> {
      */
     public send<
         Index extends number,
-        Event extends (typeof MessageTypes)[Index]
+        Event extends (typeof MessageTypes)[Index] & keyof typeof SendEvents
     >(event: Event, ...args: (Buffer | number[] | number)[]): this;
 
     public send(event: string, ...args: (Buffer | number[] | number)[]): this {
@@ -158,6 +159,39 @@ export default class GameConnection<Ready extends boolean = false> {
             }
         );
 
+        /**
+         * @event
+         *
+         * Report unhandled promises. This will log all unhandled
+         * promise rejections to the event emitter.
+         */
+        process.on('unhandledRejection', (error) => {
+            if (!(error instanceof Error))
+                return console.error('Unhandled Rejection:', error);
+
+            console.error(`Unhandled Rejection: ${error.name}: ${error.message}\n${error.stack}`);
+        });
+
+
+        /**
+         * @event
+         *
+         * Interupt signal. Disconnect the websocket on interupt
+         * signal. This is mainly used to signal instant closing
+         * of the socket tunnel, so the player instances don't
+         * flood the world.
+         */
+        process.on('SIGINT', (signals) => {
+            this.disconnect();
+        });
+
         return this as GameConnection<true>;
+    }
+
+    /**
+     * Disconnect the websocket.
+     */
+    public disconnect() {
+        this.#socket.close();
     }
 }
