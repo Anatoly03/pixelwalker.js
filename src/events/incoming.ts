@@ -105,6 +105,32 @@ export type PlayerFace = [
     number, // Face Id
 ];
 
+/**
+ * The `PlayerGodMode` event is emitted when a player enables god mode.
+ * 
+ * | Index | Type | Description |
+ * | --- | --- | --- |
+ * | 0 | `number` | Player Id |
+ * | 1 | `boolean` | Enabled |
+ */
+export type PlayerGodMode = [
+    number, // Player Id
+    boolean, // God Mode Enabled
+];
+
+/**
+ * The `PlayerModMode` event is emitted when a player enables moderator mode.
+ * 
+ * | Index | Type | Description |
+ * | --- | --- | --- |
+ * | 0 | `number` | Player Id |
+ * | 1 | `boolean` | Enabled |
+ */
+export type PlayerModMode = [
+    number, // Player Id
+    boolean, // Mod Mode Enabled
+];
+
 export type ReceiveEvents = {
     PlayerInit: PlayerInit;
 
@@ -136,10 +162,8 @@ export type ReceiveEvents = {
     PlayerTeleported: [];
 
     PlayerFace: PlayerFace;
-
-    PlayerGodMode: [];
-
-    PlayerModMode: [];
+    PlayerGodMode: PlayerGodMode;
+    PlayerModMode: PlayerModMode;
 
     PlayerRespawn: [];
 

@@ -5,16 +5,16 @@
 
 #### Example
 
-```ts
+```js
 import "dotenv/config"
-import Client from 'pixelwalker.js'
+import Client, { PlayerMap } from 'pixelwalker.js'
 
 const client = Client.withToken(process.env.token)
 const connection = await client.createConnection('r450e0e380a815a');
+const players = new PlayerMap(connection);
 
-connection.on('PlayerInit', (...args) => {
-    connection.send('PlayerInit');
-    console.log(args);
+players.on('Add', (player) => {
+    connection.send('PlayerChatMessage', '/giveedit ' + player.username);
 })
 
 connection.bind();

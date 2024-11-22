@@ -7,6 +7,8 @@ export type PlayerMapEvents = {
     Add: [Player];
     Leave: [Player];
     Face: [Player, number];
+    GodMode: [Player, boolean];
+    ModMode: [Player, boolean];
 };
 
 /**
@@ -120,6 +122,18 @@ export default class PlayerMap {
             const player = this.players.get(id)!;
             this.emit('Face', player, face);
             player.face = face;
+        });
+
+        connection.on('PlayerGodMode', (id, god) => {
+            const player = this.players.get(id)!;
+            this.emit('GodMode', player, god);
+            player.isInGod = god;
+        });
+
+        connection.on('PlayerModMode', (id, mod) => {
+            const player = this.players.get(id)!;
+            this.emit('ModMode', player, mod);
+            player.isInMod = mod;
         });
 
         return new Proxy(this, {
