@@ -547,6 +547,40 @@ export default class BufferReader {
         return tmp;
     }
 
+    public read(tt: ComponentTypeHeader): string | number | bigint | boolean | Buffer;
+    public read(tt: ComponentTypeHeader.String): string;
+    public read(tt: ComponentTypeHeader.Byte): number;
+    public read(tt: ComponentTypeHeader.Int16): number;
+    public read(tt: ComponentTypeHeader.Int32): number;
+    public read(tt: ComponentTypeHeader.Int64): bigint;
+    public read(tt: ComponentTypeHeader.Float): number;
+    public read(tt: ComponentTypeHeader.Double): number;
+    public read(tt: ComponentTypeHeader.Boolean): boolean;
+    public read(tt: ComponentTypeHeader.ByteArray): Buffer;
+
+    public read(tt: ComponentTypeHeader): string | number | bigint | boolean | Buffer {
+        switch (tt) {
+            case ComponentTypeHeader.String:
+                return this.readDynamicBuffer().toString("ascii");
+            case ComponentTypeHeader.Byte:
+                return this.readUInt8();
+            case ComponentTypeHeader.Int16:
+                return this.readInt16LE();
+            case ComponentTypeHeader.Int32:
+                return this.readInt32LE();
+            case ComponentTypeHeader.Int64:
+                return this.readBigInt64LE();
+            case ComponentTypeHeader.Float:
+                return this.readFloatLE();
+            case ComponentTypeHeader.Double:
+                return this.readDoubleLE();
+            case ComponentTypeHeader.Boolean:
+                return !!this.readUInt8();
+            case ComponentTypeHeader.ByteArray:
+                return this.readDynamicBuffer();
+        }
+    }
+
     //
     //
     // Methods

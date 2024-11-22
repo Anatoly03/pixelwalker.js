@@ -27,10 +27,10 @@ export type PlayerInit = [
     "public" | "private" | "hidden" | "friends", // Visibility
     boolean, // Is Unsaved
     boolean, // Has Unsaved Changes
-    number[], // Global Switch States
+    Buffer, // Global Switch States
     number, // Width
     number, // Height
-    number[] // World Data
+    Buffer // World Data
 ];
 
 /**
