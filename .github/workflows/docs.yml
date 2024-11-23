@@ -26,6 +26,12 @@ jobs:
         with:
           node-version: '21.4.0'
 
+      - name: "Install dependencies"
+        run: npm install
+
+      - name: "Build project"
+        run: npm run build
+
       - name: "Building Documentation"
         run: npm run docs
       
