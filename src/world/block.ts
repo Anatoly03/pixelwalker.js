@@ -31,7 +31,7 @@ export class Block {
      * The unique id of a block. Block ID changes accross updates.
      * If you want to save persistant data, refer the block mapping.
      */
-    public id: number;
+    public readonly id: number;
 
     /**
      * Block arguments are additional data that is sent with the block.
@@ -44,16 +44,28 @@ export class Block {
     private args_t: ComponentTypeHeader[] = [];
 
     /**
+     * Create an instance of the empty Block. The following are equivalent.
+     * 
+     * ```ts
+     * new Block();
+     * Block[0];
+     * Block['empty'];
+     * Block.EMPTY;
+     * ```
+     */
+    public constructor();
+
+    /**
      * Create a new block instance based on its' block id.
      */
     public constructor(id: number);
 
-    public constructor(id: number | string | undefined) {
+    public constructor(id?: number | string) {
         switch (true) {
             case (id === undefined):
                 this.id = 0;
                 break;
-            case (typeof id === 'string'):
+            case (typeof id === 'string' && BlockMappings[id] !== undefined):
                 this.id = BlockMappings[id];
                 break;
             case (typeof id === 'number'):
@@ -84,6 +96,20 @@ export class Block {
      */
     public get name(): string {
         return BlockMappingsReverse[this.id];
+    }
+
+    /**
+     * Returns if two blocks are equal based on their id and arguments.
+     */
+    public equals(other: Block): boolean {
+        if (this.id !== other.id) return false;
+        if (this.args.length !== other.args.length) return false;
+
+        for (let i = 0; i < this.args.length; i++) {
+            if (this.args[i] !== other.args[i]) return false;
+        }
+
+        return true;
     }
 
     /**
