@@ -150,7 +150,7 @@ export class Block {
     public serialize_args(): Buffer {
         const buffers: Buffer[] = [];
 
-        for (let i = 0; i < this.args.length; i++) {
+        for (let i = 0; i < this.args_t.length; i++) {
             buffers.push(BufferReader.Dynamic(this.args_t[i], this.args[i]));
         }
 

@@ -32,7 +32,7 @@ export default class World {
     public structure?: Structure;
 
     /**
-     * The event event attributes are the internal event emitters for the
+     * The event attributes are the internal event emitters for the
      * game connection. They are used as an abstraction layer to append events.
      */
     private events: EventEmitter<WorldEvents> = new EventEmitter();

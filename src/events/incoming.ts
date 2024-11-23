@@ -47,6 +47,20 @@ export type PlayerChatMessage = [
 ];
 
 /**
+ * The `SystemMessage` event is emitted when a system message is sent.
+ * This message is usually displayed in the chat.
+ * 
+ * | Index | Type | Description |
+ * | --- | --- | --- |
+ * | 0 | `string` | Title |
+ * | 1 | `string` | Message |
+ */
+export type SystemMessage = [
+    string, // Title
+    string // Message
+];
+
+/**
  * The `PlayerJoined` event is emitted when a player joins the room.
  *
  * | Index | Type | Description |
@@ -278,8 +292,7 @@ export type ReceiveEvents = {
 
     OldChatMessages: [];
 
-    SystemMessage: [];
-
+    SystemMessage: SystemMessage;
     PlayerJoined: PlayerJoined;
     PlayerLeft: PlayerLeft;
     PlayerMoved: PlayerMoved;

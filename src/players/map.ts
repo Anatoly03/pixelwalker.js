@@ -64,7 +64,7 @@ export default class PlayerMap {
          *
          * The `PlayerInit` event is emitted when the player is initialized.
          */
-        connection.once("PlayerInit", (id, cuid, username, face, isAdmin, x, y, chatColor, isWorldOwnner, canUseEdit, canUseGod, ..._) => {
+        connection.once("PlayerInit", (id, cuid, username, face, isAdmin, x, y, chatColor, isWorldOwner, canUseEdit, canUseGod, ..._) => {
             this.self = {
                 id,
                 cuid,

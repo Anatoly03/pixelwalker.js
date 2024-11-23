@@ -11,3 +11,5 @@ export { default as Block } from "./world/block.js";
 export { default as Layer } from "./world/layer.js";
 export { default as Structure } from "./world/structure.js";
 export { default as World } from "./world/world.js";
+
+export { default as Chat } from "./chat/chat.js";

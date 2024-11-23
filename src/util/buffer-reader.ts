@@ -66,7 +66,7 @@ export default class BufferReader {
      * @param {string} value
      * @returns {Buffer}
      */
-    public static String(value: string): Buffer {
+    public static String(value: string = ''): Buffer {
         const stringByteLen = Buffer.byteLength(value);
         const lengthByteCount = this.length7BitInt(stringByteLen);
 
@@ -82,7 +82,7 @@ export default class BufferReader {
      * @param {number} value
      * @returns {Buffer}
      */
-    public static Byte(value: number): Buffer {
+    public static Byte(value: number = 0): Buffer {
         const buffer = BufferReader.alloc(2);
         buffer.writeUInt8(ComponentTypeHeader.Byte);
         buffer.writeUInt8(value);
@@ -93,7 +93,7 @@ export default class BufferReader {
      * @param {number} value
      * @returns {Buffer}
      */
-    public static Int16(value: number): Buffer {
+    public static Int16(value: number = 0): Buffer {
         const buffer = BufferReader.alloc(3);
         buffer.writeUInt8(ComponentTypeHeader.Int16);
         buffer.writeUInt16BE(value);
@@ -104,7 +104,7 @@ export default class BufferReader {
      * @param {number} value
      * @returns {Buffer}
      */
-    public static Int32(value: number): Buffer {
+    public static Int32(value: number = 0): Buffer {
         const buffer = BufferReader.alloc(5);
         buffer.writeUInt8(ComponentTypeHeader.Int32);
         buffer.writeInt32BE(value);
@@ -115,7 +115,7 @@ export default class BufferReader {
      * @param {bigint} value
      * @returns {Buffer}
      */
-    public static Int64(value: bigint): Buffer {
+    public static Int64(value: bigint = BigInt(0).valueOf()): Buffer {
         const buffer = BufferReader.alloc(9);
         buffer.writeUInt8(ComponentTypeHeader.Int64);
         buffer.writeBigInt64BE(value);
@@ -126,7 +126,7 @@ export default class BufferReader {
      * @param {number} value
      * @returns {Buffer}
      */
-    public static Float(value: number): Buffer {
+    public static Float(value: number = 0): Buffer {
         const buffer = BufferReader.alloc(5);
         buffer.writeUInt8(ComponentTypeHeader.Float);
         buffer.writeFloatBE(value);
@@ -137,7 +137,7 @@ export default class BufferReader {
      * @param {number} value
      * @returns {Buffer}
      */
-    public static Double(value: number): Buffer {
+    public static Double(value: number = 0): Buffer {
         const buffer = BufferReader.alloc(9);
         buffer.writeUInt8(ComponentTypeHeader.Double);
         buffer.writeDoubleBE(value);
@@ -148,7 +148,7 @@ export default class BufferReader {
      * @param {boolean} value
      * @returns {Buffer}
      */
-    public static Boolean(value: boolean): Buffer {
+    public static Boolean(value: boolean = false): Buffer {
         const buffer = BufferReader.alloc(2);
         buffer.writeUInt8(ComponentTypeHeader.Boolean);
         buffer.writeUInt8(value ? 1 : 0);
@@ -159,7 +159,7 @@ export default class BufferReader {
      * @param {Uint8Array} buffer
      * @returns {Buffer}
      */
-    public static ByteArray(buffer: Buffer): Buffer {
+    public static ByteArray(buffer: Buffer = Buffer.from([0])): Buffer {
         // const bufferByteLen = Buffer.byteLength(buffer);
 
         // const bufLength = Buffer.alloc(length7BitInt(bufferByteLen));
@@ -182,6 +182,7 @@ export default class BufferReader {
      * @returns {Buffer}
      */
     public static Magic(value: number): Buffer {
+        if (value === undefined) throw new Error('Received undefined magic byte')
         return Buffer.from([value]);
     }
 
@@ -189,7 +190,7 @@ export default class BufferReader {
      * @param {number} value
      * @returns {Buffer}
      */
-    public static Bit7(value: number): Buffer {
+    public static Bit7(value: number = 0): Buffer {
         const buffer = BufferReader.alloc(this.length7BitInt(value));
         buffer.write7BitInt(value);
         return buffer.toBuffer();
