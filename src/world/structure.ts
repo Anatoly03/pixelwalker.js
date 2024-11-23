@@ -3,6 +3,8 @@ import BufferReader from "../util/buffer-reader";
 import Layer from "./layer";
 import Block from "./block";
 
+import structureMigrations from "./structure.migrations";
+
 export default class Structure<Meta extends { [keys: number | string]: number | string | boolean | null | undefined } = {}> {
     readonly [layer: number]: Layer;
 
@@ -26,6 +28,26 @@ export default class Structure<Meta extends { [keys: number | string]: number | 
         for (let i = 0; i < Structure.LAYER_COUNT; i++) {
             (this as any)[i] = new Layer(width, height);
         }
+    }
+
+    //
+    //
+    // GETTERS
+    //
+    //
+
+    /**
+     * Reference to the background layer of the structure.
+     */
+    public get background(): Layer {
+        return this[0];
+    }
+
+    /**
+     * Reference to the foreground layer of the structure.
+     */
+    public get foreground(): Layer {
+        return this[1];
     }
 
     //
@@ -57,6 +79,26 @@ export default class Structure<Meta extends { [keys: number | string]: number | 
     }
 
     /**
+     * Copy a subset of the structure defined by the coordinates.
+     */
+    public copy(x1: number, y1: number, x2: number, y2: number): Structure {
+        if (x2 < x1) { let tmp = x2; x2 = x1; x1 = tmp }
+        if (y2 < y1) { let tmp = y2; y2 = y1; y1 = tmp }
+
+        const world = new Structure(x2 - x1 + 1, y2 - y1 + 1)
+
+        for (let x = x1; x <= x2; x++)
+            for (let y = y1; y <= y2; y++) {
+                if (x < 0 || y < 0 || x >= this.width || y >= this.height)
+                    continue
+                world.background[x - x1][y - y1] = this.background[x][y]
+                world.foreground[x - x1][y - y1] = this.foreground[x][y]
+            }
+
+        return world
+    }
+
+    /**
      * Provides a custom string representation of the block which
      * is used for printing the block to stdout.
      */
@@ -69,6 +111,8 @@ export default class Structure<Meta extends { [keys: number | string]: number | 
     // STORAGE I/O
     //
     //
+
+    private static LATEST_VERSION_ENCODING = 1;
 
     // TODO TEST THIS
     public static fromString(format: "json" | "yaml", value: string): Structure {
@@ -87,9 +131,11 @@ export default class Structure<Meta extends { [keys: number | string]: number | 
                 throw new Error(`Unknown format: ${format}`);
         }
 
-        if (data["file-version"] !== 1) {
+        if (data["file-version"] < 0 || data["file-version"] > Structure.LATEST_VERSION_ENCODING) {
             throw new Error(`Unsupported file version: ${data["file-version"]}`);
         }
+
+        data = structureMigrations(data);
 
         if (data.width <= 0 || data.height <= 0) {
             throw new Error(`Invalid structure size: ${data.width}x${data.height}`);
@@ -130,7 +176,7 @@ export default class Structure<Meta extends { [keys: number | string]: number | 
         const layers: string[] = [];
 
         const data = {
-            "file-version": 1,
+            "file-version": Structure.LATEST_VERSION_ENCODING,
             meta: this.meta,
             width: this.width,
             height: this.height,

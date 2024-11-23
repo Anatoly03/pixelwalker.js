@@ -7,8 +7,25 @@ import BufferReader, { ComponentTypeHeader } from "../util/buffer-reader";
 export class Block {
     /**
      * Retrieve a default block by its' id or string identifier.
+     * 
+     * @example
+     * 
+     * ```ts
+     * const empty = Block[0];
+     * ```
      */
-    static [id: number]: Block;
+    static readonly [id: number]: Block;
+
+    /**
+     * Retrieve the block argument based on the argument number.
+     * 
+     * @example
+     * const portal = Block['portal'];
+     * portal[0] = 1;   // rotation
+     * portal[1] = 100; // portal id
+     * portal[2] = 101; // target portal id
+     */
+    [arg: number]: (string | number | bigint | boolean | Buffer);
 
     /**
      * The unique id of a block. Block ID changes accross updates.
@@ -48,6 +65,11 @@ export class Block {
 
         if ((BlockData as any)[this.name]) {
             this.args_t = (BlockData as any)[this.name];
+            this.args = new Array(this.args_t.length);
+        }
+
+        for (let i = 0; i < this.args_t.length; i++) {
+            this[i] = this.args[i]; // TODO make this a getter/ reference cell
         }
     }
 
@@ -200,7 +222,7 @@ export const BlockData = {
  */
 (() => {
     for (const id of Object.keys(BlockMappingsReverse)) {
-        Block[+id] = new Block(+id);
+        (Block as any)[+id] = new Block(+id);
     }
 })();
 
