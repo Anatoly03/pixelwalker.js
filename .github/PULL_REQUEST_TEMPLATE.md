@@ -8,13 +8,15 @@
 **Motivating Examples**
 
 ```ts
-import Client from 'pixelwalker.js'
+import Client, { Chat, MessageTypes, PlayerMap, Block, World, Structure } from "pixelwalker.js"
 
-const client = new Client({ token })
+export const client = Client.withToken('token');
+export const connection = await client.createConnection('connection');
+export const players = new PlayerMap(connection);
+export const world = new World(connection);
+export const chat = new Chat(connection);
 
-client.on('event', async () => {
+// TODO
 
-})
-
-client.connect(world_id)
+connection.bind();
 ```
