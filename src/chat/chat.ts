@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import GameConnection from "../connection";
 
-export default class Chat<T extends { [keys: string]: [number, ...string[]] } = {}> {
+export default class Chat<Commands extends Lowercase<string> = never> {
     /**
      * The Player map contains an updated map of players in the room.
      */
@@ -11,6 +11,11 @@ export default class Chat<T extends { [keys: string]: [number, ...string[]] } = 
      * Reference to the player's own ID.
      */
     protected readonly selfId!: number;
+
+    /**
+     * Reference to the player's own Connect User ID.
+     */
+    protected readonly selfCuid!: string;
 
     /**
      * The stream to write the chat messages to. If undefined,
@@ -35,10 +40,35 @@ export default class Chat<T extends { [keys: string]: [number, ...string[]] } = 
      * The event attribute is the internal event emitters for the chat
      * manager. It is used as an abstraction layer to append events.
      */
-    private events: EventEmitter<T> = new EventEmitter();
+    private events: EventEmitter<{ [K in Commands]: [number, ...string[]] }> = new EventEmitter();
 
     /**
-     * Create a new chat manager.
+     * The commandPermissions attribute is a map of commands to their
+     * permission checkers. If the permission checker returns true,
+     * the command can be executed.
+     */
+    private commandPermissions: Map<Commands, (pid: number) => boolean> = new Map();
+
+    /**
+     * Create a new chat manager. Note, that the generic parameter lists
+     * all registered commands and will do very strict type checking to
+     * make sure no command is called that is not registered. To avoid this,
+     * i.e create an *open* command manager, use `string` as the generic
+     * parameter.
+     *
+     * All commands follow the convention of being lowercase. Intelisense
+     * will automatically error at commands with capital letters, however if
+     * this fails, the command will never be called at runtime.
+     *
+     * ```ts
+     * const chat = new Chat<string>(connection);
+     * chat.emit('hello', 5);       // OK
+     * chat.emit('goodbye', 4);     // OK
+     *
+     * const chat2 = new Chat<'hello' | 'hi'>(connection);
+     * chat2.emit('hello', 4);      // OK
+     * chat2.emit('goodbye', 4);    // Error: Command 'goodbye' is not registered.
+     * ```
      */
     public constructor(private connection: GameConnection) {
         /**
@@ -47,10 +77,9 @@ export default class Chat<T extends { [keys: string]: [number, ...string[]] } = 
          * The `PlayerInit` event is emitted when the player is initialized.
          */
         connection.once("PlayerInit", (id, cuid, username, face, isAdmin, x, y, chatColor, isWorldOwner, canUseEdit, canUseGod, ..._) => {
-            (this as any).selfId = id;
             this.players.set(id, {
-                id,
-                cuid,
+                id: ((this as any).selfId = id),
+                cuid: ((this as any).selfCuid = cuid),
                 username,
                 colorCode: "\x1b[0;36m",
             });
@@ -102,7 +131,7 @@ export default class Chat<T extends { [keys: string]: [number, ...string[]] } = 
             for (const prefix of this.commandPrefix) {
                 if (message.startsWith(prefix)) {
                     const [command, ...args] = message.substring(prefix.length).split(" ");
-                    (this as any).emit(command, id, ...args);
+                    (this as any).emit(command.toLowerCase(), id, ...args);
                     return;
                 }
             }
@@ -123,7 +152,7 @@ export default class Chat<T extends { [keys: string]: [number, ...string[]] } = 
             for (const prefix of this.commandPrefix) {
                 if (message.startsWith(prefix)) {
                     const [command, ...args] = message.substring(prefix.length).split(" ");
-                    (this as any).emit(command, id, ...args);
+                    (this as any).emit(command.toLowerCase(), id, ...args);
                     return;
                 }
             }
@@ -165,7 +194,7 @@ export default class Chat<T extends { [keys: string]: [number, ...string[]] } = 
      * `eventNameand` listener will result in the listener being added, and called,
      * multiple times.
      */
-    public on<Event extends keyof T>(eventName: Event, cb: (...args: [number, ...string[]]) => void): this;
+    public on<Event extends Commands>(eventName: Event, cb: (...args: [number, ...string[]]) => void): this;
 
     public on(event: string, callee: (...args: any[]) => void): this {
         this.events.on(event as any, callee as any);
@@ -176,7 +205,7 @@ export default class Chat<T extends { [keys: string]: [number, ...string[]] } = 
      * Adds a **one-time** listener function for the event named `eventName`. The
      * next time `eventName` is triggered, this listener is removed and then invoked.
      */
-    public once<Event extends keyof T>(eventName: Event, cb: (...args: T[Event]) => void): this;
+    public once<Event extends Commands>(eventName: Event, cb: (...args: [number, ...string[]]) => void): this;
 
     public once(event: string, callee: (...args: any[]) => void): this {
         this.events.once(event as any, callee as any);
@@ -187,7 +216,7 @@ export default class Chat<T extends { [keys: string]: [number, ...string[]] } = 
      * Synchronously calls each of the listeners registered for the event named `eventName`,
      * in the order they were registered, passing the supplied arguments to each.
      */
-    public emit<Event extends keyof T>(eventName: Event, ...args: T[Event]): this;
+    public emit<Event extends Commands>(eventName: Event, ...args: [number, ...string[]]): this;
 
     public emit(event: string, ...args: any[]): this {
         this.events.emit(event as any, ...(args as any));
@@ -209,18 +238,75 @@ export default class Chat<T extends { [keys: string]: [number, ...string[]] } = 
     }
 
     /**
-     * Appends a command handler to the event list.
+     * Appends a command handler to the event list. **This command can
+     * be called by anyone.**
+     *
+     * @example
+     *
+     * ```ts
+     * export const chat = new Chat(connection)
+     *     .register('hello', (pid) => {
+     *         console.log(`Player ${pid} said Hello!`)
+     *     });
+     * ```
      */
-    public register<A extends string>(commandName: A, callee: (playerId: number, ...args: string[]) => any): Chat<T & { [K in A]: [number, ...string[]] }> {
-        (this as any).events.on(commandName, callee);
-        return this as any;
+    public register<A extends Lowercase<string>>(commandName: A, callee: (playerId: number, ...args: string[]) => any): Chat<Commands | A>;
+
+    /**
+     * Appends a command handler to the event list. The second argument
+     * is a permission callback that is called with the player's ID and
+     * returns a boolean. If the callback returns true, the command listener
+     * will be activated.
+     *
+     * @example
+     *
+     * ```ts
+     * export const players = new PlayerMap(connection);
+     *
+     * function PERMISSION_SELF(pid: number) {
+     *     return pid => players[pid].cuid === players.self.cuid;
+     * }
+     *
+     * export const chat = new Chat(connection)
+     *     // This registers an admin command only for even player IDs.
+     *     .register(
+     *         'even',
+     *         pid => pid % 2 == 0,
+     *         (pid) => console.log(`Player ${pid} said Hello!`)
+     *     );
+     *     // This registers an admin command only for the bot owner.
+     *     .register(
+     *         'admin',
+     *         PERMISSION_SELF,
+     *         (pid) => console.log(`Bot Admin ${pid} said Hello!`)
+     *     );
+     * ```
+     */
+    public register<A extends Lowercase<string>>(commandName: A, permissionCallback: (playerId: number) => boolean, callee: (playerId: number, ...args: string[]) => any): Chat<Commands | A>;
+
+    public register(commandName: string, ...callee: ((...args: any[]) => any)[]): this {
+        switch (callee.length) {
+            case 1: {
+                (this as any).commandPermissions.set(commandName, (_: number) => true);
+                (this as any).events.on(commandName, callee[0]);
+                return this as any;
+            }
+            case 2: {
+                (this as any).commandPermissions.set(commandName, callee[0]);
+                (this as any).events.on(commandName, callee[1]);
+                return this as any;
+            }
+            default:
+                throw new Error("Unreachable: Invalid number of arguments despite function overloads and type hints.");
+        }
     }
 
     /**
      * Appends a command handler to the event list.
      */
-    public registerHelp(): Chat<T & { [K in "help"]: [number, ...string[]] }> {
+    public registerHelp(): Chat<Commands | "help"> {
         (this as any).events.on("help", (pid: number) => {
+            // TODO: Implement help command
             this.send(`Commands: !help`);
         });
         return this as any;
