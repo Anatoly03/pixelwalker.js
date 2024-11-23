@@ -181,6 +181,17 @@ export default class GameConnection<Ready extends boolean = false> {
             this.disconnect();
         });
 
+        /**
+         * @event PlayerInit
+         * 
+         * Upon receiving the `PlayerInit` event, the server requires
+         * the client to send the `PlayerInit` event as well back to
+         * the server.
+         */
+        this.once('PlayerInit', () => {
+            this.send('PlayerInit');
+        });
+
         return this as GameConnection<true>;
     }
 

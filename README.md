@@ -3,27 +3,21 @@
 
 [NPM](https://www.npmjs.com/package/pixelwalker.js) | [GitHub](https://github.com/Anatoly03/pixelwalker.js)
 
-#### Example
+```sh
+npm i --save pixelwalker.js
+```
 
-```js
+```ts
 import "dotenv/config"
-import Client, { PlayerMap } from 'pixelwalker.js'
+import * as fs from 'node:fs'
+import Client, { MessageTypes, PlayerMap, Block, World, Structure } from "../../pixelwalker/dist/index"
 
-const client = Client.withToken(process.env.token)
-const connection = await client.createConnection('r450e0e380a815a');
-const players = new PlayerMap(connection);
-
-players.on('Add', (player) => {
-    connection.send('PlayerChatMessage', '/giveedit ' + player.username);
-})
+export const client = Client.withToken(process.env.token);
+export const connection = await client.createConnection('djtqrcjn4fzyhi8');
+export const players = new PlayerMap(connection);
+export const world = new World(connection);
 
 connection.bind();
-```
-
-## Installation
-
-```
-npm i --save pixelwalker.js
 ```
 
 ## Contribution
