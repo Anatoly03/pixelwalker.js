@@ -10,7 +10,7 @@ npm i --save pixelwalker.js
 ```ts
 import "dotenv/config"
 import * as fs from 'node:fs'
-import Client, { MessageTypes, PlayerMap, Block, World, Structure } from "../../pixelwalker/dist/index"
+import Client, { MessageTypes, PlayerMap, Block, World, Structure } from "pixelwalker.js"
 
 export const client = Client.withToken(process.env.token);
 export const connection = await client.createConnection('djtqrcjn4fzyhi8');
