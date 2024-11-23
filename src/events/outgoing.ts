@@ -1,4 +1,5 @@
 import { ComponentTypeHeader } from "../util/buffer-reader";
+import { BlockData } from "../world/block";
 
 /**
  * The `PlayerInit` message has to be sent once directly after connecting
@@ -19,7 +20,10 @@ export const PlayerInit = [] as const;
  * | 0 | `number` | X coordinate of the block |
  *
  */
-// export const WorldBlockPlaced = [] as const;
+// export const WorldBlockPlaced = [
+//     ...Object.keys(BlockData).map((k) => [ComponentTypeHeader.Int32, ComponentTypeHeader.Int32, ...(BlockData as any)[k]]),
+//     []
+// ] as const;
 
 /**
  * The `PlayerChatMessage` can be sent to write to the chat.

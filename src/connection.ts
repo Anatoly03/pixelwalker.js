@@ -166,7 +166,7 @@ export default class GameConnection<Ready extends boolean = false> {
                 case GameConnection.HeaderBytes.Message:
                     const messageId = buffer.read7BitInt();
                     const args = buffer.deserialize();
-                    this.emit('*', GameConnection.MessageTypes[messageId] as any, ...args);
+                    this.emit("*", GameConnection.MessageTypes[messageId] as any, ...args);
                     this.emit(GameConnection.MessageTypes[messageId] as any, ...args);
                     break;
             }
