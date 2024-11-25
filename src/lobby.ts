@@ -11,6 +11,13 @@ import GameClient from "./game.js";
  */
 export default class LobbyClient {
     /**
+     * The list of available room types. The room types are used when
+     * opening a new room on the game server. The room types are currently
+     * not used, and currently room type `RoomTypes[0]` can be used.
+     */
+    public static RoomTypes = RoomTypes;
+
+    /**
      * The PixelWalker backend consists of several servers, and the API
      * server uses [PocketBase](https://pocketbase.io/) as its' base.
      */
@@ -115,7 +122,8 @@ export default class LobbyClient {
      * message here, you will be disconnected in some seconds after connecting.
      *
      * ```ts
-     * const joinkey = await client.getJoinKey('4naaehf4xxexavv);
+     * export const client = LobbyClient.withToken(process.env.token);
+     * const joinkey = await client.getJoinKey('4naaehf4xxexavv');
      * const socket = new WebSocket(`wss://game.pixelwalker.net/room/${joinkey}`);
      * socket.binaryType = 'arraybuffer';
      *
@@ -132,7 +140,13 @@ export default class LobbyClient {
      * placed after the magic byte `Message = 0x6B`. Read about the byte-level protocol
      * in the [Connection](./connection.ts) class.
      */
-    public async getJoinKey(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]): Promise<string> {
+    public async getJoinKey(world_id: string, room_type?: (typeof RoomTypes)[0]): Promise<string> {
+        if (process.env.LOCALHOST) {
+            room_type = room_type ?? "pixelwalker_dev";
+        } else {
+            room_type = room_type ?? RoomTypes[0];
+        }
+
         const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {});
         return token;
     }
@@ -142,7 +156,7 @@ export default class LobbyClient {
      * type. The returned object will return an event emitter than can bind to
      * the game server.
      */
-    public async connection(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]): Promise<GameClient> {
+    public async connection(world_id: string, room_type?: (typeof RoomTypes)[0]): Promise<GameClient> {
         const token = await this.getJoinKey(world_id, room_type);
         return new GameClient(token);
     }

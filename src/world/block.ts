@@ -246,6 +246,6 @@ export const BlockArgs = {
 
     hazard_death_door: [ComponentTypeHeader.Int32],
     hazard_death_gate: [ComponentTypeHeader.Int32],
-};
+} as const;
 
 export default Block;
