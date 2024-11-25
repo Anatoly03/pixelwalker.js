@@ -7,7 +7,7 @@ import BufferReader, { ComponentTypeHeader } from "./util/buffer-reader.js";
 import ReceiveEvents from "./events/incoming.js";
 import SendEvents, { SendEventsFormat } from "./events/outgoing.js";
 
-export default class GameConnection<Ready extends boolean = false> {
+export default class GameClient<Ready extends boolean = false> {
     /**
      * Get an array of message typed sequenced integer → message name. Note,
      * that the array below is not full,
@@ -25,21 +25,16 @@ export default class GameConnection<Ready extends boolean = false> {
      * The Magic Bytes noting the type of connection message. All incoming
      * messages start with either of the magic bytes.
      */
-    private static HeaderBytes = {
+    public static HeaderBytes = {
         Ping: 0x3f,
         Message: 0x6b,
     };
 
     /**
-     * This is the variable containing the joinkey for the game connection.
-     */
-    #joinkey: string;
-
-    /**
      * An open HTML connection to the game server. This is the tunnel with the
      * game server, which manages realtime communication with a world.
      */
-    #socket!: Ready extends true ? WebSocket : never;
+    public socket!: Ready extends true ? WebSocket : never;
 
     /**
      * The event event attributes are the internal event emitters for the
@@ -48,20 +43,17 @@ export default class GameConnection<Ready extends boolean = false> {
     #receiver: EventEmitter<ReceiveEvents> = new EventEmitter();
 
     /**
-     * **NOTE**: Creating a `GameConnection` is not enough to connect to the game.
+     * **NOTE**: Creating a `GameClient` is not enough to connect to the game.
      * You need to manually call the `bind` method to establish a connection, after
      * registering event handlersand managing the state of your program.
      */
-    constructor(joinKey: string) {
-        this.#joinkey = joinKey;
-    }
+    constructor(private joinkey: string) {}
 
-    /**
-     * Is the current connection connected?
-     */
-    public connected(): this is GameConnection<true> {
-        return this.#socket && this.#socket.readyState === this.#socket.OPEN;
-    }
+    //
+    //
+    // EVENTS
+    //
+    //
 
     /**
      * Adds the listener function to the end of the listeners array for the
@@ -70,32 +62,10 @@ export default class GameConnection<Ready extends boolean = false> {
      * `eventNameand` listener will result in the listener being added, and called,
      * multiple times.
      */
-    public on<Index extends number, Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents>(eventName: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
+    public listen<Index extends number, Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents>(eventName: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
 
-    public on(event: string, callee: (...args: any[]) => void): this {
+    public listen(event: string, callee: (...args: any[]) => void): this {
         this.#receiver.on(event as any, callee);
-        return this;
-    }
-
-    /**
-     * Adds a **one-time** listener function for the event named `eventName`. The
-     * next time `eventName` is triggered, this listener is removed and then invoked.
-     */
-    public once<Index extends number, Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents>(eventName: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
-
-    public once(event: string, callee: (...args: any[]) => void): this {
-        this.#receiver.once(event as any, callee);
-        return this;
-    }
-
-    /**
-     * Synchronously calls each of the listeners registered for the event named `eventName`,
-     * in the order they were registered, passing the supplied arguments to each.
-     */
-    public emit<Index extends number, Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents>(eventName: Event, ...args: ReceiveEvents[Event]): this;
-
-    public emit(event: string, ...args: any[]): this {
-        this.#receiver.emit(event as any, ...args);
         return this;
     }
 
@@ -108,22 +78,28 @@ export default class GameConnection<Ready extends boolean = false> {
     public send(event: string, ...args: (boolean | number | bigint | string | Buffer)[]): this {
         const format: ComponentTypeHeader[] = SendEventsFormat[event as keyof typeof SendEventsFormat] as any;
 
-        const buffer = [Buffer.from([GameConnection.HeaderBytes.Message, GameConnection.MessageTypes.findIndex((m) => m === event)])];
+        const buffer = [Buffer.from([GameClient.HeaderBytes.Message, GameClient.MessageTypes.findIndex((m) => m === event)])];
 
         for (let i = 0; i < format.length; i++) {
             buffer.push(BufferReader.Dynamic(format[i], args[i]));
         }
 
-        this.#socket.send(Buffer.concat(buffer));
+        this.socket.send(Buffer.concat(buffer));
         return this;
     }
+
+    //
+    //
+    // METHODS
+    //
+    //
 
     /**
      *
      */
-    public bind(): GameConnection<true> {
-        this.#socket = new WebSocket(`wss://${Config.GameServerLink}/room/${this.#joinkey}`) as any;
-        this.#socket.binaryType = "arraybuffer";
+    public bind(): GameClient<true> {
+        this.socket = new WebSocket(`wss://${Config.GameServerLink}/room/${this.joinkey}`) as any;
+        this.socket.binaryType = "arraybuffer";
 
         /**
          * @event
@@ -132,7 +108,7 @@ export default class GameConnection<Ready extends boolean = false> {
          * general, it is received when the opening connection could not be
          * established.
          */
-        this.#socket.on("unexpected-response", (request, response) => {
+        this.socket.on("unexpected-response", (request, response) => {
             throw new Error(`Could not connect to ${request.method} "${request.host}/${request.path}": ${response.statusCode} ${response.statusMessage}`);
         });
 
@@ -141,18 +117,18 @@ export default class GameConnection<Ready extends boolean = false> {
          *
          * The message event is received for every incoming socket message.
          */
-        this.#socket.on("message", (message: WithImplicitCoercion<ArrayBuffer>) => {
+        this.socket.on("message", (message: WithImplicitCoercion<ArrayBuffer>) => {
             const buffer = BufferReader.from(message);
             if (buffer.length == 0) return;
 
             switch (buffer.readUInt8()) {
-                case GameConnection.HeaderBytes.Ping:
-                    return this.#socket.send(Buffer.from([GameConnection.HeaderBytes.Ping]), {});
+                case GameClient.HeaderBytes.Ping:
+                    return this.socket.send(Buffer.from([GameClient.HeaderBytes.Ping]), {});
 
-                case GameConnection.HeaderBytes.Message:
+                case GameClient.HeaderBytes.Message:
                     const messageId = buffer.read7BitInt();
                     const args = buffer.deserialize();
-                    this.emit(GameConnection.MessageTypes[messageId] as any, ...args);
+                    this.#receiver.emit(GameClient.MessageTypes[messageId] as any, ...args);
                     break;
             }
         });
@@ -181,24 +157,31 @@ export default class GameConnection<Ready extends boolean = false> {
             this.disconnect();
         });
 
-        /**
-         * @event PlayerInit
-         * 
-         * Upon receiving the `PlayerInit` event, the server requires
-         * the client to send the `PlayerInit` event as well back to
-         * the server.
-         */
-        this.once('PlayerInit', () => {
-            this.send('PlayerInit');
-        });
+        // /**
+        //  * @event PlayerInit
+        //  * 
+        //  * Upon receiving the `PlayerInit` event, the server requires
+        //  * the client to send the `PlayerInit` event as well back to
+        //  * the server.
+        //  */
+        // this.listen('PlayerInit', () => {
+        //     this.send('PlayerInit');
+        // });
 
-        return this as GameConnection<true>;
+        return this as GameClient<true>;
+    }
+
+    /**
+     * Is the current connection connected?
+     */
+    public connected(): this is GameClient<true> {
+        return this.socket && this.socket.readyState === this.socket.OPEN;
     }
 
     /**
      * Disconnect the websocket.
      */
     public disconnect() {
-        this.#socket.close();
+        this.socket.close();
     }
 }

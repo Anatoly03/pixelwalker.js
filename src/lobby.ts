@@ -1,15 +1,15 @@
 import PocketBase, { RecordService } from "pocketbase";
-import GameConnection from "./connection.js";
 
 import Config from "./data/config.js";
 import RoomTypes from "./data/room-types.js";
 import PublicProfile from "./types/public-profile.js";
 import PublicWorld from "./types/public-world.js";
+import GameClient from "./game.js";
 
 /**
  *
  */
-export default class PixelWalkerClient {
+export default class LobbyClient {
     /**
      * The PixelWalker backend consists of several servers, and the API
      * server uses [PocketBase](https://pocketbase.io/) as its' base.
@@ -33,8 +33,8 @@ export default class PixelWalkerClient {
      * const client2 = Client.new(process.env.TOKEN)
      * ```
      */
-    public static withToken(token: string): PixelWalkerClient | null {
-        const client = new PixelWalkerClient();
+    public static withToken(token: string): LobbyClient | null {
+        const client = new LobbyClient();
         client.pocketbase.authStore.save(token, { verified: true });
 
         if (!client.pocketbase.authStore.isValid) return null;
@@ -115,7 +115,7 @@ export default class PixelWalkerClient {
      * message here, you will be disconnected in some seconds after connecting.
      *
      * ```ts
-     * const joinkey = await client.getJoinKey('4naaehf4xxexavv');
+     * const joinkey = await client.getJoinKey('4naaehf4xxexavv);
      * const socket = new WebSocket(`wss://game.pixelwalker.net/room/${joinkey}`);
      * socket.binaryType = 'arraybuffer';
      *
@@ -132,20 +132,18 @@ export default class PixelWalkerClient {
      * placed after the magic byte `Message = 0x6B`. Read about the byte-level protocol
      * in the [Connection](./connection.ts) class.
      */
-    public async getJoinKey(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]) {
+    public async getJoinKey(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]): Promise<string> {
         const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {});
-        return token as string;
+        return token;
     }
 
     /**
-     *
-     * @param world_id
-     * @param room_type
+     * Generate a game session for a specific world id. Optionally override room
+     * type. The returned object will return an event emitter than can bind to
+     * the game server.
      */
-    public async createConnection(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]): Promise<GameConnection> {
-        const join_key = await this.getJoinKey(world_id, room_type);
-        const connection = new GameConnection(join_key);
-
-        return connection;
+    public async connection(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]): Promise<GameClient> {
+        const token = await this.getJoinKey(world_id, room_type);
+        return new GameClient(token);
     }
 }
