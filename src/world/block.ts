@@ -2,41 +2,67 @@ import { BlockMappings, BlockMappingsReverse } from "../data/block-mappings";
 import BufferReader, { ComponentTypeHeader } from "../util/buffer-reader";
 
 /**
- * This mapping contains the list of all blocks that are present in
- * the game.
+ * This type represents the block numeric id that can be used in the game.
+ * 
+ * ```ts
+ * const blockId: BlockId = 0;
+ * const block = new Block(blockId);
+ * block.name; // 'empty'
+ * ```
  */
-export const BlockList: {
-    readonly [id: keyof typeof BlockMappingsReverse | keyof typeof BlockMappings]: Block;
-} = new Proxy(
-    {},
-    {
-        get: (target, prop: string) => {
-            return new Block(!isNaN(+prop) ? +prop : prop);
-        },
-    }
-);
+export type BlockId = keyof typeof BlockMappingsReverse;
+
+/**
+ * This type represents the block mapping name that can be used in the game.
+ * 
+ * ```ts
+ * const blockName: BlockName = 'empty';
+ * const block = new Block(blockName);
+ * block.id; // 0
+ * ```
+ */
+export type BlockName = keyof typeof BlockMappings;
+
+// /**
+//  * This mapping contains definitions of blocks which exist in
+//  * the game. Blocks can be accessed by their id or mapping name.
+//  * Under the hood, a proxy is used to generate the block instances,
+//  * so accessing a block by its' id or mapping name is equivalent to
+//  * creating a new block instance with the `Block` class.
+//  */
+// export const Blocks: {
+//     [id in keyof typeof BlockMappingsReverse]: Block<id>;
+// } & {
+//     [name in keyof typeof BlockMappings]: Block<(typeof BlockMappings)[name]>;
+// } = new Proxy(
+//     {},
+//     {
+//         get(target, prop): any {
+//             if (typeof prop !== "string") return (target as any)[prop];
+
+//             if (Number.isInteger(+prop)) {
+//                 return new Block(+prop);
+//             }
+
+//             if (BlockMappings[prop] !== undefined) {
+//                 return new Block(BlockMappings[prop]);
+//             }
+
+//             return null;
+//         },
+//     }
+// );
 
 /**
  * A block is a single unit in the game world matrix. This class contains
  * static access to all blocks in the game with their uppercase mapping or
  * by id.
- * 
+ *
  * ```ts
  * console.log(Block['EMPTY']); // Block[empty]
  * ```
  */
-export class Block<Index extends number = number> {
-    /**
-     * Retrieve a default block by its' id or string identifier.
-     *
-     * @example
-     *
-     * ```ts
-     * const empty = Block[0];
-     * ```
-     */
-    static readonly [id: number | Uppercase<keyof typeof BlockMappings & string>]: Block;
-
+export class Block<Index extends BlockId = BlockId> {
     /**
      * Retrieve the block argument based on the argument number.
      *
@@ -61,54 +87,36 @@ export class Block<Index extends number = number> {
     /**
      * Block arguments are additional data that is sent with the block.
      */
-    public args: (string | number | bigint | boolean | Buffer)[] = [];
-    private args_t: ComponentTypeHeader[] = [];
+    // TODO add never ternary for blocks without data.
+    // TODO data: FormatType<(typeof BlockArgs)[keyof typeof BlockArgs]>;
+    public data: (string | number | bigint | boolean | Buffer)[] = [];
 
     /**
-     * Create an instance of the empty Block. The following are equivalent.
-     *
-     * ```ts
-     * new Block();
-     * Block[0];
-     * Block['empty'];
-     * Block.EMPTY;
-     * ```
+     * Create a new block instance based on its' block id or block mapping.
      */
-    // public constructor();
-
-    /**
-     * Create a new block instance based on its' block id.
-     */
-    public constructor(id: Index);
-
-    /**
-     * Create a new block instance based on its' block name.
-     */
-    public constructor(id: keyof typeof BlockMappings);
-
-    public constructor(id?: number | string) {
+    public constructor(id: Index | (typeof BlockMappingsReverse)[Index]) {
         switch (true) {
             case id === undefined:
-                this.id = 0 as Index;
-                break;
+                throw new Error("Block id is undefined");
+            // this.id = 0 as Index;
+            // break;
             case typeof id === "string" && BlockMappings[id] !== undefined:
                 this.id = BlockMappings[id] as Index;
                 break;
             case typeof id === "number":
-                this.id = id as Index;
+                this.id = id;
                 break;
             default:
                 throw new Error("Unreachable: Invalid block id despite type hint.");
         }
 
-        if ((BlockData as any)[this.name]) {
-            this.args_t = (BlockData as any)[this.name];
-            this.args = new Array(this.args_t.length);
+        if ((BlockArgs as any)[this.name]) {
+            this.data = new Array((BlockArgs as any)[this.name].length);
         }
 
-        for (let i = 0; i < this.args_t.length; i++) {
-            this[i] = this.args[i]; // TODO make this a getter/ reference cell
-        }
+        // for (let i = 0; i < this.args_t.length; i++) {
+        //     this[i] = this.args[i]; // TODO make this a getter/ reference cell
+        // }
     }
 
     //
@@ -129,10 +137,10 @@ export class Block<Index extends number = number> {
      */
     public equals(other: Block<number>): other is Block<Index> {
         if ((this.id as number) !== other.id) return false;
-        if (this.args.length !== other.args.length) return false;
+        if (this.data.length !== other.data.length) return false;
 
-        for (let i = 0; i < this.args.length; i++) {
-            if (this.args[i] !== other.args[i]) return false;
+        for (let i = 0; i < this.data.length; i++) {
+            if (this.data[i] !== other.data[i]) return false;
         }
 
         return true;
@@ -153,55 +161,58 @@ export class Block<Index extends number = number> {
     //
 
     /**
-     * Deserialize a block from the buffer reader.
-     */
-    public static deserialize(buffer: BufferReader): Block {
-        const blockId = buffer.readUInt32LE();
-        const block = new Block(blockId);
-
-        if ((BlockData as any)[block.name]) {
-            block.args_t = (BlockData as any)[block.name];
-
-            for (const type of block.args_t) {
-                block.args.push(buffer.read(type));
-            }
-        }
-
-        return block;
-    }
-
-    /**
      * Serialize block arguments to the buffer writer.
      */
-    public serialize_args(): Buffer {
+    public static serialize_args(block: Block): Buffer {
         const buffers: Buffer[] = [];
+        const format: ComponentTypeHeader[] = (BlockArgs as any)[block.name];
 
-        for (let i = 0; i < this.args_t.length; i++) {
-            buffers.push(BufferReader.Dynamic(this.args_t[i], this.args[i]));
+        for (let i = 0; i < format.length; i++) {
+            buffers.push(BufferReader.Dynamic(format[i], block.data[i]));
         }
 
         return Buffer.concat(buffers);
     }
 
     /**
+     * Deserialize a block from the buffer reader.
+     */
+    public static deserialize(buffer: BufferReader): Block {
+        const blockId = buffer.readUInt32LE();
+        const block = new Block(blockId);
+        const format: ComponentTypeHeader[] = (BlockArgs as any)[block.name];
+
+        for (let i = 0; i < format.length; i++) {
+            block.data[i] = buffer.read(format[i]);
+        }
+
+        return block;
+    }
+
+    /**
      * Deserialize the block from the string.
      */
-    public static fromString(value: string): Block<number> {
+    public static fromString(value: string): Block {
         const parts = value.split(".");
         const blockId = parseInt(parts[0], 16);
         const block = new Block(blockId);
+        const format: ComponentTypeHeader[] = (BlockArgs as any)[block.name];
 
         if (parts.length > 1) {
             const args = parts[1];
             const buffer = BufferReader.from(Buffer.from(args, "hex"));
 
-            if ((BlockData as any)[block.name]) {
-                block.args_t = (BlockData as any)[block.name];
-
-                for (const type of block.args_t) {
-                    block.args.push(buffer.read(type));
-                }
+            for (let i = 0; i < format.length; i++) {
+                block.data[i] = buffer.read(format[i]);
             }
+
+            // if ((BlockArgs as any)[block.name]) {
+            //     block.args_t = (BlockArgs as any)[block.name];
+
+            //     for (const type of block.args_t) {
+            //         block.args.push(buffer.read(type));
+            //     }
+            // }
         }
 
         return block;
@@ -212,7 +223,7 @@ export class Block<Index extends number = number> {
      */
     public toString(): string {
         let s = this.id.toString(16).padStart(2, "0");
-        if (this.args.length) s += "." + this.serialize_args().toString("hex");
+        if (this.data.length) s += "." + Block.serialize_args(this as Block).toString("hex");
         s += ";";
         return s;
     }
@@ -222,7 +233,7 @@ export class Block<Index extends number = number> {
  * This mapping contains definitins of block data which require additional
  * arguments to be sent or received with.
  */
-export const BlockData = {
+export const BlockArgs = {
     coin_gold_door: [ComponentTypeHeader.Int32],
     coin_blue_door: [ComponentTypeHeader.Int32],
     coin_gold_gate: [ComponentTypeHeader.Int32],
@@ -266,20 +277,5 @@ export const BlockData = {
     hazard_death_door: [ComponentTypeHeader.Int32],
     hazard_death_gate: [ComponentTypeHeader.Int32],
 };
-
-/**
- * This function initializes static block instances based on
- * the block mappings on the `Block` class. This maps `BLOCK
- * ID TO BLOCK`
- */
-(() => {
-    for (const id of Object.keys(BlockMappingsReverse)) {
-        (Block as any)[+id] = new Block(+id);
-    }
-
-    for (const name of Object.keys(BlockMappings)) {
-        (Block as any)[name.toUpperCase()] = new Block(BlockMappings[name]);
-    }
-})();
 
 export default Block;
