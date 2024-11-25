@@ -37,7 +37,7 @@ export default class Chat {
      * The event attribute is the internal event emitters for the chat
      * manager. It is used as an abstraction layer to append events.
      */
-    private events: EventEmitter<{ [k: string]: string[] }> = new EventEmitter();
+    private events: EventEmitter<{ [k: string]: [number, ...string[]] }> = new EventEmitter();
 
     /**
      * Create a new chat manager.
@@ -102,7 +102,7 @@ export default class Chat {
             for (const prefix of this.commandPrefix) {
                 if (message.startsWith(prefix)) {
                     const [command, ...args] = message.substring(prefix.length).split(" ");
-                    (this as any).emit(command, id, ...args);
+                    this.events.emit(command, id, ...args);
                     return;
                 }
             }
@@ -123,7 +123,7 @@ export default class Chat {
             for (const prefix of this.commandPrefix) {
                 if (message.startsWith(prefix)) {
                     const [command, ...args] = message.substring(prefix.length).split(" ");
-                    (this as any).emit(command, id, ...args);
+                    this.events.emit(command, id, ...args);
                     return;
                 }
             }
@@ -188,7 +188,7 @@ export default class Chat {
      * Appends a command handler to the event list.
      */
     public register(commandName: string, callee: (playerId: number, ...args: string[]) => any): this {
-        (this as any).events.on(commandName, callee);
+        this.events.on(commandName, callee);
         return this;
     }
 
@@ -196,7 +196,7 @@ export default class Chat {
      * Appends a command handler to the event list.
      */
     public registerHelp(): this {
-        (this as any).events.on("help", (pid: number) => {
+        this.events.on("help", (pid: number) => {
             this.send(`Commands: !help`);
         });
         return this;

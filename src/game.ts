@@ -5,6 +5,7 @@ import MessageTypes from "./data/message-types.js";
 import BufferReader, { ComponentTypeHeader } from "./util/buffer-reader.js";
 import { Block, GameConnection } from "./index.js";
 import Chat from "./chat/chat.js";
+import PlayerMap from "./players/map.js";
 
 export type ReceiveEvents = {
     Init: [];
@@ -72,7 +73,12 @@ export default class GameClient {
      * The chat manager is a utility to manage chat messages in the game. It can
      * be used to listen for chat messages, bot command requests and send to chat.
      */
-    public chat: Chat;
+    public readonly chat: Chat;
+
+    /**
+     * The Player map contains an updated map of players in the room.
+     */
+    public readonly players: PlayerMap;
 
     /**
      * The event event attributes are the internal event emitters for the
@@ -90,6 +96,7 @@ export default class GameClient {
     constructor(joinkey: string) {
         this.connection = new GameConnection(joinkey);
         this.chat = new Chat(this.connection);
+        this.players = new PlayerMap(this.connection);
     }
 
     //

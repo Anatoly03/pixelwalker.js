@@ -163,7 +163,6 @@ export default class GameConnection<Ready extends boolean = false> {
                 case GameConnection.HeaderBytes.Message:
                     const messageId = buffer.read7BitInt();
                     const args = buffer.deserialize();
-                    console.log(MessageTypes[messageId], ...args)
                     this.#receiver.emit(GameConnection.MessageTypes[messageId] as any, ...args);
                     break;
             }
@@ -177,7 +176,6 @@ export default class GameConnection<Ready extends boolean = false> {
          */
         process.on("unhandledRejection", (error) => {
             if (!(error instanceof Error)) return console.error("Unhandled Rejection:", error);
-
             console.error(`Unhandled Rejection: ${error.name}: ${error.message}\n${error.stack}`);
         });
 
