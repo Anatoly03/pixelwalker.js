@@ -7,6 +7,28 @@ import BufferReader, { ComponentTypeHeader } from "./util/buffer-reader.js";
 import ReceiveEvents from "./events/incoming.js";
 import SendEvents, { SendEventsFormat } from "./events/outgoing.js";
 
+/**
+ * The GameClient is a connection to the game server. It is used to send and
+ * receive messages from the game server. The methods `listen` and `send` provide
+ * interfaces to operate on incoming and with outgoing messages.
+ * 
+ * @example
+ * 
+ * This is a minimal example to keep a connection to the game server alive.
+ * The bot will not do anything other than responding to the PlayerInit event
+ * once and then keep the connection alive.
+ * 
+ * ```ts
+ * export const client = LobbyClient.withToken(process.env.token);
+ * export const game = await client.connection(process.env.world_id);
+ * 
+ * game.listen('PlayerInit', () => {
+ *     game.send('PlayerInit');
+ * });
+ * 
+ * game.bind();
+ * ```
+ */
 export default class GameClient<Ready extends boolean = false> {
     /**
      * Get an array of message typed sequenced integer → message name. Note,
