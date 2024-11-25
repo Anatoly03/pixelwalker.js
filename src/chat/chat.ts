@@ -1,259 +1,235 @@
-// import { EventEmitter } from "events";
-// import GameConnection from "../game";
+import { EventEmitter } from "events";
 
-// export default class Chat<T extends { [keys: string]: [number, ...string[]] } = {}> {
-//     /**
-//      * The Player map contains an updated map of players in the room.
-//      */
-//     protected players: Map<number, { id: number; cuid: string; username: string; colorCode: string }> = new Map();
+import GameConnection from "../game.connection.js";
+import BufferReader from "../util/buffer-reader.js";
 
-//     /**
-//      * Reference to the player's own ID.
-//      */
-//     protected readonly selfId!: number;
+export default class Chat {
+    /**
+     * The Player map contains an updated map of players in the room.
+     */
+    protected players: Map<number, { id: number; cuid: string; username: string; colorCode: string }> = new Map();
 
-//     /**
-//      * The stream to write the chat messages to. If undefined,
-//      * the chat messages will not be written.
-//      *
-//      * @example
-//      *
-//      * ```ts
-//      * const chat = new Chat(connection)
-//      *     .setUpstream(process.stdout);
-//      * ```
-//      */
-//     private stream?: NodeJS.WriteStream;
+    /**
+     * Reference to the player's own ID.
+     */
+    protected readonly selfId!: number;
 
-//     /**
-//      * The command prefix is the list of prefixes that are used to
-//      * identify a command.
-//      */
-//     public commandPrefix = ["!", "."];
+    /**
+     * The stream to write the chat messages to. If undefined,
+     * the chat messages will not be written.
+     *
+     * @example
+     *
+     * ```ts
+     * const chat = new Chat(connection)
+     *     .setUpstream(process.stdout);
+     * ```
+     */
+    private stream?: NodeJS.WriteStream;
 
-//     /**
-//      * The event attribute is the internal event emitters for the chat
-//      * manager. It is used as an abstraction layer to append events.
-//      */
-//     private events: EventEmitter<T> = new EventEmitter();
+    /**
+     * The command prefix is the list of prefixes that are used to
+     * identify a command.
+     */
+    public commandPrefix = ["!", "."];
 
-//     /**
-//      * Create a new chat manager.
-//      */
-//     public constructor(private connection: GameConnection) {
-//         /**
-//          * @event
-//          *
-//          * The `PlayerInit` event is emitted when the player is initialized.
-//          */
-//         connection.once("PlayerInit", (id, cuid, username, face, isAdmin, x, y, chatColor, isWorldOwner, canUseEdit, canUseGod, ..._) => {
-//             (this as any).selfId = id;
-//             this.players.set(id, {
-//                 id,
-//                 cuid,
-//                 username,
-//                 colorCode: "\x1b[0;36m",
-//             });
-//         });
+    /**
+     * The event attribute is the internal event emitters for the chat
+     * manager. It is used as an abstraction layer to append events.
+     */
+    private events: EventEmitter<{ [k: string]: string[] }> = new EventEmitter();
 
-//         /**
-//          * @event
-//          *
-//          * The `PlayerJoin` event is emitted when a player other than self
-//          * joins the room.
-//          */
-//         connection.on("PlayerJoined", (id, cuid, username, face, isAdmin, isFriend, isOwner, canUseGod, canUseEdit, x, y, chatColor, coins, blueCoins, deaths, collectedItems, isInGod, isInMod, crown, win, team, switches) => {
-//             let colorCode: string;
+    /**
+     * Create a new chat manager.
+     */
+    public constructor(private connection: GameConnection) {
+        /**
+         * @event
+         *
+         * The `PlayerInit` event is emitted when the player is initialized.
+         */
+        connection.listen("PlayerInit", (id, cuid, username, face, isAdmin, x, y, chatColor, isWorldOwner, canUseEdit, canUseGod, ..._) => {
+            (this as any).selfId = id;
+            this.players.set(id, {
+                id,
+                cuid,
+                username,
+                colorCode: "\x1b[0;36m",
+            });
+        });
 
-//             switch (true) {
-//                 case isAdmin:
-//                     colorCode = "\x1b[1;33m";
-//                     break;
-//                 case isFriend:
-//                     colorCode = "\x1b[1;32m";
-//                     break;
-//                 default:
-//                     colorCode = "\x1b[0;36m";
-//             }
+        /**
+         * @event
+         *
+         * The `PlayerJoin` event is emitted when a player other than self
+         * joins the room.
+         */
+        connection.listen("PlayerJoined", (id, cuid, username, face, isAdmin, isFriend, isOwner, canUseGod, canUseEdit, x, y, chatColor, coins, blueCoins, deaths, collectedItems, isInGod, isInMod, crown, win, team, switches) => {
+            let colorCode: string;
 
-//             const player = {
-//                 id,
-//                 cuid,
-//                 username,
-//                 colorCode,
-//             };
+            switch (true) {
+                case isAdmin:
+                    colorCode = "\x1b[1;33m";
+                    break;
+                case isFriend:
+                    colorCode = "\x1b[1;32m";
+                    break;
+                default:
+                    colorCode = "\x1b[0;36m";
+            }
 
-//             connection.send("PlayerChatMessage", `/giveedit ${username}`);
+            const player = {
+                id,
+                cuid,
+                username,
+                colorCode,
+            };
 
-//             this.players.set(id, player);
-//         });
+            this.players.set(id, player);
+        });
 
-//         connection.on("PlayerLeft", (id) => {
-//             const player = this.players.get(id);
-//             if (!player) return;
+        connection.listen("PlayerLeft", (id) => {
+            const player = this.players.get(id);
+            if (!player) return;
 
-//             this.players.delete(id);
-//         });
+            this.players.delete(id);
+        });
 
-//         connection.on("PlayerChatMessage", (id, message) => {
-//             const player = this.players.get(id);
-//             if (!player) return;
+        connection.listen("PlayerChatMessage", (id, message) => {
+            const player = this.players.get(id);
+            if (!player) return;
 
-//             for (const prefix of this.commandPrefix) {
-//                 if (message.startsWith(prefix)) {
-//                     const [command, ...args] = message.substring(prefix.length).split(" ");
-//                     (this as any).emit(command, id, ...args);
-//                     return;
-//                 }
-//             }
+            for (const prefix of this.commandPrefix) {
+                if (message.startsWith(prefix)) {
+                    const [command, ...args] = message.substring(prefix.length).split(" ");
+                    (this as any).emit(command, id, ...args);
+                    return;
+                }
+            }
 
-//             if (this.stream) {
-//                 // Replace usernames to highlight with their color code
-//                 for (const [id, player] of this.players) {
-//                     message = message.replace(new RegExp(`\\b${player.username}\\b`, "gi"), `${player.colorCode}${player.username}\x1b[0;0m`);
-//                 }
-//                 this.stream.write(`[${player.colorCode}${player.username}\x1b[0;0m] ${message}\n`);
-//             }
-//         });
+            if (this.stream) {
+                // Replace usernames to highlight with their color code
+                for (const [id, player] of this.players) {
+                    message = message.replace(new RegExp(`\\b${player.username}\\b`, "gi"), `${player.colorCode}${player.username}\x1b[0;0m`);
+                }
+                this.stream.write(`[${player.colorCode}${player.username}\x1b[0;0m] ${message}\n`);
+            }
+        });
 
-//         connection.on("PlayerDirectMessage", (id, message) => {
-//             const player = this.players.get(id);
-//             if (!player) return;
+        connection.listen("PlayerDirectMessage", (id, message) => {
+            const player = this.players.get(id);
+            if (!player) return;
 
-//             for (const prefix of this.commandPrefix) {
-//                 if (message.startsWith(prefix)) {
-//                     const [command, ...args] = message.substring(prefix.length).split(" ");
-//                     (this as any).emit(command, id, ...args);
-//                     return;
-//                 }
-//             }
+            for (const prefix of this.commandPrefix) {
+                if (message.startsWith(prefix)) {
+                    const [command, ...args] = message.substring(prefix.length).split(" ");
+                    (this as any).emit(command, id, ...args);
+                    return;
+                }
+            }
 
-//             if (this.stream) {
-//                 // Replace usernames to highlight with their color code
-//                 for (const [id, player] of this.players) {
-//                     message = message.replace(new RegExp(`\\b${player.username}\\b`, "gi"), `${player.colorCode}${player.username}\x1b[0;0m`);
-//                 }
+            if (this.stream) {
+                // Replace usernames to highlight with their color code
+                for (const [id, player] of this.players) {
+                    message = message.replace(new RegExp(`\\b${player.username}\\b`, "gi"), `${player.colorCode}${player.username}\x1b[0;0m`);
+                }
 
-//                 this.stream.write(`[${player.colorCode}${player.username}\x1b[0;0m → \x1b[1;36mYOU\x1b[0;0m] ${message}\n`);
-//             }
-//         });
+                this.stream.write(`[${player.colorCode}${player.username}\x1b[0;0m → \x1b[1;36mYOU\x1b[0;0m] ${message}\n`);
+            }
+        });
 
-//         connection.on("SystemMessage", (title, message) => {
-//             if (this.stream) {
-//                 if (title.startsWith("* ")) title = title.substring(2);
+        connection.listen("SystemMessage", (title, message) => {
+            if (this.stream) {
+                if (title.startsWith("* ")) title = title.substring(2);
 
-//                 // Replace usernames to highlight with their color code
-//                 for (const [id, player] of this.players) {
-//                     message = message.replace(new RegExp(`\\b${player.username}\\b`, "gi"), `${player.colorCode}${player.username}\x1b[0;34m`);
-//                 }
+                // Replace usernames to highlight with their color code
+                for (const [id, player] of this.players) {
+                    message = message.replace(new RegExp(`\\b${player.username}\\b`, "gi"), `${player.colorCode}${player.username}\x1b[0;34m`);
+                }
 
-//                 this.stream.write(`[\x1b[0;34m${title}\x1b[0;0m] \x1b[0;34m${message}\x1b[0;0m\n`);
-//             }
-//         });
-//     }
+                this.stream.write(`[\x1b[0;34m${title}\x1b[0;0m] \x1b[0;34m${message}\x1b[0;0m\n`);
+            }
+        });
+    }
 
-//     //
-//     //
-//     // EVENTS
-//     //
-//     //
+    //
+    //
+    // EVENTS
+    //
+    //
 
-//     /**
-//      * Adds the listener function to the end of the listeners array for the
-//      * event named `eventName`. No checks are made to see if the listener has
-//      * already been added. Multiple calls passing the same combination of
-//      * `eventNameand` listener will result in the listener being added, and called,
-//      * multiple times.
-//      */
-//     public on<Event extends keyof T>(eventName: Event, cb: (...args: [number, ...string[]]) => void): this;
+    /**
+     * Adds the listener function to the end of the listeners array for the
+     * event named `eventName`. No checks are made to see if the listener has
+     * already been added. Multiple calls passing the same combination of
+     * `eventNameand` listener will result in the listener being added, and called,
+     * multiple times.
+     */
+    public listen(cb: (...args: [number, string]) => void): this {
+        this.connection.listen("PlayerChatMessage", cb);
+        return this;
+    }
 
-//     public on(event: string, callee: (...args: any[]) => void): this {
-//         this.events.on(event as any, callee as any);
-//         return this;
-//     }
+    //
+    //
+    // METHODS
+    //
+    //
 
-//     /**
-//      * Adds a **one-time** listener function for the event named `eventName`. The
-//      * next time `eventName` is triggered, this listener is removed and then invoked.
-//      */
-//     public once<Event extends keyof T>(eventName: Event, cb: (...args: T[Event]) => void): this;
+    /**
+     * Adds an upstream to write the chat messages to.
+     */
+    public setUpstream(stream: NodeJS.WriteStream): this {
+        this.stream = stream;
+        return this;
+    }
 
-//     public once(event: string, callee: (...args: any[]) => void): this {
-//         this.events.once(event as any, callee as any);
-//         return this;
-//     }
+    /**
+     * Appends a command handler to the event list.
+     */
+    public register(commandName: string, callee: (playerId: number, ...args: string[]) => any): this {
+        (this as any).events.on(commandName, callee);
+        return this;
+    }
 
-//     /**
-//      * Synchronously calls each of the listeners registered for the event named `eventName`,
-//      * in the order they were registered, passing the supplied arguments to each.
-//      */
-//     public emit<Event extends keyof T>(eventName: Event, ...args: T[Event]): this;
+    /**
+     * Appends a command handler to the event list.
+     */
+    public registerHelp(): this {
+        (this as any).events.on("help", (pid: number) => {
+            this.send(`Commands: !help`);
+        });
+        return this;
+    }
 
-//     public emit(event: string, ...args: any[]): this {
-//         this.events.emit(event as any, ...(args as any));
-//         return this;
-//     }
+    /**
+     * Write to the chat as a player.
+     */
+    public send(message: string): void {
+        this.connection.send("PlayerChatMessage", BufferReader.String(message));
+    }
 
-//     //
-//     //
-//     // METHODS
-//     //
-//     //
-
-//     /**
-//      * Adds an upstream to write the chat messages to.
-//      */
-//     public setUpstream(stream: NodeJS.WriteStream): this {
-//         this.stream = stream;
-//         return this;
-//     }
-
-//     /**
-//      * Appends a command handler to the event list.
-//      */
-//     public register<A extends string>(commandName: A, callee: (playerId: number, ...args: string[]) => any): Chat<T & { [K in A]: [number, ...string[]] }> {
-//         (this as any).events.on(commandName, callee);
-//         return this as any;
-//     }
-
-//     /**
-//      * Appends a command handler to the event list.
-//      */
-//     public registerHelp(): Chat<T & { [K in "help"]: [number, ...string[]] }> {
-//         (this as any).events.on("help", (pid: number) => {
-//             this.send(`Commands: !help`);
-//         });
-//         return this as any;
-//     }
-
-//     /**
-//      * Write to the chat as a player.
-//      */
-//     public send(message: string): void {
-//         this.connection.send("PlayerChatMessage", message);
-//     }
-
-//     /**
-//      * Log to upstream.
-//      */
-//     public log(level: "error" | "warning" | "info" | "success", message: string): void {
-//         if (this.stream) {
-//             switch (level) {
-//                 case "success":
-//                     // message = message.replace('\x1b[0;0m', '\x1b[0;32m'); // TODO reset color?
-//                     message = `\x1b[0;32m${message}\n\x1b[0;0m`;
-//                     break;
-//                 case "error":
-//                     message = `\x1b[0;31m${message}\n\x1b[0;0m`;
-//                     break;
-//                 case "warning":
-//                     message = `\x1b[0;33m${message}\n\x1b[0;0m`;
-//                     break;
-//                 case "info":
-//                     message = `\x1b[0;36m${message}\n\x1b[0;0m`;
-//                     break;
-//             }
-//             this.stream.write(message);
-//         }
-//     }
-// }
+    // /**
+    //  * Log to upstream.
+    //  */
+    // public log(level: "error" | "warning" | "info" | "success", message: string): void {
+    //     if (this.stream) {
+    //         switch (level) {
+    //             case "success":
+    //                 // message = message.replace('\x1b[0;0m', '\x1b[0;32m'); // TODO reset color?
+    //                 message = `\x1b[0;32m${message}\n\x1b[0;0m`;
+    //                 break;
+    //             case "error":
+    //                 message = `\x1b[0;31m${message}\n\x1b[0;0m`;
+    //                 break;
+    //             case "warning":
+    //                 message = `\x1b[0;33m${message}\n\x1b[0;0m`;
+    //                 break;
+    //             case "info":
+    //                 message = `\x1b[0;36m${message}\n\x1b[0;0m`;
+    //                 break;
+    //         }
+    //         this.stream.write(message);
+    //     }
+    // }
+}

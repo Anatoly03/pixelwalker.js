@@ -4,6 +4,7 @@ import WebSocket from "ws";
 import MessageTypes from "./data/message-types.js";
 import BufferReader, { ComponentTypeHeader } from "./util/buffer-reader.js";
 import { Block, GameConnection } from "./index.js";
+import Chat from "./chat/chat.js";
 
 export type ReceiveEvents = {
     Init: [];
@@ -68,6 +69,12 @@ export default class GameClient {
     private connection!: GameConnection;
 
     /**
+     * The chat manager is a utility to manage chat messages in the game. It can
+     * be used to listen for chat messages, bot command requests and send to chat.
+     */
+    public chat: Chat;
+
+    /**
      * The event event attributes are the internal event emitters for the
      * game connection. They are used as an abstraction layer to append events.
      *
@@ -82,6 +89,7 @@ export default class GameClient {
      */
     constructor(joinkey: string) {
         this.connection = new GameConnection(joinkey);
+        this.chat = new Chat(this.connection);
     }
 
     //
@@ -102,16 +110,6 @@ export default class GameClient {
     public listen(event: string, callee: (...args: any[]) => void): this {
         this.#receiver.on(event as any, callee);
         return this;
-    }
-
-    /**
-     * 
-     * @param content 
-     */
-    public async sendChat(content: string): Promise<void> {
-        // TODO implement command
-        this.connection.send("PlayerChatMessage", BufferReader.String(content));
-        // TODO implement scheduler
     }
 
     //
