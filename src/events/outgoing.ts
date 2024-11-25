@@ -1,5 +1,6 @@
 import { ComponentTypeHeader } from "../util/buffer-reader";
-import { BlockData } from "../world/block";
+import { FormatType } from "../util/types";
+import { BlockArgs } from "../world/block";
 
 /**
  * The `PlayerInit` message has to be sent once directly after connecting
@@ -17,10 +18,15 @@ export const PlayerInit = [] as const;
  *
  * | Index | Type | Description |
  * | --- | --- | --- |
- * | 0 | `number` | X coordinate of the block |
- *
+ * | 0 | `Buffer` | Block data |
+ * | 1 | `number` | Layer |
+ * | 2 | `number` | Block ID |
  */
-// export const WorldBlockPlaced = [
+export const WorldBlockPlaced = [
+    ComponentTypeHeader.ByteArray,
+    ComponentTypeHeader.Int32,
+    ComponentTypeHeader.Int32,
+] as const;
 //     ...Object.keys(BlockData).map((k) => [ComponentTypeHeader.Int32, ComponentTypeHeader.Int32, ...(BlockData as any)[k]]),
 //     []
 // ] as const;
@@ -112,7 +118,7 @@ export const SendEventsFormat = {
     // PerformWorldAction: [],
     // WorldCleared: [],
     // WorldReloaded: [],
-    // WorldBlockPlaced,
+    WorldBlockPlaced,
     // WorldBlockFilled: [],
     PlayerChatMessage,
     // OldChatMessages: [],
@@ -139,35 +145,6 @@ export const SendEventsFormat = {
     // GlobalSwitchReset: [],
     // PlayerDirectMessage: [],
 };
-
-export type FormatType<K> = K extends readonly []
-    ? []
-    : K extends readonly [infer A, ...infer V]
-    ? [
-          A extends ComponentTypeHeader
-              ? A extends ComponentTypeHeader.Boolean
-                  ? boolean
-                  : A extends ComponentTypeHeader.Byte
-                  ? number
-                  : A extends ComponentTypeHeader.ByteArray
-                  ? number[]
-                  : A extends ComponentTypeHeader.Double
-                  ? number
-                  : A extends ComponentTypeHeader.Float
-                  ? number
-                  : A extends ComponentTypeHeader.Int16
-                  ? number
-                  : A extends ComponentTypeHeader.Int32
-                  ? number
-                  : A extends ComponentTypeHeader.Int64
-                  ? number
-                  : A extends ComponentTypeHeader.String
-                  ? string
-                  : never
-              : never,
-          ...FormatType<V>
-      ]
-    : never;
 
 export type SendEvents = {
     [K in keyof typeof SendEventsFormat]: FormatType<(typeof SendEventsFormat)[K]>;

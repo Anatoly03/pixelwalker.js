@@ -5,7 +5,9 @@ const data: Response = await fetch(`https://${Config.GameServerLink}/mappings`);
 const map: { [keys: string]: number } = await data.json();
 
 export const BlockMappings: { [keys: string]: number } = map;
-export const BlockMappingsReverse: { [keys: number]: string } = Object.fromEntries(Object.entries(map).map((a) => a.reverse()));
+export const BlockMappingsReverse: { [keys: number]: string } = {};
+
+Object.entries(map).forEach(([key, value]) => BlockMappingsReverse[+value] = key);
 
 if (import.meta.dirname)
     fs.writeFileSync(

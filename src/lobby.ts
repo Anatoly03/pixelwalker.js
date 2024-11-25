@@ -5,11 +5,12 @@ import Config from "./data/config.js";
 import RoomTypes from "./data/room-types.js";
 import PublicProfile from "./types/public-profile.js";
 import PublicWorld from "./types/public-world.js";
+import GameClient from "./game.js";
 
 /**
  *
  */
-export default class PixelWalkerClient {
+export default class LobbyClient {
     /**
      * The PixelWalker backend consists of several servers, and the API
      * server uses [PocketBase](https://pocketbase.io/) as its' base.
@@ -17,8 +18,8 @@ export default class PixelWalkerClient {
     public readonly pocketbase: PocketBase;
 
     /**
-     * Create a new Client instance, by logging in with a token. If the
-     * token is invalid, it will return null.
+     * Create a new Lobby Client instance, by logging in with a token. If
+     * the token is invalid, it will return null.
      *
      * @param {string} token The object holding the token which is used
      * to sign into pocketbase.
@@ -33,8 +34,8 @@ export default class PixelWalkerClient {
      * const client2 = Client.new(process.env.TOKEN)
      * ```
      */
-    public static withToken(token: string): PixelWalkerClient | null {
-        const client = new PixelWalkerClient();
+    public static withToken(token: string): LobbyClient | null {
+        const client = new this();
         client.pocketbase.authStore.save(token, { verified: true });
 
         if (!client.pocketbase.authStore.isValid) return null;
@@ -42,7 +43,7 @@ export default class PixelWalkerClient {
         return client;
     }
 
-    protected constructor() {
+    private constructor() {
         this.pocketbase = new PocketBase(Config.APIServerLink);
     }
 
@@ -132,20 +133,24 @@ export default class PixelWalkerClient {
      * placed after the magic byte `Message = 0x6B`. Read about the byte-level protocol
      * in the [Connection](./connection.ts) class.
      */
-    public async getJoinKey(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]) {
-        const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {});
-        return token as string;
-    }
+    // public async getJoinKey(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]) {
+    //     const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {});
+    //     return token as string;
+    // }
 
     /**
      *
      * @param world_id
      * @param room_type
      */
-    public async createConnection(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]): Promise<GameConnection> {
-        const join_key = await this.getJoinKey(world_id, room_type);
-        const connection = new GameConnection(join_key);
+    // public async createConnection(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]): Promise<GameConnection> {
+    //     const join_key = await this.getJoinKey(world_id, room_type);
+    //     const connection = new GameConnection(join_key);
+    //     return connection;
+    // }
 
-        return connection;
+    public async connection(world_id: string, room_type: (typeof RoomTypes)[0] = RoomTypes[0]): Promise<GameClient> {
+        const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {});
+        return GameClient.withKey(token);
     }
 }

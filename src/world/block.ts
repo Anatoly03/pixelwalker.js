@@ -23,36 +23,6 @@ export type BlockId = keyof typeof BlockMappingsReverse;
  */
 export type BlockName = keyof typeof BlockMappings;
 
-// /**
-//  * This mapping contains definitions of blocks which exist in
-//  * the game. Blocks can be accessed by their id or mapping name.
-//  * Under the hood, a proxy is used to generate the block instances,
-//  * so accessing a block by its' id or mapping name is equivalent to
-//  * creating a new block instance with the `Block` class.
-//  */
-// export const Blocks: {
-//     [id in keyof typeof BlockMappingsReverse]: Block<id>;
-// } & {
-//     [name in keyof typeof BlockMappings]: Block<(typeof BlockMappings)[name]>;
-// } = new Proxy(
-//     {},
-//     {
-//         get(target, prop): any {
-//             if (typeof prop !== "string") return (target as any)[prop];
-
-//             if (Number.isInteger(+prop)) {
-//                 return new Block(+prop);
-//             }
-
-//             if (BlockMappings[prop] !== undefined) {
-//                 return new Block(BlockMappings[prop]);
-//             }
-
-//             return null;
-//         },
-//     }
-// );
-
 /**
  * A block is a single unit in the game world matrix. This class contains
  * static access to all blocks in the game with their uppercase mapping or

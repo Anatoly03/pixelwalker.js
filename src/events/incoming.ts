@@ -1,3 +1,7 @@
+import { BlockMappings, BlockMappingsReverse } from "../data/block-mappings";
+import { FormatType } from "../util/types";
+import Block, { BlockArgs } from "../world/block";
+
 /**
  * The `PlayerInit` event is the first emitted event from the server and it is emitted only once.
  *
@@ -32,6 +36,38 @@ export type PlayerInit = [
     number, // Height
     Buffer // World Data
 ];
+
+/**
+ * The `WorldBlockPlaced` event is emitted when a block is placed in the world.
+ * 
+ * | Index | Type | Description |
+ * | --- | --- | --- |
+ * | 0 | `number` | Player Id |
+ * | 1 | `boolean` | Is Fill Operation? |
+ * | 2 | `Buffer` | Coordinate Buffer |
+ * | 3 | `number` | Layer |
+ * | 4 | `number` | Block Id |
+ * | ... | `any` | Block Data |
+ */
+export type WorldBlockPlaced = [
+    number, // Player Id
+    boolean, // Is Fill Operation?
+    Buffer, // Coordinate Buffer
+    0 | 1, // Layer
+    number, // Block Id
+    ...(string | number | bigint | boolean | Buffer)[] // Block Data
+];
+// TODO type system
+// export type WorldBlockPlaced = {
+//     [BID in keyof typeof BlockMappingsReverse]: [
+//         number, // Player Id
+//         boolean, // Is Fill Operation?
+//         Buffer, // Coordinate Buffer
+//         0 | 1, // Layer
+//         BID, // Block Id
+//         ...FormatType<(typeof BlockData)[(typeof BlockMappingsReverse)[BID] & keyof typeof BlockData]> // Block Data
+//     ];
+// }[number];
 
 /**
  * The `PlayerChatMessage` event is emitted on every chat message.
@@ -284,7 +320,7 @@ export type ReceiveEvents = {
 
     WorldReloaded: [];
 
-    WorldBlockPlaced: [];
+    WorldBlockPlaced: WorldBlockPlaced;
 
     WorldBlockFilled: [];
 

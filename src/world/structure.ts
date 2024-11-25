@@ -4,6 +4,7 @@ import Layer from "./layer";
 import Block from "./block";
 
 import structureMigrations from "./structure.migrations";
+import BlockImpl from "./block";
 
 export default class Structure<Meta extends { [keys: number | string]: number | string | boolean | null | undefined } = {}> {
     readonly [layer: number]: Layer;
@@ -150,7 +151,7 @@ export default class Structure<Meta extends { [keys: number | string]: number | 
             let idx = 0;
 
             for (const bl of blocks) {
-                const block = Block.fromString(bl);
+                const block = (BlockImpl as any).fromString(bl);
                 const x = idx % data.width;
                 const y = Math.floor(idx / data.width);
                 structure[i][x][y] = block;
@@ -195,7 +196,7 @@ export default class Structure<Meta extends { [keys: number | string]: number | 
                     let blockId = palette.indexOf(block.name);
 
                     ENCODING += blockId.toString(16).padStart(2, "0");
-                    if (block.args.length) ENCODING += '.' + block.serialize_args().toString('hex');
+                    if (block.data.length) ENCODING += '.' + BlockImpl.serialize_args(block).toString('hex');
                     ENCODING += ';';
                 }
             }
