@@ -6,6 +6,7 @@ import BufferReader, { ComponentTypeHeader } from "./util/buffer-reader.js";
 import { Block, GameConnection } from "./index.js";
 import Chat from "./chat/chat.js";
 import PlayerMap from "./players/map.js";
+import World from "./world/world.js";
 
 export type ReceiveEvents = {
     Init: [];
@@ -81,6 +82,12 @@ export default class GameClient {
     public readonly players: PlayerMap;
 
     /**
+     * The world is a structure wrapper synchronized with a client. It tracks
+     * the world state and provides an interface to interact with the world.
+     */
+    public readonly world: World;
+
+    /**
      * The event event attributes are the internal event emitters for the
      * game connection. They are used as an abstraction layer to append events.
      *
@@ -97,6 +104,7 @@ export default class GameClient {
         this.connection = new GameConnection(joinkey);
         this.chat = new Chat(this.connection);
         this.players = new PlayerMap(this.connection);
+        this.world = new World(this.connection);
     }
 
     //

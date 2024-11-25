@@ -137,7 +137,7 @@ export class Block<Index extends BlockId = BlockId> {
         const buffers: Buffer[] = [];
         const format: ComponentTypeHeader[] = (BlockArgs as any)[block.name];
 
-        for (let i = 0; i < format.length; i++) {
+        for (let i = 0; i < (format?.length ?? 0); i++) {
             buffers.push(BufferReader.Dynamic(format[i], block.data[i]));
         }
 
@@ -152,7 +152,7 @@ export class Block<Index extends BlockId = BlockId> {
         const block = new Block(blockId);
         const format: ComponentTypeHeader[] = (BlockArgs as any)[block.name];
 
-        for (let i = 0; i < format.length; i++) {
+        for (let i = 0; i < (format?.length ?? 0); i++) {
             block.data[i] = buffer.read(format[i]);
         }
 
@@ -172,7 +172,7 @@ export class Block<Index extends BlockId = BlockId> {
             const args = parts[1];
             const buffer = BufferReader.from(Buffer.from(args, "hex"));
 
-            for (let i = 0; i < format.length; i++) {
+            for (let i = 0; i < (format?.length ?? 0); i++) {
                 block.data[i] = buffer.read(format[i]);
             }
 
