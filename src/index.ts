@@ -20,7 +20,7 @@ export { default as LobbyClient, default as PixelWalkerClient } from "./lobby.js
 export { default as GameConnection } from "./game.connection.js";
 export { default as GameClient } from "./game.js";
 
-// export { default as PlayerMap } from "./players/map.js";
+export { default as PlayerMap } from "./players/map.js";
 
 export { default as Block } from "./world/block.js";
 export { default as Layer } from "./world/layer.js";

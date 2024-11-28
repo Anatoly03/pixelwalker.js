@@ -7,7 +7,7 @@ import { toBinary, fromBinary, create } from "@bufbuild/protobuf";
 
 type WorldEventNames = Protocol.WorldPacket["packet"]["case"];
 type WorldEventData<Name extends WorldEventNames> = Protocol.WorldPacket["packet"] & { name: Name };
-type Events = { [K in WorldEventNames & string]: [WorldEventData<K>["value"]] };
+type Events = { [K in WorldEventNames & string]: [(WorldEventData<K> & { case: K })["value"]] };
 
 /**
  * The GameConnection is a connection to the game server. It is used to send and
@@ -116,7 +116,7 @@ export default class GameConnection<Ready extends boolean = false> {
          */
         this.socket.on("message", (message: WithImplicitCoercion<ArrayBuffer>) => {
             const packet = fromBinary(Protocol.WorldPacketSchema, Buffer.from(message));
-            this.#receiver.emit(packet.packet.case as any, packet.packet);
+            this.#receiver.emit(packet.packet.case as any, packet.packet.value ?? {});
         });
 
         /**

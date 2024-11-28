@@ -75,8 +75,8 @@ export default class LobbyClient {
      * }
      * ```
      */
-    public profiles() {
-        return this.pocketbase.collection("public_profiles") as RecordService<PublicProfile>;
+    public profiles(): RecordService<PublicProfile> {
+        return this.pocketbase.collection("public_profiles");
     }
 
     /**
@@ -103,8 +103,8 @@ export default class LobbyClient {
      * }
      * ```
      */
-    public worlds() {
-        return this.pocketbase.collection("public_worlds") as RecordService<PublicWorld>;
+    public worlds(): RecordService<PublicWorld> {
+        return this.pocketbase.collection("public_worlds");
     }
 
     /**
@@ -141,12 +141,7 @@ export default class LobbyClient {
      * in the [Connection](./connection.ts) class.
      */
     public async getJoinKey(world_id: string, room_type?: (typeof RoomTypes)[0]): Promise<string> {
-        if (process.env.LOCALHOST) {
-            room_type = room_type ?? "pixelwalker_dev";
-        } else {
-            room_type = room_type ?? RoomTypes[0];
-        }
-
+        room_type = room_type ?? (process.env.LOCALHOST ? "pixelwalker_dev" : RoomTypes[0]);
         const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {});
         return token;
     }

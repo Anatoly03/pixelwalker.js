@@ -1,12 +1,8 @@
 import EventEmitter from "events";
 import WebSocket from "ws";
 
-import Config from "./data/config.js";
-import * as Protocol from "./network/pixelwalker_pb.js";
-import { toBinary, fromBinary } from "@bufbuild/protobuf";
-
 import { GameConnection } from "./index.js";
-// import PlayerMap from "./players/map.js";
+import PlayerMap from "./players/map.js";
 import World from "./world/world.js";
 
 // export type ReceiveEvents = {
@@ -58,7 +54,7 @@ export default class GameClient {
     /**
      * The Player map contains an updated map of players in the room.
      */
-    // public readonly players: PlayerMap;
+    public readonly players: PlayerMap;
 
     /**
      * The world is a structure wrapper synchronized with a client. It tracks
@@ -82,7 +78,7 @@ export default class GameClient {
     constructor(joinkey: string) {
         this.connection = new GameConnection(joinkey);
         // this.chat = new Chat(this.connection);
-        // this.players = new PlayerMap(this.connection);
+        this.players = new PlayerMap(this.connection);
         this.world = new World(this.connection);
     }
 
