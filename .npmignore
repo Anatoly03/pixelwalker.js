@@ -1,5 +1,6 @@
 .github
 # dist
+docs
 # local
 network
 node_modules
