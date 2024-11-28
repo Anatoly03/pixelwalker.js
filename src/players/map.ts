@@ -72,12 +72,12 @@ export default class PlayerMap {
                 properties: message?.playerProperties!,
                 state: {
                     $typeName: "WorldPackets.PlayerWorldState",
-                    coins: 0,
-                    blueCoins: 0,
+                    coinsGold: 0,
+                    coinsBlue: 0,
                     deaths: 0,
-                    collectedItems: new Uint8Array(0), // TODO
-                    hasCrown: false,
-                    hasCompletedWord: false,
+                    collectedItems: [], // TODO
+                    hasGoldCrown: false,
+                    hasSilverCrown: false,
                     switches: new Uint8Array(999),
                     godmode: false,
                     modmode: false,
@@ -102,12 +102,12 @@ export default class PlayerMap {
                 properties: message.properties!,
                 state: message.worldState ?? {
                     $typeName: "WorldPackets.PlayerWorldState",
-                    coins: 0,
-                    blueCoins: 0,
+                    coinsGold: 0,
+                    coinsBlue: 0,
                     deaths: 0,
-                    collectedItems: new Uint8Array(0), // TODO
-                    hasCrown: false,
-                    hasCompletedWord: false,
+                    collectedItems: [], // TODO
+                    hasGoldCrown: false,
+                    hasSilverCrown: false,
                     switches: new Uint8Array(999),
                     godmode: false,
                     modmode: false,
@@ -162,10 +162,10 @@ export default class PlayerMap {
             const player = this.players.get(playerId!);
             if (!player) return;
 
-            if (message.respawnPosition) {
+            if (message.position) {
                 delete player.movement;
-                player.properties.x = message.respawnPosition.x;
-                player.properties.y = message.respawnPosition.y;
+                player.properties.position!.x = message.position.x;
+                player.properties.position!.y = message.position.y;
             }
             // this.events.emit("Respawn", player);
         });
@@ -177,10 +177,10 @@ export default class PlayerMap {
 
             console.log("TODO RESET PLAYER: " + player.properties.username);
 
-            if (message.respawnPosition) {
+            if (message.position) {
                 delete player.movement;
-                player.properties.x = message.respawnPosition.x;
-                player.properties.y = message.respawnPosition.y;
+                player.properties.position!.x = message.position.x;
+                player.properties.position!.y = message.position.y;
             }
 
             // this.events.emit("Respawn", player);
@@ -193,12 +193,12 @@ export default class PlayerMap {
 
             switch (BlockMappingsReverse[message.blockId]) {
                 case "crown_gold":
-                    if (this.crown) this.crown.state.hasCrown = false;
-                    player.state.hasCrown = true;
+                    if (this.crown) this.crown.state.hasGoldCrown = false;
+                    player.state.hasGoldCrown = true;
                     // this.events.emit("Crown", this.crown, player);
                     break;
                 case "crown_silver":
-                    player.state.hasCompletedWord = true;
+                    player.state.hasSilverCrown = true;
                     // this.events.emit("Trophy", player);
                     break;
                 default:

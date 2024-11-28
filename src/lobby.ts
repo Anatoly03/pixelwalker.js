@@ -1,4 +1,4 @@
-import PocketBase, { RecordService } from "pocketbase";
+import PocketBase, { BaseAuthStore, RecordService } from "pocketbase";
 
 import Config from "./data/config.js";
 import RoomTypes from "./data/room-types.js";
@@ -7,21 +7,32 @@ import PublicWorld from "./types/public-world.js";
 import GameClient from "./game.js";
 
 /**
- *
+ * The LobbyClient connects with the
+ * {@link https://api.pixelwalker.net/ PixelWalker API Server}
+ * and provides an interface with the {@link https://pocketbase.io/ PocketBase}
+ * instance. (The backend framework which PixelWalker uses.)
  */
-export default class LobbyClient {
+export default class LobbyClient<Auth extends boolean = false> {
     /**
      * The list of available room types. The room types are used when
      * opening a new room on the game server. The room types are currently
      * not used, and currently room type `RoomTypes[0]` can be used.
+     * 
+     * @static
+     * 
+     * @ignore Since there is only one room type, this symbol is ignored,
+     * but kept public to allow future extensions.
      */
     public static RoomTypes = RoomTypes;
 
     /**
      * The PixelWalker backend consists of several servers, and the API
-     * server uses [PocketBase](https://pocketbase.io/) as its' base.
+     * server uses {@link https://pocketbase.io/ Pocketbase} as its'
+     * backend framework.
      */
-    public readonly pocketbase: PocketBase;
+    public readonly pocketbase!: PocketBase & {
+        authStore: BaseAuthStore & { isValid: Auth };
+    };
 
     /**
      * Create a new Client instance, by logging in with a token. If the
@@ -36,21 +47,38 @@ export default class LobbyClient {
      *
      * ```ts
      * import 'dotenv/config'
-     * const client = Client.new({ token: process.env.TOKEN as string })
-     * const client2 = Client.new(process.env.TOKEN)
+     * const client = Client.new('eyj.......')
      * ```
+     * 
+     * @static
      */
-    public static withToken(token: string): LobbyClient | null {
-        const client = new LobbyClient();
+    public static withToken(token: string): LobbyClient<true> | null {
+        const client = new this<true>();
         client.pocketbase.authStore.save(token, { verified: true });
-
         if (!client.pocketbase.authStore.isValid) return null;
-
         return client;
     }
 
+    /**
+     * Create a new Client instance, by logging in as a guest. This
+     * method does not require any arguments and will return a new
+     * instance able to have minimal interactions with the API server.
+     * 
+     * You can still access public information, but won't be able to
+     * establish a game connection, access private information and
+     * you will be affected by stricter rate limits.
+     * 
+     * @static
+     */
+    public static guest(): LobbyClient<false> {
+        return new this();
+    }
+
+    /**
+     * @todo
+     */
     protected constructor() {
-        this.pocketbase = new PocketBase(Config.APIServerLink);
+        this.pocketbase = new PocketBase(Config.APIServerLink) as any;
     }
 
     /**
@@ -139,8 +167,10 @@ export default class LobbyClient {
      * handshake. This does not require any further arguments, however needs to be
      * placed after the magic byte `Message = 0x6B`. Read about the byte-level protocol
      * in the [Connection](./connection.ts) class.
+     * 
+     * @this LobbyClient<true>
      */
-    public async getJoinKey(world_id: string, room_type?: (typeof RoomTypes)[0]): Promise<string> {
+    public async getJoinKey(this: LobbyClient<true>, world_id: string, room_type?: (typeof RoomTypes)[0]): Promise<string> {
         room_type = room_type ?? (process.env.LOCALHOST ? "pixelwalker_dev" : RoomTypes[0]);
         const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {});
         return token;
@@ -150,8 +180,10 @@ export default class LobbyClient {
      * Generate a game session for a specific world id. Optionally override room
      * type. The returned object will return an event emitter than can bind to
      * the game server.
+     * 
+     * @this LobbyClient<true>
      */
-    public async connection(world_id: string, room_type?: (typeof RoomTypes)[0]): Promise<GameClient> {
+    public async connection(this: LobbyClient<true>, world_id: string, room_type?: (typeof RoomTypes)[0]): Promise<GameClient> {
         const token = await this.getJoinKey(world_id, room_type);
         return new GameClient(token);
     }

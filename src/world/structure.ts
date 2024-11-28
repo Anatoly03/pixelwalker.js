@@ -5,7 +5,7 @@ import Block from "./block";
 
 import structureMigrations from "./structure.migrations";
 
-export default class Structure<Meta extends { [keys: number | string]: number | string | boolean | null | undefined } = {}> {
+export default class Structure<Meta extends { [keys: number | string]: any } = {}> {
     readonly [layer: number]: Layer;
 
     /**

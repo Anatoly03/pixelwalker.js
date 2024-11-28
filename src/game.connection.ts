@@ -7,12 +7,14 @@ import { toBinary, fromBinary, create } from "@bufbuild/protobuf";
 
 type WorldEventNames = Protocol.WorldPacket["packet"]["case"];
 type WorldEventData<Name extends WorldEventNames> = Protocol.WorldPacket["packet"] & { name: Name };
-type Events = { [K in WorldEventNames & string]: [(WorldEventData<K> & { case: K })["value"]] };
+export type Events = { [K in WorldEventNames & string]: [(WorldEventData<K> & { case: K })["value"]] };
 
 /**
- * The GameConnection is a connection to the game server. It is used to send and
- * receive messages from the game server. The methods `listen` and `send` provide
- * interfaces to operate on incoming and with outgoing messages.
+ * The GameConnection is a connection to the game server at the
+ * {@link https://game.pixelwalker.net/ PixelWalker Game Server}.
+ * It is used to send and receive messages from the game server. The methods
+ * `listen` and `send` provide interfaces to operate on incoming and with
+ * outgoing messages.
  *
  * @example
  *
@@ -24,14 +26,27 @@ type Events = { [K in WorldEventNames & string]: [(WorldEventData<K> & { case: K
  * export const client = LobbyClient.withToken(process.env.token);
  * export const game = await GameConnection(client.getJoinKey(process.env.world_id))
  *
- * game.listen('PlayerInit', () => {
- *     game.send('PlayerInit');
+ * game.listen('playerInitPacket', () => {
+ *     game.send('playerInitReceived');
+ * });
+ * 
+ * this.connection.listen("ping", () => {
+ *     this.connection.send("ping");
  * });
  *
  * game.bind();
  * ```
  */
 export default class GameConnection<Ready extends boolean = false> {
+    /**
+     * The protocol is a collection of all the possible messages that can be
+     * sent and received from the game server. It is used to serialize and
+     * deserialize messages to and from the game server.
+     * 
+     * @kind file
+     */
+    public static Protocol = Protocol;
+
     /**
      * An open HTML connection to the game server. This is the tunnel with the
      * game server, which manages realtime communication with a world.
@@ -45,11 +60,32 @@ export default class GameConnection<Ready extends boolean = false> {
     #receiver: EventEmitter<Events> = new EventEmitter();
 
     /**
+     * 
+     * @param joinkey The joinkey retrieved from the API server.
+     * 
+     * ```ts
+     * import { LobbyClient } from "pixelwalker.js/localhost"
+     * 
+     * const client = LobbyClient.withToken(process.env.token)
+     * const joinkey = await client.getJoinKey(process.env.world_id);
+     * ```
+     * 
+     * @returns {GameConnection} A new instance of the GameConnection.
+     * 
+     * ```ts
+     * const connection = GameConnection.withJoinKey(joinkey);
+     * ```
+     */
+    public static withJoinKey(joinkey: string): GameConnection {
+        return new this(joinkey);
+    }
+
+    /**
      * **NOTE**: Creating a `GameConnection` is not enough to connect to the game.
      * You need to manually call the `bind` method to establish a connection, after
      * registering event handlersand managing the state of your program.
      */
-    constructor(private joinkey: string) {}
+    protected constructor(private joinkey: string) {}
 
     //
     //
@@ -61,8 +97,12 @@ export default class GameConnection<Ready extends boolean = false> {
      * Adds the listener function to the end of the listeners array for the
      * event named `eventName`. No checks are made to see if the listener has
      * already been added. Multiple calls passing the same combination of
-     * `eventNameand` listener will result in the listener being added, and called,
-     * multiple times.
+     * `eventNameand` listener will result in the listener being added, and
+     * called, multiple times.
+     * 
+     * | Event Name         | Description |
+     * |--------------------|-------------|
+     * | `playerInitPacket` | The message event is received when the client opens the connection.
      */
     public listen<Event extends keyof Events>(eventName: Event, callback: (e: Events[Event][0]) => void): this {
         this.#receiver.on(eventName as any, callback as any);
@@ -72,6 +112,10 @@ export default class GameConnection<Ready extends boolean = false> {
     /**
      * Sends a message to the game server, evaluating the header bytes and argument
      * format based on `eventName`.
+     * 
+     * | Event Name         | Description |
+     * |--------------------|-------------|
+     * | `playerInitReceived` | The message has to be sent when the client receives `playerInitPacket`.
      */
     public send<Event extends keyof Events>(eventName: Event, value: Events[Event][0] = <any>{}): this {
         const message = create(Protocol.WorldPacketSchema, { packet: { case: eventName, value } } as any);

@@ -1,20 +1,8 @@
-import EventEmitter from "events";
-import WebSocket from "ws";
+import GameConnection from "./game.connection.js";
 
-import { GameConnection } from "./index.js";
+import { Events } from "./game.connection.js";
 import PlayerMap from "./players/map.js";
 import World from "./world/world.js";
-
-// export type ReceiveEvents = {
-//     Init: [];
-//     Block: [Block, [number, number][], 0 | 1];
-//     Chat: [string];
-// };
-
-// export type SendEvents = {
-//     Block: [Block, [number, number][], 0 | 1];
-//     Chat: [string];
-// };
 
 /**
  * The GameClient is a connection interface with the game server. It is used to
@@ -43,7 +31,7 @@ export default class GameClient {
      * An open HTML connection to the game server. This is the tunnel with the
      * game server, which manages realtime communication with a world.
      */
-    public connection!: GameConnection;
+    protected connection!: GameConnection;
 
     /**
      * The chat manager is a utility to manage chat messages in the game. It can
@@ -70,13 +58,35 @@ export default class GameClient {
      */
     // #receiver: EventEmitter<Events> = new EventEmitter();
 
+
+    /**
+     * 
+     * @param joinkey The joinkey retrieved from the API server.
+     * 
+     * ```ts
+     * import { LobbyClient } from "pixelwalker.js/localhost"
+     * 
+     * const client = LobbyClient.withToken(process.env.token)
+     * const joinkey = await client.getJoinKey(process.env.world_id);
+     * ```
+     * 
+     * @returns {GameClient} A new instance of the GameClient.
+     * 
+     * ```ts
+     * const connection = GameClient.withJoinKey(joinkey);
+     * ```
+     */
+    public static withJoinKey(joinkey: string): GameClient | null {
+        return new this(joinkey);
+    }
+
     /**
      * **NOTE**: Creating a `GameClient` is not enough to connect to the game.
      * You need to manually call the `bind` method to establish a connection, after
      * registering event handlersand managing the state of your program.
      */
     constructor(joinkey: string) {
-        this.connection = new GameConnection(joinkey);
+        this.connection = GameConnection.withJoinKey(joinkey);
         // this.chat = new Chat(this.connection);
         this.players = new PlayerMap(this.connection);
         this.world = new World(this.connection);
@@ -89,19 +99,26 @@ export default class GameClient {
     //
 
     /**
-     * Adds the listener function to the end of the listeners array for the
-     * event named `eventName`. No checks are made to see if the listener has
-     * already been added. Multiple calls passing the same combination of
-     * `eventNameand` listener will result in the listener being added, and called,
-     * multiple times.
+     * Calls the internal {@link GameConnection.listen} method to listen for
+     * incoming events from the server. Refer to the {@link GameConnection.listen}
+     * method for more information.
      */
-    // public listen<Event extends keyof ReceiveEvents>(eventName: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
+    public listen<Event extends keyof Events>(eventName: Event, callback: (e: Events[Event][0]) => void): this {
+        this.connection.listen(eventName, callback);
+        return this;
+    }
 
-    // public listen(event: string, callee: (...args: any[]) => void): this {
-    //     this.#receiver.on(event as any, callee);
-    //     return this;
-    // }
-
+    /**
+     * Calls the internal {@link GameConnection.send} method to send a packet to
+     * the server. Refer to the {@link GameConnection.send} method for more information.
+     * 
+     * The {@link GameClient} class automatically manages pings and the init hanshake to
+     * keep the connection alive.
+     */
+    public send<Event extends keyof Events>(eventName: Event, value: Events[Event][0] = <any>{}): this {
+        this.connection.send(eventName, value);
+        return this;
+    }
     //
     //
     // METHODS
@@ -109,7 +126,8 @@ export default class GameClient {
     //
 
     /**
-     *
+     * Binds the connection to the game server. Internally, this method
+     * creates a socket in the connection class and appens core event listeners.
      */
     public bind(): this {
         this.connection.bind();
