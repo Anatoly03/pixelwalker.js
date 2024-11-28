@@ -2,8 +2,7 @@
 
 import BufferReader from "./util/buffer-reader.js";
 
-export { default as MessageTypes } from "./data/message-types.js";
-export { default as BufferReader } from "./util/buffer-reader.js";
+export * as Protocol from "./network/pixelwalker_pb.js";
 
 export const Type = {
     String: BufferReader.String,

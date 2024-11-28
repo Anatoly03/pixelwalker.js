@@ -1,0 +1,13 @@
+.github
+# dist
+# local
+network
+node_modules
+src
+
+.gitignore
+.npmignore
+.prettierrc
+buf.gen.yaml
+# package files
+tsconfig.json

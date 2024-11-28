@@ -11,5 +11,4 @@
  */
 process.env.LOCALHOST = "true";
 
-// export { default as default } from "../index.js";
-export * from "../index.js";
+export * from '../dist/index.js';

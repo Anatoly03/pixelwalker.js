@@ -38,24 +38,43 @@ export default class World {
     private events: EventEmitter<WorldEvents> = new EventEmitter();
 
     public constructor(private connection: GameConnection) {
-        connection.listen("PlayerInit", (_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, title, plays, owner, description, visibility, isUnsaved, hasUnsavedChanges, globalSwitchStates, width, height, worldData) => {
-            const buffer = BufferReader.from(worldData);
+        /**
+         * @event PlayerInit
+         * 
+         * The `PlayerInit` event is emitted when the player is initialized. It
+         * receives the world data.
+         */
+        // connection.listen("PlayerInit", (_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, title, plays, owner, description, visibility, isUnsaved, hasUnsavedChanges, globalSwitchStates, width, height, worldData) => {
+        //     const buffer = BufferReader.from(worldData);
 
-            this.meta = { title, owner, plays, description };
-            this.structure = new Structure(width, height).deserialize(buffer);
+        //     this.meta = { title, owner, plays, description };
+        //     this.structure = new Structure(width, height).deserialize(buffer);
 
-            if (buffer.subarray().length) {
-                console.error(`WorldSerializationFault: World data buffer has ${buffer.subarray().length} remaining bytes.`);
-                // connection.close();
-                return;
-            }
+        //     if (buffer.subarray().length) {
+        //         console.error(`WorldSerializationFault: World data buffer has ${buffer.subarray().length} remaining bytes.`);
+        //         // connection.close();
+        //         return;
+        //     }
 
-            this.events.emit("Init", this.structure);
-        });
+        //     this.events.emit("Init", this.structure);
+        // });
 
-        connection.listen("WorldBlockPlaced", (...args) => {
-            console.log(args)
-        })
+        // /**
+        //  * @event WorldBlockPlaced
+        //  * 
+        //  * The `WorldBlockPlaced` event is emitted when a block is placed in the world.
+        //  */
+        // connection.listen("WorldBlockPlaced", (pid, isFill, coords, layer, bid, ...args) => {
+        //     const coordinates = new Uint16Array(Buffer.from(coords).buffer);
+        //     const block = new Block(bid)
+        //     block.data = args;
+
+        //     for (let i = 0; i < coords.length; i += 2) {
+        //         const [x, y] = coordinates.slice(i, i + 2);
+        //         // TODOthis.structure![layer][x][y] = block;
+        //         console.log(block, x, y)
+        //     }
+        // })
     }
 
     //

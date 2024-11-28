@@ -2,9 +2,12 @@ import EventEmitter from "events";
 import WebSocket from "ws";
 
 import Config from "./data/config.js";
-import MessageTypes from "./data/message-types.js";
-import BufferReader from "./util/buffer-reader.js";
-import ReceiveEvents from "./events/incoming.js";
+import * as Protocol from "./network/pixelwalker_pb.js";
+import { toBinary, fromBinary, create } from "@bufbuild/protobuf";
+
+type WorldEventNames = Protocol.WorldPacket["packet"]["case"];
+type WorldEventData<Name extends WorldEventNames> = Protocol.WorldPacket["packet"] & { name: Name };
+type Events = { [K in WorldEventNames & string]: [WorldEventData<K>["value"]] };
 
 /**
  * The GameConnection is a connection to the game server. It is used to send and
@@ -30,28 +33,6 @@ import ReceiveEvents from "./events/incoming.js";
  */
 export default class GameConnection<Ready extends boolean = false> {
     /**
-     * Get an array of message typed sequenced integer → message name. Note,
-     * that the array below is not full,
-     *
-     * @example
-     *
-     * ```ts
-     * import { Connection } from 'pixelwalker.js'
-     * console.log(Connection.MessageTypes); // ["PlayerInit", "UpdateRights", ...]
-     * ```
-     */
-    public static MessageTypes: typeof MessageTypes = MessageTypes;
-
-    /**
-     * The Magic Bytes noting the type of connection message. All incoming
-     * messages start with either of the magic bytes.
-     */
-    public static HeaderBytes = {
-        Ping: 0x3f,
-        Message: 0x6b,
-    };
-
-    /**
      * An open HTML connection to the game server. This is the tunnel with the
      * game server, which manages realtime communication with a world.
      */
@@ -61,7 +42,7 @@ export default class GameConnection<Ready extends boolean = false> {
      * The event event attributes are the internal event emitters for the
      * game connection. They are used as an abstraction layer to append events.
      */
-    #receiver: EventEmitter<ReceiveEvents> = new EventEmitter();
+    #receiver: EventEmitter<Events> = new EventEmitter();
 
     /**
      * **NOTE**: Creating a `GameConnection` is not enough to connect to the game.
@@ -83,38 +64,19 @@ export default class GameConnection<Ready extends boolean = false> {
      * `eventNameand` listener will result in the listener being added, and called,
      * multiple times.
      */
-    // public listen<Index extends number, Event extends (typeof MessageTypes)[Index] & keyof ReceiveEvents>(eventName: Event, cb: (...args: ReceiveEvents[Event]) => void): this;
-
-    // public listen(event: string, callee: (...args: any[]) => void): this {
-    //     this.#receiver.on(event as any, callee);
-    //     return this;
-    // }
-    public listen<Event extends (typeof MessageTypes)[number] & keyof ReceiveEvents>(eventName: Event, cb: (...args: ReceiveEvents[Event]) => void): this {
-        this.#receiver.on(eventName as any, cb as any);
+    public listen<Event extends keyof Events>(eventName: Event, callback: (e: Events[Event][0]) => void): this {
+        this.#receiver.on(eventName as any, callback as any);
         return this;
     }
 
     /**
-     * Synchronously sends a message to the game server, evaluating the header
-     * bytes and argument format based on `eventName`.
+     * Sends a message to the game server, evaluating the header bytes and argument
+     * format based on `eventName`.
      */
-    // public send<Index extends number, Event extends (typeof MessageTypes)[Index] & keyof SendEvents>(eventName: Event, ...args: SendEvents[Event]): this;
-
-    // public send(event: string, ...args: (boolean | number | bigint | string | Buffer)[]): this {
-    //     const format: ComponentTypeHeader[] = SendEventsFormat[event as keyof typeof SendEventsFormat] as any;
-
-    //     const buffer = [Buffer.from([GameConnection.HeaderBytes.Message, GameConnection.MessageTypes.findIndex((m) => m === event)])];
-
-    //     for (let i = 0; i < format.length; i++) {
-    //         buffer.push(BufferReader.Dynamic(format[i], args[i]));
-    //     }
-
-    //     this.socket.send(Buffer.concat(buffer));
-    //     return this;
-    // }
-    public send<Event extends (typeof MessageTypes)[number]>(eventName: Event, ...args: Buffer[]): this {
-        const buffer = [Buffer.from([GameConnection.HeaderBytes.Message, GameConnection.MessageTypes.findIndex((m) => m === eventName)]), ...args];
-        this.socket.send(Buffer.concat(buffer));
+    public send<Event extends keyof Events>(eventName: Event, value: Events[Event][0] = <any>{}): this {
+        const message = create(Protocol.WorldPacketSchema, { packet: { case: eventName, value } } as any);
+        const buffer = toBinary(Protocol.WorldPacketSchema, message);
+        this.socket.send(buffer);
         return this;
     }
 
@@ -153,19 +115,8 @@ export default class GameConnection<Ready extends boolean = false> {
          * The message event is received for every incoming socket message.
          */
         this.socket.on("message", (message: WithImplicitCoercion<ArrayBuffer>) => {
-            const buffer = BufferReader.from(message);
-            if (buffer.length == 0) return;
-
-            switch (buffer.readUInt8()) {
-                case GameConnection.HeaderBytes.Ping:
-                    return this.socket.send(Buffer.from([GameConnection.HeaderBytes.Ping]), {});
-
-                case GameConnection.HeaderBytes.Message:
-                    const messageId = buffer.read7BitInt();
-                    const args = buffer.deserialize();
-                    this.#receiver.emit(GameConnection.MessageTypes[messageId] as any, ...args);
-                    break;
-            }
+            const packet = fromBinary(Protocol.WorldPacketSchema, Buffer.from(message));
+            this.#receiver.emit(packet.packet.case as any, packet.packet);
         });
 
         /**
