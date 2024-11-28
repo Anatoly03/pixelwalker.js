@@ -19,6 +19,7 @@
     "@bufbuild/protobuf": "^2.2.2",
     "@types/node": "^20.12.7",
     "i": "^0.3.7",
+    "jwt-decode": "^4.0.0",
     "npm": "^10.9.1",
     "pocketbase": "^0.21.1",
     "ws": "^8.16.0",

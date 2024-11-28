@@ -1,6 +1,7 @@
 import GameConnection from "./game.connection.js";
-
 import { Events } from "./game.connection.js";
+
+import LobbyClient from "./lobby.js";
 import PlayerMap from "./players/map.js";
 import World from "./world/world.js";
 
@@ -58,26 +59,35 @@ export default class GameClient {
      */
     // #receiver: EventEmitter<Events> = new EventEmitter();
 
-
     /**
-     * 
+     *
      * @param joinkey The joinkey retrieved from the API server.
-     * 
+     *
      * ```ts
      * import { LobbyClient } from "pixelwalker.js/localhost"
-     * 
+     *
      * const client = LobbyClient.withToken(process.env.token)
      * const joinkey = await client.getJoinKey(process.env.world_id);
      * ```
-     * 
+     *
      * @returns {GameClient} A new instance of the GameClient.
-     * 
+     *
      * ```ts
      * const connection = GameClient.withJoinKey(joinkey);
      * ```
      */
     public static withJoinKey(joinkey: string): GameClient | null {
         return new this(joinkey);
+    }
+
+    /**
+     * 
+     */
+    public static async withPocketBaseToken(args: { token: string; world_id: string }): Promise<GameClient | null> {
+        const lobby = LobbyClient.withToken(args.token);
+        if (!lobby) return null;
+        const joinkey = await lobby!.getJoinKey(args.world_id);
+        return this.withJoinKey(joinkey);
     }
 
     /**
@@ -111,7 +121,7 @@ export default class GameClient {
     /**
      * Calls the internal {@link GameConnection.send} method to send a packet to
      * the server. Refer to the {@link GameConnection.send} method for more information.
-     * 
+     *
      * The {@link GameClient} class automatically manages pings and the init hanshake to
      * keep the connection alive.
      */
