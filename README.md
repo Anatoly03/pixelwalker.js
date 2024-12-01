@@ -9,10 +9,20 @@ npm i --save pixelwalker.js
 
 ```ts
 import "dotenv/config"
-import { LobbyClient } from "../../pixelwalker/dist/index"
+import { LobbyClient } from "pixelwalker.js"
 
 export const client = LobbyClient.withToken(process.env.token);
-export const connection = await client.createConnection(process.env.world_id);
+export const game = await client.connection(process.env.world_id);
+
+game.listen('playerChatPacket', ({ playerId, message }) => {
+    if (message != '!ping') return;
+
+    game.send('playerChatPacket', {
+        $typeName: 'WorldPackets.PlayerChatPacket',
+        playerId: 0,
+        message: `Pong, ${game.players[playerId].properties.username}!`,
+    })
+})
 
 connection.bind();
 ```
