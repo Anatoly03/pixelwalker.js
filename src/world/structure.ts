@@ -1,9 +1,9 @@
 import YAML from "yaml";
-import BufferReader from "../util/buffer-reader";
-import Layer from "./layer";
-import Block from "./block";
+import BufferReader from "../util/buffer-reader.js";
+import Layer from "./layer.js";
+import Block from "./block.js";
 
-import structureMigrations from "./structure.migrations";
+import structureMigrations from "./structure.migrations.js";
 
 export default class Structure<Meta extends { [keys: number | string]: any } = {}> {
     readonly [layer: number]: Layer;

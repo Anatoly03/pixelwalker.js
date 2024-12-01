@@ -1,5 +1,4 @@
 import GameConnection from "./game.connection.js";
-import { Events } from "./game.connection.js";
 
 import LobbyClient from "./lobby.js";
 import PlayerMap from "./players/map.js";

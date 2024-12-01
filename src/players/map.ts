@@ -1,4 +1,4 @@
-import EventEmitter from "events";
+// import EventEmitter from "events";
 
 import GameConnection from "../game.connection.js";
 import Player from "../types/player.js";

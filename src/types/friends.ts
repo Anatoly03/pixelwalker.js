@@ -1,4 +1,4 @@
-import LobbyClient from "../lobby";
+// import LobbyClient from "../lobby.js";
 
 /**
  * A friend entry as retrieved by the endpoint `/api/friends`

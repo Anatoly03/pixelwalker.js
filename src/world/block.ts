@@ -1,5 +1,5 @@
-import { BlockMappings, BlockMappingsReverse } from "../data/block-mappings";
-import BufferReader, { ComponentTypeHeader } from "../util/buffer-reader";
+import { BlockMappings, BlockMappingsReverse } from "../data/block-mappings.js";
+import BufferReader, { ComponentTypeHeader } from "../util/buffer-reader.js";
 
 /**
  * This type represents the block numeric id that can be used in the game.
