@@ -8,13 +8,14 @@
 **Motivating Examples**
 
 ```ts
-import Client from 'pixelwalker.js'
 
-const client = new Client({ token })
+import "dotenv/config"
+import { LobbyClient } from "pixelwalker.js"
 
-client.on('event', async () => {
+export const client = LobbyClient.withToken(process.env.token);
+export const game = await client.connection(process.env.world_id);
 
-})
+// TODO
 
-client.connect(world_id)
+connection.bind();
 ```
