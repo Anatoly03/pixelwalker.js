@@ -76,11 +76,26 @@ export default class LobbyClient<Auth extends boolean = false> {
      *
      * @static
      */
-    public static withToken(token: string): LobbyClient<true> | null {
+    public static withToken(token: string) {
         const client = new this<true>();
         client.pocketbase.authStore.save(token, { verified: true });
         if (!client.pocketbase.authStore.isValid) return null;
         return client;
+    }
+
+    /**
+     * Create a new Client instance, by logging in with a username (or email) and
+     * password. If invalid, returns a promise resolving. null.
+     */
+    public static async withUsernamePassword(username: string, password: string) {
+        const client = new this<true>();
+        try {
+            const auth = await client.pocketbase.collection('users').authWithPassword(username, password);
+            if (!auth) return null;
+            return client;
+        } catch (_) {
+            return null;
+        }
     }
 
     /**
