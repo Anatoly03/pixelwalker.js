@@ -37,7 +37,7 @@ export type Events = { [K in WorldEventNames & string]: [(WorldEventData<K> & { 
  * game.bind();
  * ```
  */
-export default class GameConnection<Ready extends boolean = false> {
+export default class GameConnection {
     /**
      * The protocol is a collection of all the possible messages that can be
      * sent and received from the game server. It is used to serialize and
@@ -51,7 +51,7 @@ export default class GameConnection<Ready extends boolean = false> {
      * An open HTML connection to the game server. This is the tunnel with the
      * game server, which manages realtime communication with a world.
      */
-    public socket!: Ready extends true ? WebSocket : never;
+    public socket!: WebSocket;
 
     /**
      * The event event attributes are the internal event emitters for the
@@ -76,7 +76,7 @@ export default class GameConnection<Ready extends boolean = false> {
      * const connection = GameConnection.withJoinKey(joinkey);
      * ```
      */
-    public static withJoinKey(joinkey: string): GameConnection {
+    public static withJoinKey(joinkey: string) {
         return new this(joinkey);
     }
 
@@ -190,7 +190,7 @@ export default class GameConnection<Ready extends boolean = false> {
     /**
      * Is the current connection connected?
      */
-    public connected(): this is GameConnection<true> {
+    public connected(): this is GameConnection {
         return this.socket && this.socket.readyState === this.socket.OPEN;
     }
 

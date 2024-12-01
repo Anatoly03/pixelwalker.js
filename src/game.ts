@@ -27,13 +27,7 @@ import World from "./world/world.js";
  * game.bind();
  * ```
  */
-export default class GameClient {
-    /**
-     * An open HTML connection to the game server. This is the tunnel with the
-     * game server, which manages realtime communication with a world.
-     */
-    protected connection!: GameConnection;
-
+export default class GameClient extends GameConnection {
     /**
      * The chat manager is a utility to manage chat messages in the game. It can
      * be used to listen for chat messages, bot command requests and send to chat.
@@ -76,14 +70,14 @@ export default class GameClient {
      * const connection = GameClient.withJoinKey(joinkey);
      * ```
      */
-    public static withJoinKey(joinkey: string): GameClient | null {
-        return new this(joinkey);
-    }
+    // public static withJoinKey(joinkey: string) {
+    //     return new this(joinkey);
+    // }
 
     /**
-     * 
+     * @todo
      */
-    public static async withPocketBaseToken(args: { token: string; world_id: string }): Promise<GameClient | null> {
+    public static async withPocketBaseToken(args: { token: string; world_id: string }) {
         const lobby = LobbyClient.withToken(args.token);
         if (!lobby) return null;
         const joinkey = await lobby!.getJoinKey(args.world_id);
@@ -96,39 +90,14 @@ export default class GameClient {
      * registering event handlersand managing the state of your program.
      */
     constructor(joinkey: string) {
-        this.connection = GameConnection.withJoinKey(joinkey);
+        super(joinkey);
+
+        // this.connection = GameConnection.withJoinKey(joinkey);
         // this.chat = new Chat(this.connection);
-        this.players = new PlayerMap(this.connection);
-        this.world = new World(this.connection);
+        this.players = new PlayerMap(this);
+        this.world = new World(this);
     }
 
-    //
-    //
-    // EVENTS
-    //
-    //
-
-    /**
-     * Calls the internal {@link GameConnection.listen} method to listen for
-     * incoming events from the server. Refer to the {@link GameConnection.listen}
-     * method for more information.
-     */
-    public listen<Event extends keyof Events>(eventName: Event, callback: (e: Events[Event][0]) => void): this {
-        this.connection.listen(eventName, callback);
-        return this;
-    }
-
-    /**
-     * Calls the internal {@link GameConnection.send} method to send a packet to
-     * the server. Refer to the {@link GameConnection.send} method for more information.
-     *
-     * The {@link GameClient} class automatically manages pings and the init hanshake to
-     * keep the connection alive.
-     */
-    public send<Event extends keyof Events>(eventName: Event, value: Events[Event][0] = <any>{}): this {
-        this.connection.send(eventName, value);
-        return this;
-    }
     //
     //
     // METHODS
@@ -139,8 +108,8 @@ export default class GameClient {
      * Binds the connection to the game server. Internally, this method
      * creates a socket in the connection class and appens core event listeners.
      */
-    public bind(): this {
-        this.connection.bind();
+    public override bind(): this {
+        super.bind();
 
         /**
          * @event Ping
@@ -149,8 +118,8 @@ export default class GameClient {
          * send back a pong back to the server. Clients which forget to send
          * a pong back to the server will be disconnected after a while.
          */
-        this.connection.listen("ping", () => {
-            this.connection.send("ping");
+        super.listen("ping", () => {
+            super.send("ping");
         });
 
         /**
@@ -160,24 +129,10 @@ export default class GameClient {
          * the client to send the `PlayerInit` event as well back to
          * the server.
          */
-        this.connection.listen("playerInitPacket", () => {
-            this.connection.send("playerInitReceived");
+        super.listen("playerInitPacket", () => {
+            super.send("playerInitReceived");
         });
 
         return this;
-    }
-
-    /**
-     * Returns the current connection life state.
-     */
-    public connected(): boolean {
-        return this.connection.connected();
-    }
-
-    /**
-     * Disconnect the connection.
-     */
-    public disconnect() {
-        this.connection.close();
     }
 }
