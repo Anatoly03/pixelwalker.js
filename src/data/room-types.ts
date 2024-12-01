@@ -1,7 +1,7 @@
 import Config from "./config.js";
 import fs from "node:fs";
 
-const data: Response = await fetch(`https://${Config.GameServerLink}/listroomtypes`);
+const data: Response = await fetch(`${Config.GameServerLink}/listroomtypes`);
 const map: string[] = await data.json();
 
 export const RoomTypes: string[] = map;

@@ -1,6 +1,7 @@
 # Compilations
 dist
 node_modules
+src/network
 
 # All Environment files need to be in gitignore
 *.env

@@ -13,8 +13,17 @@ export default {
      * The Game server link is the link to the game server, which manages runtime
      * world connections.
      */
+    get GameServerSocketLink() {
+        if (process.env.LOCALHOST) return "ws://127.0.0.1:5148";
+        return "wss://game.pixelwalker.net";
+    },
+    
+    /**
+     * The Game server link is the link to the game server, which manages runtime
+     * world connections.
+     */
     get GameServerLink() {
-        if (process.env.LOCALHOST) return "localhost:5148";
-        return "game.pixelwalker.net";
+        if (process.env.LOCALHOST) return "http://localhost:5148";
+        return "https://game.pixelwalker.net";
     },
 };

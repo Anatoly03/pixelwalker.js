@@ -1,19 +1,14 @@
 import EventEmitter from "events";
-import GameConnection from "../connection";
-import BufferReader from "../util/buffer-reader";
-import Structure from "./structure";
-import Block from "./block";
+import GameConnection from "../game.connection.js";
+import BufferReader from "../util/buffer-reader.js";
+import Structure from "./structure.js";
+import Block from "./block.js";
 
-export type WorldMeta = {
-    title: string;
-    owner: string;
-    plays: number;
-    description: string;
-};
+import { WorldMeta } from "../network/pixelwalker_pb.js";
 
-export type WorldEvents = {
-    Init: [Structure];
-};
+// export type WorldEvents = {
+//     Init: [Structure];
+// };
 
 /**
  * A World is a structure wrapper synchronized with a client.
@@ -23,31 +18,60 @@ export default class World {
      * The metadata of the structure. This attribute can be used
      * to store additional information about the structure.
      */
-    public meta?: WorldMeta;
+    public get meta(): WorldMeta | undefined {
+        return this.structure?.meta;
+    }
 
     /**
      * The internal reference to a structure instance. This attribute
      * is undefined, if the world did not process `PlayerInit` yet.
      */
-    public structure?: Structure;
+    public structure?: Structure<WorldMeta>;
 
     /**
      * The event attributes are the internal event emitters for the
      * game connection. They are used as an abstraction layer to append events.
      */
-    private events: EventEmitter<WorldEvents> = new EventEmitter();
+    // private events: EventEmitter<WorldEvents> = new EventEmitter();
 
-    public constructor(private connection: GameConnection) {
-        connection.on("PlayerInit", (_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, title, plays, owner, description, visibility, isUnsaved, hasUnsavedChanges, globalSwitchStates, width, height, worldData) => {
-            const buffer = BufferReader.from(worldData);
+    public constructor(connection: GameConnection) {
+        /**
+         * @event PlayerInit
+         * 
+         * The `PlayerInit` event is emitted when the player is initialized. It
+         * receives the world data.
+         */
+        connection.listen('playerInitPacket', message => {
+            const buffer = BufferReader.from(message.worldData);
 
-            this.meta = { title, owner, plays, description };
-            this.structure = new Structure(width, height).deserialize(buffer);
+            this.structure = new Structure(message.worldWidth, message.worldHeight).deserialize(buffer) as Structure<WorldMeta>;
+            this.structure.meta = message.worldMeta!;
 
-            if (buffer.subarray().length) throw new Error(`World data buffer has ${buffer.subarray().length} remaining bytes.`);
+            if (buffer.subarray().length) {
+                console.error(`WorldSerializationFault: World data buffer has ${buffer.subarray().length} remaining bytes.`);
+                // connection.close();
+                return;
+            }
 
-            this.emit("Init", this.structure);
+            // this.events.emit("Init", this.structure);
         });
+
+        /**
+         * @event WorldBlockPlaced
+         * 
+         * The `WorldBlockPlaced` event is emitted when a block is placed in the world.
+         */
+        // connection.listen('worldBlockPlacedPacket', message => {
+        //     const coordinates = new Uint16Array(Buffer.from(coords).buffer);
+        //     const block = new Block(bid)
+        //     block.data = args;
+
+        //     for (let i = 0; i < coords.length; i += 2) {
+        //         const [x, y] = coordinates.slice(i, i + 2);
+        //         // TODOthis.structure![layer][x][y] = block;
+        //         console.log(block, x, y)
+        //     }
+        // })
     }
 
     //
@@ -63,34 +87,10 @@ export default class World {
      * `eventNameand` listener will result in the listener being added, and called,
      * multiple times.
      */
-    public on<Event extends keyof WorldEvents>(eventName: Event, cb: (...args: WorldEvents[Event]) => void): this;
-
-    public on(event: string, callee: (...args: any[]) => void): this {
-        this.events.on(event as any, callee);
-        return this;
-    }
-
-    /**
-     * Adds a **one-time** listener function for the event named `eventName`. The
-     * next time `eventName` is triggered, this listener is removed and then invoked.
-     */
-    public once<Event extends keyof WorldEvents>(eventName: Event, cb: (...args: WorldEvents[Event]) => void): this;
-
-    public once(event: string, callee: (...args: any[]) => void): this {
-        this.events.once(event as any, callee);
-        return this;
-    }
-
-    /**
-     * Synchronously calls each of the listeners registered for the event named `eventName`,
-     * in the order they were registered, passing the supplied arguments to each.
-     */
-    public emit<Event extends keyof WorldEvents>(eventName: Event, ...args: WorldEvents[Event]): this;
-
-    public emit(event: string, ...args: any[]): this {
-        this.events.emit(event as any, ...args);
-        return this;
-    }
+    // public listen<Event extends keyof WorldEvents>(eventName: Event, cb: (...args: WorldEvents[Event]) => void): this {
+    //     this.events.on(eventName, cb as any);
+    //     return this;
+    // }
 
     //
     //

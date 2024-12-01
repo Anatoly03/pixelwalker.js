@@ -9,19 +9,36 @@ npm i --save pixelwalker.js
 
 ```ts
 import "dotenv/config"
-import * as fs from 'node:fs'
-import Client, { MessageTypes, PlayerMap, Block, World, Structure } from "../../pixelwalker/dist/index"
+import { LobbyClient } from "pixelwalker.js"
 
-export const client = Client.withToken(process.env.token);
-export const connection = await client.createConnection('djtqrcjn4fzyhi8');
-export const players = new PlayerMap(connection);
-export const world = new World(connection);
+export const client = LobbyClient.withToken(process.env.token);
+export const game = await client.connection(process.env.world_id);
+
+game.listen('playerChatPacket', ({ playerId, message }) => {
+    if (message != '!ping') return;
+
+    game.send('playerChatPacket', {
+        $typeName: 'WorldPackets.PlayerChatPacket',
+        playerId: 0,
+        message: `Pong, ${game.players[playerId].properties.username}!`,
+    })
+})
 
 connection.bind();
 ```
 
+#### Testing in Local Development server
+
+```ts
+import { LobbyClient } from 'pixelwalker.js/localhost'
+```
+
+By setting the `localhost` flag (adding it to the import), the API server and Game server paths are derouted to the localhost ports equivalent.
+
 ## Contribution
 
 ```
-npm run build
+npm install
 ```
+
+Installing the node packages will also build the project into dist.

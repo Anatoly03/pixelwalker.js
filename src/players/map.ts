@@ -1,19 +1,20 @@
-import EventEmitter from "events";
-import GameConnection from "../connection.js";
-import Player, { SelfPlayer } from "../types/player.js";
+// import EventEmitter from "events";
+
+import GameConnection from "../game.connection.js";
+import Player from "../types/player.js";
 import { BlockMappingsReverse } from "../data/block-mappings.js";
 
-export type PlayerMapEvents = {
-    Init: [SelfPlayer];
-    Add: [Player];
-    Leave: [Player];
-    Face: [Player, number];
-    GodMode: [Player, boolean];
-    ModMode: [Player, boolean];
-    Respawn: [Player];
-    Crown: [Player | undefined, Player | undefined];
-    Trophy: [Player];
-};
+// export type PlayerMapEvents = {
+//     Init: [SelfPlayer];
+//     Add: [Player];
+//     Leave: [Player];
+//     Face: [Player, number];
+//     GodMode: [Player, boolean];
+//     ModMode: [Player, boolean];
+//     Respawn: [Player];
+//     Crown: [Player | undefined, Player | undefined];
+//     Trophy: [Player];
+// };
 
 /**
  * The `PlayerMap` class is a wrapper around a map of players in the room.
@@ -42,7 +43,7 @@ export default class PlayerMap {
     /**
      * The self player is the player that is the client itself.
      */
-    public self: SelfPlayer | undefined;
+    public self: Player | undefined;
 
     /**
      * The public crown is the player that is holding the golden crown.
@@ -53,44 +54,39 @@ export default class PlayerMap {
      * The event event attributes are the internal event emitters for the
      * game connection. They are used as an abstraction layer to append events.
      */
-    private events: EventEmitter<PlayerMapEvents> = new EventEmitter();
+    // private events: EventEmitter<PlayerMapEvents> = new EventEmitter();
 
     /**
      * Constructs the player map wrapper on a map of players.
      */
-    constructor(private connection: GameConnection) {
+    constructor(connection: GameConnection) {
         /**
          * @event
          *
          * The `PlayerInit` event is emitted when the player is initialized.
          */
-        connection.once("PlayerInit", (id, cuid, username, face, isAdmin, x, y, chatColor, isWorldOwner, canUseEdit, canUseGod, ..._) => {
+        connection.listen("playerInitPacket", message => {
+            const { playerId } = message.playerProperties!;
+
             this.self = {
-                id,
-                cuid,
-                username,
-                isAdmin,
-                isSelf: true,
-                face,
-                x,
-                y,
-                velX: 0,
-                velY: 0,
-                isInGod: false,
-                isInMod: false,
-                canUseGod,
-                canUseEdit,
-                crown: false,
-                win: false,
-                team: 0,
-                coins: 0,
-                blueCoins: 0,
-                deaths: 0,
-                tickId: 0,
+                properties: message?.playerProperties!,
+                state: {
+                    $typeName: "WorldPackets.PlayerWorldState",
+                    coinsGold: 0,
+                    coinsBlue: 0,
+                    deaths: 0,
+                    collectedItems: [], // TODO
+                    hasGoldCrown: false,
+                    hasSilverCrown: false,
+                    switches: new Uint8Array(999),
+                    godmode: false,
+                    modmode: false,
+                    teamId: 0,
+                },
             };
 
-            this.players.set(id, this.self);
-            this.emit("Init", this.self);
+            this.players.set(playerId, this.self);
+            // this.events.emit("Init", this.self);
         });
 
         /**
@@ -99,110 +95,125 @@ export default class PlayerMap {
          * The `PlayerJoin` event is emitted when a player other than self
          * joins the room.
          */
-        connection.on("PlayerJoined", (id, cuid, username, face, isAdmin, isFriend, isOwner, canUseGod, canUseEdit, x, y, chatColor, coins, blueCoins, deaths, collectedItems, isInGod, isInMod, crown, win, team, switches) => {
-            const player = {
-                id,
-                cuid,
-                username,
-                isAdmin,
-                isSelf: true,
-                face,
-                x,
-                y,
-                velX: 0,
-                velY: 0,
-                isInGod: false,
-                isInMod: false,
-                canUseGod,
-                canUseEdit,
-                crown: false,
-                win: false,
-                team: 0,
-                coins: 0,
-                blueCoins: 0,
-                deaths: 0,
+        connection.listen("playerJoinedPacket", message => {
+            const { playerId } = message.properties!;
+
+            const player: Player = {
+                properties: message.properties!,
+                state: message.worldState ?? {
+                    $typeName: "WorldPackets.PlayerWorldState",
+                    coinsGold: 0,
+                    coinsBlue: 0,
+                    deaths: 0,
+                    collectedItems: [], // TODO
+                    hasGoldCrown: false,
+                    hasSilverCrown: false,
+                    switches: new Uint8Array(999),
+                    godmode: false,
+                    modmode: false,
+                    teamId: 0,
+                },
             };
 
-            this.players.set(id, player);
-            this.emit("Add", player);
+            this.players.set(playerId, player);
+            // this.events.emit("Add", player);
         });
 
-        connection.on("PlayerLeft", (id) => {
-            const player = this.players.get(id);
+        connection.listen("playerLeftPacket", message => {
+            const { playerId } = message!;
+            const player = this.players.get(playerId);
             if (!player) return;
 
-            this.emit("Leave", player);
-            this.players.delete(id);
+            // this.events.emit("Leave", player);
+            this.players.delete(playerId);
         });
 
-        connection.on("PlayerFace", (id, face) => {
-            const player = this.players.get(id);
+        connection.listen("playerFacePacket", message => {
+            const { playerId } = message!;
+            const player = this.players.get(playerId!);
             if (!player) return;
 
-            this.emit("Face", player, face);
-            player.face = face;
+            // this.events.emit("Face", player, face);
+            player.properties.face = message.faceId;
         });
 
-        connection.on("PlayerGodMode", (id, god) => {
-            const player = this.players.get(id);
+        connection.listen("playerGodModePacket", message => {
+            const { playerId } = message!;
+            const player = this.players.get(playerId!);
             if (!player) return;
 
-            this.emit("GodMode", player, god);
-            player.isInGod = god;
+            // this.events.emit("GodMode", player, god);
+            player.state.godmode = message.enabled;
+            player.state.modmode = false;
         });
 
-        connection.on("PlayerModMode", (id, mod) => {
-            const player = this.players.get(id);
+        connection.listen("playerModModePacket", message => {
+            const { playerId } = message!;
+            const player = this.players.get(playerId!);
             if (!player) return;
 
-            this.emit("ModMode", player, mod);
-            player.isInMod = mod;
+            // this.events.emit("ModMode", player, mod);
+            player.state.godmode = false;
+            player.state.modmode = message.enabled;
         });
 
-        connection.on("PlayerRespawn", (id, x, y) => {
-            const player = this.players.get(id);
+        connection.listen("playerRespawnPacket", message => {
+            const { playerId } = message!;
+            const player = this.players.get(playerId!);
             if (!player) return;
 
-            player.x = x;
-            player.y = y;
-            this.emit("Respawn", player);
-        });
-
-        connection.on("PlayerReset", (...args) => {
-            const [id] = args;
-            const player = this.players.get(id);
-            if (!player) return;
-
-            console.log("TODO RESET PLAYER: " + player.username);
-
-            if (args.length === 3) {
-                const [_, x, y] = args;
-
-                player.x = x;
-                player.y = y;
-
-                this.emit("Respawn", player);
+            if (message.position) {
+                delete player.movement;
+                player.properties.position!.x = message.position.x;
+                player.properties.position!.y = message.position.y;
             }
+            // this.events.emit("Respawn", player);
         });
 
-        connection.on("PlayerTouchBlock", (id, x, y, blockId) => {
-            const player = this.players.get(id);
+        connection.listen("playerResetPacket", message => {
+            const { playerId } = message!;
+            const player = this.players.get(playerId!);
             if (!player) return;
 
-            switch (BlockMappingsReverse[blockId]) {
+            console.log("TODO RESET PLAYER: " + player.properties.username);
+
+            if (message.position) {
+                delete player.movement;
+                player.properties.position!.x = message.position.x;
+                player.properties.position!.y = message.position.y;
+            }
+
+            // this.events.emit("Respawn", player);
+        });
+
+        connection.listen("playerTouchBlockPacket", message => {
+            const { playerId } = message!;
+            const player = this.players.get(playerId!);
+            if (!player) return;
+
+            switch (BlockMappingsReverse[message.blockId]) {
                 case "crown_gold":
-                    if (this.crown) this.crown.crown = false;
-                    player.crown = true;
-                    this.emit("Crown", this.crown, player);
+                    if (this.crown) this.crown.state.hasGoldCrown = false;
+                    player.state.hasGoldCrown = true;
+                    // this.events.emit("Crown", this.crown, player);
                     break;
                 case "crown_silver":
-                    player.win = true;
-                    this.emit("Trophy", player);
+                    player.state.hasSilverCrown = true;
+                    // this.events.emit("Trophy", player);
                     break;
                 default:
-                    console.log("TODO TOUCH BLOCK: " + blockId);
+                    console.log("TODO TOUCH BLOCK: " + BlockMappingsReverse[message.blockId]);
             }
         });
+
+        connection.listen('playerMovedPacket', message => {
+            const { playerId } = message!;
+            const player = this.players.get(playerId!);
+            if (!player) return;
+
+            player.movement = message;
+            // emit
+        })
 
         return new Proxy(this, {
             get: (target, prop: string) => {
@@ -225,34 +236,10 @@ export default class PlayerMap {
      * `eventNameand` listener will result in the listener being added, and called,
      * multiple times.
      */
-    public on<Event extends keyof PlayerMapEvents>(eventName: Event, cb: (...args: PlayerMapEvents[Event]) => void): this;
-
-    public on(event: string, callee: (...args: any[]) => void): this {
-        this.events.on(event as any, callee);
-        return this;
-    }
-
-    /**
-     * Adds a **one-time** listener function for the event named `eventName`. The
-     * next time `eventName` is triggered, this listener is removed and then invoked.
-     */
-    public once<Event extends keyof PlayerMapEvents>(eventName: Event, cb: (...args: PlayerMapEvents[Event]) => void): this;
-
-    public once(event: string, callee: (...args: any[]) => void): this {
-        this.events.once(event as any, callee);
-        return this;
-    }
-
-    /**
-     * Synchronously calls each of the listeners registered for the event named `eventName`,
-     * in the order they were registered, passing the supplied arguments to each.
-     */
-    public emit<Event extends keyof PlayerMapEvents>(eventName: Event, ...args: PlayerMapEvents[Event]): this;
-
-    public emit(event: string, ...args: any[]): this {
-        this.events.emit(event as any, ...args);
-        return this;
-    }
+    // public listen<Event extends keyof PlayerMapEvents>(eventName: Event, cb: (...args: PlayerMapEvents[Event]) => void): this {
+    //     this.events.on(eventName, cb as any);
+    //     return this;
+    // }
 
     //
     //

@@ -1,7 +1,7 @@
 import Config from "./config.js";
 import fs from "node:fs";
 
-const data: Response = await fetch(`https://${Config.GameServerLink}/mappings`);
+const data: Response = await fetch(`${Config.GameServerLink}/mappings`);
 const map: { [keys: string]: number } = await data.json();
 
 export const BlockMappings: { [keys: string]: number } = map;

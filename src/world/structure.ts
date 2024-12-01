@@ -1,11 +1,11 @@
 import YAML from "yaml";
-import BufferReader from "../util/buffer-reader";
-import Layer from "./layer";
-import Block from "./block";
+import BufferReader from "../util/buffer-reader.js";
+import Layer from "./layer.js";
+import Block from "./block.js";
 
-import structureMigrations from "./structure.migrations";
+import structureMigrations from "./structure.migrations.js";
 
-export default class Structure<Meta extends { [keys: number | string]: number | string | boolean | null | undefined } = {}> {
+export default class Structure<Meta extends { [keys: number | string]: any } = {}> {
     readonly [layer: number]: Layer;
 
     /**
@@ -195,7 +195,7 @@ export default class Structure<Meta extends { [keys: number | string]: number | 
                     let blockId = palette.indexOf(block.name);
 
                     ENCODING += blockId.toString(16).padStart(2, "0");
-                    if (block.args.length) ENCODING += '.' + block.serialize_args().toString('hex');
+                    if (block.data.length) ENCODING += '.' + Block.serialize_args(block).toString('hex');
                     ENCODING += ';';
                 }
             }

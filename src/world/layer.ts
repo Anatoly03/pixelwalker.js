@@ -1,5 +1,5 @@
-import BufferReader from "../util/buffer-reader";
-import Block from "./block";
+import BufferReader from "../util/buffer-reader.js";
+import Block from "./block.js";
 
 /**
  * A layer is a two-dimensional array of blocks.
