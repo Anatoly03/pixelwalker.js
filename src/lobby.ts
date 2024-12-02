@@ -6,6 +6,7 @@ import RoomTypes from "./data/room-types.js";
 import GameClient from "./game.js";
 
 import PublicProfile from "./types/public-profile.js";
+import PrivateWorld from "./types/private-world.js";
 import PublicWorld from "./types/public-world.js";
 import Friend, { FriendRequest } from "./types/friends.js";
 
@@ -150,6 +151,11 @@ export default class LobbyClient<Auth extends boolean = false> {
      * Returns a Pocketbase [RecordService](https://github.com/pocketbase/js-sdk/blob/master/src/services/RecordService.ts).
      * See usage at the [PocketBase](https://pocketbase.io/) website for [searching records](https://pocketbase.io/docs/api-records#listsearch-records).
      * This method returns a collection handler that allows you to search through all public worlds.
+     * 
+     * @note
+     * 
+     * If you want to get a full list of worlds that you own and are not set to
+     * public, refer to the {@link LobbyClient.my_worlds} method.
      *
      * @example
      *
@@ -169,9 +175,43 @@ export default class LobbyClient<Auth extends boolean = false> {
      *   "width": 200
      * }
      * ```
+     * 
+     * @example
+     * 
+     * If you want to get only **public** worlds that you yourself own, you can
+     * use the `owner='selfId'` filter (with selfId being your own connect user id).
+     * 
+     * ```ts
+     * LobbyClient.withToken(process.env.token);
+     *   .worlds()
+     *   .getFullList({ filter: `owner='${client.selfId}'` })
+     *   .then(console.log)
+     * ```
      */
     public worlds(): RecordService<PublicWorld> {
         return this.pocketbase.collection("public_worlds");
+    }
+
+    /**
+     * Returns a Pocketbase [RecordService](https://github.com/pocketbase/js-sdk/blob/master/src/services/RecordService.ts).
+     * See usage at the [PocketBase](https://pocketbase.io/) website for [searching records](https://pocketbase.io/docs/api-records#listsearch-records).
+     * This method returns a collection handler that allows you to search through
+     * all worlds owned by you.
+     * 
+     * @example
+     * 
+     * ```ts
+     * LobbyClient.withToken(process.env.token).
+     *   .my_worlds()
+     *   .getFullList()
+     *   .then(console.log)
+     * ```
+     * 
+     * @note To use this function you have to be logged in. (Login with
+     * an authorized constructor, i.e. not {@link LobbyClient.guest})
+     */
+    public my_worlds(this: LobbyClient<true>): RecordService<PrivateWorld> {
+        return this.pocketbase.collection("worlds");
     }
 
     /**
