@@ -7,10 +7,10 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "generate-proto": "npx buf generate",
     "docs": "npx typedoc src",
     "test": "jest --verbose ./test",
-    "prepublish": "npm run build",
-    "postinstall": "npx buf generate"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [],
   "author": "",
