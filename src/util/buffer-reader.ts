@@ -751,4 +751,16 @@ export default class BufferReader {
 
         return arr;
     }
+
+    [Symbol.for("nodejs.util.inspect.custom")]() {
+        let s = '<BufferReader';
+        let copy = BufferReader.from(this.#buffer);
+        copy.#offset = this.#offset;
+
+        for (let i = 0; i < 20 && this.#offset + i < this.length - 1; i++) {
+            s += ' ' + copy.readUInt8().toString(16).padStart(2, '0');
+        }
+
+        return s + '>';
+    }
 }
