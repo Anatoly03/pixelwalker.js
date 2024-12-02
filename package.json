@@ -9,8 +9,7 @@
     "build": "tsc",
     "generate-proto": "npx buf generate",
     "docs": "npx typedoc src",
-    "test": "jest --verbose ./test",
-    "prepublishOnly": "npm run build"
+    "test": "jest --verbose ./test"
   },
   "keywords": [],
   "author": "",
