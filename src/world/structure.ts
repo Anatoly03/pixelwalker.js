@@ -195,7 +195,7 @@ export default class Structure<Meta extends { [keys: number | string]: any } = {
                     let blockId = palette.indexOf(block.name);
 
                     ENCODING += blockId.toString(16).padStart(2, "0");
-                    if (block.data.length) ENCODING += '.' + Block.serialize_args(block).toString('hex');
+                    if (block.data.length) ENCODING += '.' + block.serialize_args().toString('hex');
                     ENCODING += ';';
                 }
             }
