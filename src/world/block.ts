@@ -246,6 +246,10 @@ export const BlockArgs = {
 
     hazard_death_door: [ComponentTypeHeader.Int32],
     hazard_death_gate: [ComponentTypeHeader.Int32],
+
+    note_drum: [ComponentTypeHeader.ByteArray],
+    note_piano: [ComponentTypeHeader.ByteArray],
+    note_guitar: [ComponentTypeHeader.ByteArray],
 } as const;
 
 export default Block;
