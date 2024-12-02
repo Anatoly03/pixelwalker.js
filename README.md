@@ -18,8 +18,6 @@ game.listen('playerChatPacket', ({ playerId, message }) => {
     if (message != '!ping') return;
 
     game.send('playerChatPacket', {
-        $typeName: 'WorldPackets.PlayerChatPacket',
-        playerId: 0,
         message: `Pong, ${game.players[playerId].properties.username}!`,
     })
 })
