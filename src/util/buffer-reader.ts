@@ -425,6 +425,16 @@ export default class BufferReader {
     /**
      *
      */
+    public expectUInt8(value: number) {
+        const tmp = this.#buffer.readUInt8(this.#offset);
+        this.#offset += 1;
+        if (tmp !== value) throw new Error(`Expected ${value} but got ${tmp}`);
+        return tmp;
+    }
+
+    /**
+     *
+     */
     public readUInt8() {
         const tmp = this.#buffer.readUInt8(this.#offset);
         this.#offset += 1;
@@ -740,5 +750,17 @@ export default class BufferReader {
         }
 
         return arr;
+    }
+
+    [Symbol.for("nodejs.util.inspect.custom")]() {
+        let s = '<BufferReader';
+        let copy = BufferReader.from(this.#buffer);
+        copy.#offset = this.#offset;
+
+        for (let i = 0; i < 20 && this.#offset + i < this.length - 1; i++) {
+            s += ' ' + copy.readUInt8().toString(16).padStart(2, '0');
+        }
+
+        return s + '>';
     }
 }
