@@ -1,7 +1,6 @@
-import YAML from "yaml";
 import BufferReader from "../util/buffer-reader.js";
 import Layer from "./layer.js";
-import Block from "./block.js";
+import Block, { BlockName } from "./block.js";
 
 import structureMigrations from "./structure.migrations.js";
 
@@ -114,22 +113,49 @@ export default class Structure<Meta extends { [keys: number | string]: any } = {
 
     private static LATEST_VERSION_ENCODING = 1;
 
-    // TODO TEST THIS
-    public static fromString(format: "json" | "yaml", value: string): Structure {
-        let data: any;
+    /**
+     * Read the structure from a parser implementation and
+     * return a Structure instance. *The default parser is JSON.*
+     * 
+     * @example
+     * 
+     * ```ts
+     * const value = fs.readFileSync("structure.json");
+     * const data = Structure.fromString(value);
+     * ```
+     */
+    public static fromString(value: string): Structure;
 
-        switch (format) {
-            case "json": {
-                data = JSON.parse(data);
-                break;
-            }
-            case "yaml": {
-                data = YAML.parse(data);
-                break;
-            }
-            default:
-                throw new Error(`Unknown format: ${format}`);
-        }
+    /**
+     * Read the structure from a JSON parser implementation and
+     * return a Structure instance.
+     * 
+     * @example
+     * 
+     * ```ts
+     * const value = fs.readFileSync("structure.json");
+     * const data = Structure.fromString(value, JSON);
+     * ```
+     */
+    public static fromString(value: string, format: JSON): Structure;
+
+    /**
+     * Read the structure from a custom parser implementation and
+     * return a Structure instance.
+     * 
+     * @example
+     * 
+     * ```ts
+     * import YAML from "yaml";
+     * 
+     * const value = fs.readFileSync("structure.yaml");
+     * const data = Structure.fromString(value, YAML);
+     * ```
+     */
+    public static fromString(value: string, parser: { parse(v: string): any }): Structure;
+
+    public static fromString(value: string, parser: { parse(v: string): any } = JSON): Structure {
+        let data = parser.parse(value);
 
         if (data["file-version"] < 0 || data["file-version"] > Structure.LATEST_VERSION_ENCODING) {
             throw new Error(`Unsupported file version: ${data["file-version"]}`);
@@ -162,17 +188,37 @@ export default class Structure<Meta extends { [keys: number | string]: any } = {
     }
 
     /**
-     * Write the structure into a writeable stream.
+     * Write the structure into a writeable stream and return an
+     * JSON string representation of the structure.
+     * 
+     * @example
+     * 
+     * ```ts
+     * const structure = ...;
+     * const data = structure.toString(JSON);
+     * fs.writeFileSync("structure.json", data);
+     * ```
      */
-    public toString(format: "json"): string;
+    public toString(format: JSON): string;
 
     /**
-     * Write the structure into a writeable stream.
+     * Write the structure into a writeable stream and return a custom
+     * object encoding string.
+     * 
+     * @example
+     * 
+     * ```ts
+     * import YAML from "yaml";
+     * 
+     * const structure = ...;
+     * const data = structure.toString(YAML);
+     * fs.writeFileSync("structure.yaml", data);
+     * ```
      */
-    public toString(format: "yaml"): string;
+    public toString(parser: { stringify(v: any): string }): string;
 
-    public toString(format: "json" | "yaml"): string {
-        const palette = ["empty"];
+    public toString(parser: { stringify(v: any): string }): string {
+        const palette: BlockName[] = ["empty"];
         const layers: string[] = [];
 
         const data = {
@@ -195,7 +241,7 @@ export default class Structure<Meta extends { [keys: number | string]: any } = {
                     let blockId = palette.indexOf(block.name);
 
                     ENCODING += blockId.toString(16).padStart(2, "0");
-                    if (block.data.length) ENCODING += '.' + Block.serialize_args(block).toString('hex');
+                    if (block.data.length) ENCODING += '.' + block.serialize_args().toString('hex');
                     ENCODING += ';';
                 }
             }
@@ -203,15 +249,6 @@ export default class Structure<Meta extends { [keys: number | string]: any } = {
             layers.push(ENCODING);
         }
 
-        switch (format) {
-            case "json": {
-                return JSON.stringify(data);
-            }
-            case "yaml": {
-                return YAML.stringify(data);
-            }
-            default:
-                throw new Error(`Unknown format: ${format}`);
-        }
+        return parser.stringify(data);
     }
 }

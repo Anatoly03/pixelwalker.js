@@ -63,7 +63,8 @@ export default class World {
          */
         connection.listen("worldBlockPlacedPacket", ({ playerId, isFillOperation, blockId, layer, extraFields, positions }) => {
             const block = new Block(blockId);
-            block.deserialize_args(BufferReader.from(extraFields.buffer));
+            console.log(blockId, extraFields)
+            block.deserialize_args(BufferReader.from(extraFields), true);
 
             for (const { x, y } of positions) {
                 this.structure![layer][x][y] = block;

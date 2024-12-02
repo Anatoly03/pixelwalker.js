@@ -425,6 +425,16 @@ export default class BufferReader {
     /**
      *
      */
+    public expectUInt8(value: number) {
+        const tmp = this.#buffer.readUInt8(this.#offset);
+        this.#offset += 1;
+        if (tmp !== value) throw new Error(`Expected ${value} but got ${tmp}`);
+        return tmp;
+    }
+
+    /**
+     *
+     */
     public readUInt8() {
         const tmp = this.#buffer.readUInt8(this.#offset);
         this.#offset += 1;

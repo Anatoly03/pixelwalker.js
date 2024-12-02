@@ -22,7 +22,7 @@ export { default as GameClient } from "./game.js";
 
 export { default as PlayerMap } from "./players/map.js";
 
-export { default as Block } from "./world/block.js";
+export { default as Block, BlockId, BlockName } from "./world/block.js";
 export { default as Layer } from "./world/layer.js";
 export { default as Structure } from "./world/structure.js";
 // export { default as World } from "./world/world.js";
