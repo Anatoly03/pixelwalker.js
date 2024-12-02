@@ -110,18 +110,47 @@ export default class GameConnection {
     }
 
     /**
+     * Sends a message to the game server without any body. Only two events, `ping` and
+     * `playerInitReceived` can be sent without any body.
+     * 
+     * ### Events
+     * 
+     * | Event Name           | Description |
+     * |----------------------|-------------|
+     * | `ping`               | The message has to be sent for every `ping` received from the server.
+     * | `playerInitReceived` | The message has to be sent when the client receives `playerInitPacket`.
+     */
+    public send<Event extends keyof Events>(eventName: Event): void;
+
+    /**
      * Sends a message to the game server, evaluating the header bytes and argument
      * format based on `eventName`.
      * 
-     * | Event Name         | Description |
-     * |--------------------|-------------|
+     * ### Events
+     * 
+     * | Event Name           | Description |
+     * |----------------------|-------------|
      * | `playerInitReceived` | The message has to be sent when the client receives `playerInitPacket`.
      */
-    public send<Event extends keyof Events>(eventName: Event, value: Events[Event][0] = <any>{}): this {
+    public send<Event extends keyof Events>(eventName: Event, value: Events[Event][0]): void;
+
+    /**
+     * Sends a message to the game server, evaluating the header bytes and argument
+     * format based on `eventName`. *You can optionally omit the `$typeName` and `playerId`
+     * fields from the message.*
+     * 
+     * ### Events
+     * 
+     * | Event Name           | Description |
+     * |----------------------|-------------|
+     * | `playerInitReceived` | The message has to be sent when the client receives `playerInitPacket`.
+     */
+    public send<Event extends keyof Events>(eventName: Event, value: Omit<Events[Event][0], '$typeName' | 'playerId'>): void;
+
+    public send<Event extends keyof Events>(eventName: Event, value: Events[Event][0] = <any>{}) {
         const message = create(Protocol.WorldPacketSchema, { packet: { case: eventName, value } } as any);
         const buffer = toBinary(Protocol.WorldPacketSchema, message);
         this.socket.send(buffer);
-        return this;
     }
 
     //
@@ -131,9 +160,10 @@ export default class GameConnection {
     //
 
     /**
-     *
+     * Binds the connection to the game server. Internally, this method
+     * creates a socket in the connection class and appends core event listeners.
      */
-    public bind(): void {
+    public bind(): this {
         if (process.env.LOCALHOST) {
             this.socket = new WebSocket(`${Config.GameServerSocketLink}/room/${this.joinkey}`, { port: 5148 }) as any;
         } else {
@@ -185,12 +215,14 @@ export default class GameConnection {
         process.on("SIGINT", (signals) => {
             this.close();
         });
+
+        return this;
     }
 
     /**
      * Is the current connection connected?
      */
-    public connected(): this is GameConnection {
+    public connected(): boolean {
         return this.socket && this.socket.readyState === this.socket.OPEN;
     }
 

@@ -6,10 +6,11 @@
   "type": "module",
   "typings": "dist/index.d.ts",
   "scripts": {
+    "build": "tsc",
+    "generate-proto": "npx buf generate",
     "docs": "npx typedoc src",
     "test": "jest --verbose ./test",
-    "prepublish": "tsc",
-    "postinstall": "npx buf generate"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [],
   "author": "",

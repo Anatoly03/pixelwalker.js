@@ -1,7 +1,7 @@
 
 <center><h1>PixelWalker SDK</h1></center>
 
-[NPM](https://www.npmjs.com/package/pixelwalker.js) | [GitHub](https://github.com/Anatoly03/pixelwalker.js)
+[NPM](https://www.npmjs.com/package/pixelwalker.js) | [GitHub](https://github.com/Anatoly03/pixelwalker.js) | [Protocol](https://github.com/PixelWalkerGame/Protocol)
 
 ```sh
 npm i --save pixelwalker.js
@@ -18,8 +18,6 @@ game.listen('playerChatPacket', ({ playerId, message }) => {
     if (message != '!ping') return;
 
     game.send('playerChatPacket', {
-        $typeName: 'WorldPackets.PlayerChatPacket',
-        playerId: 0,
         message: `Pong, ${game.players[playerId].properties.username}!`,
     })
 })
