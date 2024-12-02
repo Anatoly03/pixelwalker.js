@@ -1,5 +1,6 @@
 .github
 # dist
+!dist/network
 docs
 # local
 network
