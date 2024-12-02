@@ -5,9 +5,10 @@ import Config from "./data/config.js";
 import RoomTypes from "./data/room-types.js";
 import GameClient from "./game.js";
 
-import PublicProfile from "./types/public-profile.js";
-import PrivateWorld from "./types/private-world.js";
+import OnlineWorlds from "./types/online-worlds.js";
 import PublicWorld from "./types/public-world.js";
+import PrivateWorld from "./types/private-world.js";
+import PublicProfile from "./types/public-profile.js";
 import Friend, { FriendRequest } from "./types/friends.js";
 
 /**
@@ -91,7 +92,7 @@ export default class LobbyClient<Auth extends boolean = false> {
     public static async withUsernamePassword(username: string, password: string) {
         const client = new this<true>();
         try {
-            const auth = await client.pocketbase.collection('users').authWithPassword(username, password);
+            const auth = await client.pocketbase.collection("users").authWithPassword(username, password);
             if (!auth) return null;
             return client;
         } catch (_) {
@@ -151,9 +152,9 @@ export default class LobbyClient<Auth extends boolean = false> {
      * Returns a Pocketbase [RecordService](https://github.com/pocketbase/js-sdk/blob/master/src/services/RecordService.ts).
      * See usage at the [PocketBase](https://pocketbase.io/) website for [searching records](https://pocketbase.io/docs/api-records#listsearch-records).
      * This method returns a collection handler that allows you to search through all public worlds.
-     * 
+     *
      * @note
-     * 
+     *
      * If you want to get a full list of worlds that you own and are not set to
      * public, refer to the {@link LobbyClient.my_worlds} method.
      *
@@ -175,12 +176,12 @@ export default class LobbyClient<Auth extends boolean = false> {
      *   "width": 200
      * }
      * ```
-     * 
+     *
      * @example
-     * 
+     *
      * If you want to get only **public** worlds that you yourself own, you can
      * use the `owner='selfId'` filter (with selfId being your own connect user id).
-     * 
+     *
      * ```ts
      * LobbyClient.withToken(process.env.token);
      *   .worlds()
@@ -197,16 +198,16 @@ export default class LobbyClient<Auth extends boolean = false> {
      * See usage at the [PocketBase](https://pocketbase.io/) website for [searching records](https://pocketbase.io/docs/api-records#listsearch-records).
      * This method returns a collection handler that allows you to search through
      * all worlds owned by you.
-     * 
+     *
      * @example
-     * 
+     *
      * ```ts
      * LobbyClient.withToken(process.env.token).
      *   .my_worlds()
      *   .getFullList()
      *   .then(console.log)
      * ```
-     * 
+     *
      * @note To use this function you have to be logged in. (Login with
      * an authorized constructor, i.e. not {@link LobbyClient.guest})
      */
@@ -215,18 +216,61 @@ export default class LobbyClient<Auth extends boolean = false> {
     }
 
     /**
-     * @note To use this function you have to be logged in. (Login with
-     * an authorized constructor, i.e. not {@link LobbyClient.guest})
+     * Returns an array of all online, visible worlds.
      * 
      * @example
      * 
+     * ```ts
+     * // Example response: 
+     * 
+     * {
+     *   "visibleRooms": [
+     *     {
+     *       "id": "mknckr7oqxq24xa",
+     *       "players": 1,
+     *       "max_players": 50,
+     *       "data": {
+     *         "title": "[Realms] Lobby",
+     *         "description": "Visit https://realms.martenm.nl to browse worlds.",
+     *         "plays": 1119,
+     *         "minimapEnabled": true,
+     *         "type": 0
+     *       }
+     *     }
+     *   ],
+     *   "onlineRoomCount": 5,
+     *   "onlinePlayerCount": 10
+     * }
+     * ```
+     * 
+     * The `data` segment contains the `type` field, which is one of the following:
+     * 
+     * - `0`: Saved World (Worlds that players own, e.g. Public Worlds)
+     * - `1`: Unsaved World (Non-persistant Worlds, e.g. Martens' Realms)
+     * - `2`: Legacy World (Worlds from the EE archive)
+     */
+    public async online_worlds(roomType?: (typeof RoomTypes)[0]): Promise<OnlineWorlds> {
+        roomType = roomType ?? (process.env.LOCALHOST ? "pixelwalker_dev" : RoomTypes[0]);
+
+        const response = await fetch(`${Config.GameServerLink}/room/list/${roomType}`);
+        if (!response.ok) throw new Error("Failed to fetch online worlds.");
+
+        return response.json();
+    }
+
+    /**
+     * @note To use this function you have to be logged in. (Login with
+     * an authorized constructor, i.e. not {@link LobbyClient.guest})
+     *
+     * @example
+     *
      * ```json
      * // To test it, you will need to fetch the resource with your auth token.
      * // When you have the token, you can use the link below to find the
      * // resource linked to you.
-     * // 
+     * //
      * // https://api.pixelwalker.net/api/collections/users/records?perPage=500&page=1
-     * 
+     *
      * {
      *   "admin": false,
      *   "banned": false,
@@ -257,16 +301,16 @@ export default class LobbyClient<Auth extends boolean = false> {
     /**
      * @note To use this function you have to be logged in. (Login with
      * an authorized constructor, i.e. not {@link LobbyClient.guest})
-     * 
+     *
      * @example
-     * 
+     *
      * ```json
      * // To test it, you will need to fetch the resource with your auth token.
      * // When you have the token, you can use the link below to find the
      * // resource linked to you.
-     * // 
+     * //
      * // https://api.pixelwalker.net/api/friends
-     * 
+     *
      * {
      *   "id": "5cy5r7za1r3splc",
      *   "username": "ANATOLY",
@@ -286,16 +330,16 @@ export default class LobbyClient<Auth extends boolean = false> {
     /**
      * @note To use this function you have to be logged in. (Login with
      * an authorized constructor, i.e. not {@link LobbyClient.guest})
-     * 
+     *
      * @example
-     * 
+     *
      * ```json
      * // To test it, you will need to fetch the resource with your auth token.
      * // When you have the token, you can use the link below to find the
      * // resource linked to you.
-     * // 
+     * //
      * // https://api.pixelwalker.net/api/friends
-     * 
+     *
      * {
      *   "id": "...", // The id of the friend request entry in the database
      *   "sender": "5cy5r7za1r3splc",
@@ -349,9 +393,9 @@ export default class LobbyClient<Auth extends boolean = false> {
      *
      * @this LobbyClient<true>
      */
-    public async getJoinKey(this: LobbyClient<true>, world_id: string, room_type?: (typeof RoomTypes)[0]): Promise<string> {
-        room_type = room_type ?? (process.env.LOCALHOST ? "pixelwalker_dev" : RoomTypes[0]);
-        const { token } = await this.pocketbase.send(`/api/joinkey/${room_type}/${world_id}`, {});
+    public async getJoinKey(this: LobbyClient<true>, world_id: string, roomType?: (typeof RoomTypes)[0]): Promise<string> {
+        roomType = roomType ?? (process.env.LOCALHOST ? "pixelwalker_dev" : RoomTypes[0]);
+        const { token } = await this.pocketbase.send(`/api/joinkey/${roomType}/${world_id}`, {});
         return token;
     }
 
@@ -365,8 +409,8 @@ export default class LobbyClient<Auth extends boolean = false> {
      *
      * @this LobbyClient<true>
      */
-    public async connection(this: LobbyClient<true>, world_id: string, room_type?: (typeof RoomTypes)[0]): Promise<GameClient> {
-        const token = await this.getJoinKey(world_id, room_type);
+    public async connection(this: LobbyClient<true>, world_id: string, roomType?: (typeof RoomTypes)[0]): Promise<GameClient> {
+        const token = await this.getJoinKey(world_id, roomType);
         return new GameClient(token);
     }
 }
