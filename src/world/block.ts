@@ -116,14 +116,6 @@ export class Block<Index extends BlockId = BlockId> {
         return true;
     }
 
-    /**
-     * Provides a custom string representation of the block which
-     * is used for printing the block to stdout.
-     */
-    [Symbol.for("nodejs.util.inspect.custom")]() {
-        return `Block[\x1b[0;33m${this.name ?? this.id}\x1b[0;0m]`;
-    }
-
     //
     //
     // STORAGE I/O
@@ -133,12 +125,12 @@ export class Block<Index extends BlockId = BlockId> {
     /**
      * Serialize block arguments to the buffer writer.
      */
-    public static serialize_args(block: Block): Buffer {
+    public serialize_args(): Buffer {
         const buffers: Buffer[] = [];
-        const format: ComponentTypeHeader[] = (BlockArgs as any)[block.name];
+        const format: ComponentTypeHeader[] = (BlockArgs as any)[this.name];
 
         for (let i = 0; i < (format?.length ?? 0); i++) {
-            buffers.push(BufferReader.Dynamic(format[i], block.data[i]));
+            buffers.push(BufferReader.Dynamic(format[i], this.data[i]));
         }
 
         return Buffer.concat(buffers);
@@ -150,13 +142,21 @@ export class Block<Index extends BlockId = BlockId> {
     public static deserialize(buffer: BufferReader): Block {
         const blockId = buffer.readUInt32LE();
         const block = new Block(blockId);
-        const format: ComponentTypeHeader[] = (BlockArgs as any)[block.name];
+        block.deserialize_args(buffer);
+        return block;
+    }
+
+    /**
+     * Deserialize a block arguments from the buffer reader.
+     */
+    public deserialize_args(buffer: BufferReader): Block {
+        const format: ComponentTypeHeader[] = (BlockArgs as any)[this.name];
 
         for (let i = 0; i < (format?.length ?? 0); i++) {
-            block.data[i] = buffer.read(format[i]);
+            this.data[i] = buffer.read(format[i]);
         }
 
-        return block;
+        return this;
     }
 
     /**
@@ -189,13 +189,18 @@ export class Block<Index extends BlockId = BlockId> {
     }
 
     /**
+     * Provides a custom string representation of the block which
+     * is used for printing the block to stdout.
+     */
+    [Symbol.for("nodejs.util.inspect.custom")]() {
+        return `Block[\x1b[0;33m${this.name ?? this.id}\x1b[0;0m]`;
+    }
+
+    /**
      * Returns a string representation of the block as understood by the API.
      */
     public toString(): string {
-        let s = this.id.toString(16).padStart(2, "0");
-        if (this.data.length) s += "." + Block.serialize_args(this as Block).toString("hex");
-        s += ";";
-        return s;
+        return `Block[${this.name ?? this.id}${this.data.length > 0 ? ';' + this.data.toString() : ''}]`;
     }
 }
 

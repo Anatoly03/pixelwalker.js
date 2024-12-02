@@ -37,11 +37,11 @@ export default class World {
     public constructor(connection: GameConnection) {
         /**
          * @event PlayerInit
-         * 
+         *
          * The `PlayerInit` event is emitted when the player is initialized. It
          * receives the world data.
          */
-        connection.listen('playerInitPacket', message => {
+        connection.listen("playerInitPacket", (message) => {
             const buffer = BufferReader.from(message.worldData);
 
             this.structure = new Structure(message.worldWidth, message.worldHeight).deserialize(buffer) as Structure<WorldMeta>;
@@ -58,20 +58,17 @@ export default class World {
 
         /**
          * @event WorldBlockPlaced
-         * 
+         *
          * The `WorldBlockPlaced` event is emitted when a block is placed in the world.
          */
-        // connection.listen('worldBlockPlacedPacket', message => {
-        //     const coordinates = new Uint16Array(Buffer.from(coords).buffer);
-        //     const block = new Block(bid)
-        //     block.data = args;
+        connection.listen("worldBlockPlacedPacket", ({ playerId, isFillOperation, blockId, layer, extraFields, positions }) => {
+            const block = new Block(blockId);
+            block.deserialize_args(BufferReader.from(extraFields.buffer));
 
-        //     for (let i = 0; i < coords.length; i += 2) {
-        //         const [x, y] = coordinates.slice(i, i + 2);
-        //         // TODOthis.structure![layer][x][y] = block;
-        //         console.log(block, x, y)
-        //     }
-        // })
+            for (const { x, y } of positions) {
+                this.structure![layer][x][y] = block;
+            }
+        });
     }
 
     //
