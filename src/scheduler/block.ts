@@ -16,7 +16,7 @@ export default class BlockScheduler extends Scheduler<Change> {
     override ELEMENTS_PER_TICK = 200;
     override INBETWEEN_DELAY = 2;
     override RETRY_FREQUENCY = 500;
-    public BLOCKS_PER_TICK = 200;
+    public BLOCKS_PER_TICK = 400;
 
     constructor(connection: GameConnection) {
         super(connection);
