@@ -22,7 +22,7 @@ game.listen('playerChatPacket', ({ playerId, message }) => {
     })
 })
 
-connection.bind();
+game.bind();
 ```
 
 #### Testing in Local Development server
