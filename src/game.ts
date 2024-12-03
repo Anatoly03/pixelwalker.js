@@ -91,7 +91,6 @@ export default class GameClient extends GameConnection {
     constructor(joinkey: string) {
         super(joinkey);
 
-        // this.connection = GameConnection.withJoinKey(joinkey);
         // this.chat = new Chat(this.connection);
         this.players = new PlayerMap(this);
         this.world = new World(this);
@@ -131,6 +130,14 @@ export default class GameClient extends GameConnection {
         super.listen("playerInitPacket", () => {
             super.send("playerInitReceived");
         });
+
+        return this;
+    }
+
+
+    public registerCommand(commandName: string): this;
+
+    public registerCommand(commandName: string): this {
 
         return this;
     }

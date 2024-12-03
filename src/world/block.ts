@@ -147,6 +147,11 @@ export class Block {
     public static deserialize(buffer: BufferReader): Block {
         const blockId = buffer.readUInt32LE();
         const block = new Block(blockId);
+
+        if (blockId == 72) {
+            console.log(buffer.subarray(undefined, 15))
+        }
+
         block.deserialize_args(buffer);
         return block;
     }
@@ -162,7 +167,7 @@ export class Block {
                 buffer.expectUInt8(format[i]);
             }
             
-            this.data[i] = buffer.read(format[i]);
+            this.data[i] = buffer.read(format[i], !flag);
         }
 
         return this;
