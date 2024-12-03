@@ -1,32 +1,31 @@
-
 name: ci-test
 
 concurrency:
-  group: ci-test-${{ github.head_ref }}
-  # In order to save GitHub Actions usage, we are canceling the running action
-  # of the previous commit. This means, if you first push commit "A" and after a
-  # few minutes commit "B" to the pull request, the workflow run for commit "A"
-  # will be canceled.
-  cancel-in-progress: true
+    group: ci-test-${{ github.head_ref }}
+    # In order to save GitHub Actions usage, we are canceling the running action
+    # of the previous commit. This means, if you first push commit "A" and after a
+    # few minutes commit "B" to the pull request, the workflow run for commit "A"
+    # will be canceled.
+    cancel-in-progress: true
 
 on:
-  # We need to use "pull_request_target" instead of "pull_request" because we
-  # all have no repository access. And because we have no repository access and
-  # this action is using a secret, would run the action the with "pull_request"
-  # with base branch.
-  pull_request_target:
-    # The types trigger are needed to prevent github running our action when a
-    # pull request is marked as draft:
-    # https://github.community/t/dont-run-actions-on-draft-pull-requests/16817/16
-    types: [opened, synchronize, reopened, ready_for_review]
+    # We need to use "pull_request_target" instead of "pull_request" because we
+    # all have no repository access. And because we have no repository access and
+    # this action is using a secret, would run the action the with "pull_request"
+    # with base branch.
+    pull_request_target:
+        # The types trigger are needed to prevent github running our action when a
+        # pull request is marked as draft:
+        # https://github.community/t/dont-run-actions-on-draft-pull-requests/16817/16
+        types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
-  run-tests:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '21.4.0'
-    - run: npm install
-    - run: npm test
+    run-tests:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: "21.4.0"
+            - run: npm install
+            - run: npm test
