@@ -64,12 +64,33 @@ export default class World {
 
             if (buffer.subarray().length) {
                 console.error(`WorldSerializationFault: World data buffer has ${buffer.subarray().length} remaining bytes.`);
-                // connection.close();
+                connection.close();
                 return;
             }
 
             // this.events.emit("Init", this.structure);
         });
+
+        /**
+         * @event worldReloadedPacket
+         * 
+         * The `worldReloadedPacket` event is emitted when the world is reloaded.
+         */
+        connection.listen('worldReloadedPacket', message => {
+            const buffer = BufferReader.from(message.worldData);
+            const width = this.structure.width;
+            const height = this.structure.height;
+            const oldMeta = this.structure.meta;
+
+            this.structure = new Structure(width, height).deserialize(buffer) as Structure<WorldMeta>;
+            this.structure.meta = oldMeta;
+
+            if (buffer.subarray().length) {
+                console.error(`WorldSerializationFault: World data buffer has ${buffer.subarray().length} remaining bytes.`);
+                connection.close();
+                return;
+            }
+        })
 
         /**
          * @event WorldBlockPlaced
