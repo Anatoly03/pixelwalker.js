@@ -5,6 +5,7 @@ import LobbyClient from "./lobby.js";
 import PlayerMap from "./players/map.js";
 import World from "./world/world.js";
 import Player from "./types/player.js";
+import BlockScheduler from "./scheduler/block.js";
 
 /**
  * The GameClient is a connection interface with the game server. It is used to
@@ -99,6 +100,12 @@ export default class GameClient extends GameConnection {
     private static CommandLineParser = /"(\\"|\\.|.)*?"|'(\\'|\\.|.)*?'|\S+/mg;
 
     /**
+     * The block scheduler is a utility to manage block updates in the game and
+     * efficiently place blocks in accordance to the rate limit.
+     */
+    private blockScheduler = new BlockScheduler(this);
+
+    /**
      *
      * @param joinkey The joinkey retrieved from the API server.
      *
@@ -139,7 +146,7 @@ export default class GameClient extends GameConnection {
 
         // this.chat = new Chat(this.connection);
         this.players = new PlayerMap(this);
-        this.world = new World(this);
+        this.world = new World(this, this.blockScheduler);
     }
 
     //
@@ -154,6 +161,7 @@ export default class GameClient extends GameConnection {
      */
     public override bind(): this {
         super.bind();
+        this.blockScheduler.start();
 
         /**
          * @event Ping
@@ -198,6 +206,16 @@ export default class GameClient extends GameConnection {
         });
 
         return this;
+    }
+
+    /**
+     * Closes the connection to the game server. This method is used to
+     * close the connection to the game server and stop the schedulers and
+     * other running entities.
+     */
+    public override close(): void {
+        super.close();
+        this.blockScheduler.stop();
     }
 
     /**

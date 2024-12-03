@@ -5,6 +5,7 @@ import Structure from "./structure.js";
 import Block from "./block.js";
 
 import { WorldMeta } from "../network/pixelwalker_pb.js";
+import BlockScheduler from "../scheduler/block.js";
 
 // export type WorldEvents = {
 //     Init: [Structure];
@@ -48,7 +49,7 @@ export default class World {
      */
     // private events: EventEmitter<WorldEvents> = new EventEmitter();
 
-    public constructor(private connection: GameConnection) {
+    public constructor(private connection: GameConnection, private scheduler: BlockScheduler) {
         /**
          * @event PlayerInit
          *
@@ -123,7 +124,9 @@ export default class World {
                     // if (block.id === 0 && !args.write_empty) continue;
                     // to_be_placed.push([[layer, x + xt, y + yt], block]);
 
-                    this.connection.send('worldBlockPlacedPacket', {
+                    this.scheduler.send({
+                        $typeName: 'WorldPackets.WorldBlockPlacedPacket',
+                        playerId: 0,
                         isFillOperation: false,
                         extraFields: block.serialize_args(),
                         positions: [{ $typeName: 'WorldPackets.PointInteger', x: x + xt, y:y + yt }],
