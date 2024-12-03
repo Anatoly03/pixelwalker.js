@@ -16,7 +16,7 @@ export const Type = {
     ByteArray: BufferReader.ByteArray,
 }
 
-export { default as LobbyClient, default as PixelWalkerClient } from "./lobby.js";
+export { default as LobbyClient } from "./lobby.js";
 export { default as GameConnection } from "./game.connection.js";
 export { default as GameClient } from "./game.js";
 
