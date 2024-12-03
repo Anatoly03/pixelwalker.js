@@ -26,7 +26,21 @@ export default class World {
      * The internal reference to a structure instance. This attribute
      * is undefined, if the world did not process `PlayerInit` yet.
      */
-    public structure?: Structure<WorldMeta>;
+    public structure!: Structure<WorldMeta>;
+
+    /**
+     * The width of the world.
+     */
+    public get width(): number {
+        return this.structure.width;
+    }
+
+    /**
+     * The height of the world.
+     */
+    public get height(): number {
+        return this.structure.width;
+    }
 
     /**
      * The event attributes are the internal event emitters for the
@@ -34,7 +48,7 @@ export default class World {
      */
     // private events: EventEmitter<WorldEvents> = new EventEmitter();
 
-    public constructor(connection: GameConnection) {
+    public constructor(private connection: GameConnection) {
         /**
          * @event PlayerInit
          *
@@ -95,15 +109,35 @@ export default class World {
     //
     //
 
+    public async paste(xt: number, yt: number, fragment: Structure) {
+        const promises: Promise<boolean>[] = [];
+
+        for (let x = 0; x < fragment.width; x++) {
+            if (x + xt < 0 && x + xt >= this.width) continue;
+
+            for (let y = 0; y < fragment.height; y++) {
+                if (y + yt < 0 || y + yt >= this.height) continue;
+
+                for (let layer: any = 0; layer < Structure.LAYER_COUNT; layer++) {
+                    const block = fragment[layer][x][y] ?? new Block('empty');
+                    // if (block.id === 0 && !args.write_empty) continue;
+                    // to_be_placed.push([[layer, x + xt, y + yt], block]);
+
+                    this.connection.send('worldBlockPlacedPacket', {
+                        isFillOperation: false,
+                        extraFields: block.serialize_args(),
+                        positions: [{ $typeName: 'WorldPackets.PointInteger', x: x + xt, y:y + yt }],
+                        layer,
+                        blockId: block.id,
+                    })
+                }
+            }
+        }
+
+        return Promise.all(promises);
+    }
+
     // public isInitialized(): this is World<true> {
     //     return this.structure !== undefined;
-    // }
-
-    // public get width(): Init extends true ? number : undefined {
-    //     return this.structure.width as any;
-    // }
-
-    // public get height(): Init extends true ? number : undefined {
-    //     return this.structure.width as any;
     // }
 }
