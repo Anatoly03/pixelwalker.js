@@ -1,6 +1,6 @@
 import BufferReader from "../util/buffer-reader.js";
 import Layer from "./layer.js";
-import Block, { BlockName } from "./block.js";
+import Block, { BlockArgs, BlockName } from "./block.js";
 
 import structureMigrations from "./structure.migrations.js";
 
@@ -165,20 +165,39 @@ export default class Structure<Meta extends { [keys: number | string]: any } = {
 
         if (data.width <= 0 || data.height <= 0) {
             throw new Error(`Invalid structure size: ${data.width}x${data.height}`);
+        } else if (!data.palette) {
+            throw new Error(`Missing palette data in structure.`);
         }
-
+        
         const structure = new Structure(data.width, data.height);
         structure.meta = data.meta ?? {};
-
+        
         for (let i = 0; i < Structure.LAYER_COUNT; i++) {
-            const layer = data.layers[i];
-            const blocks = layer.split(";");
+            const layer: string = data.layers[i];
+            const blocks = layer.split(";").slice(0, data.width * data.height);
             let idx = 0;
 
             for (const bl of blocks) {
-                const block = Block.fromString(bl);
+                const [paletteId, args] = bl.split(".");
+                if (!paletteId) throw new Error('Malformed block data segment: ' + bl + ';');
+
+                const blockName = data.palette[parseInt(paletteId, 16)];
+                const block = new Block(blockName);
+                
+                if ((BlockArgs as any)[blockName]) {
+                    const format = (BlockArgs as any)[blockName];
+                    const buffer = BufferReader.from(Buffer.from(args, "hex"));
+
+                    for (let i = 0; i < (format?.length ?? 0); i++) {
+                        block.data[i] = buffer.read(format[i]);
+                    }
+                }
+
                 const x = idx % data.width;
                 const y = Math.floor(idx / data.width);
+
+                // console.log(i, x, y, block);
+
                 structure[i][x][y] = block;
                 idx += 1;
             }

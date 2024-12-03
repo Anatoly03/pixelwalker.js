@@ -176,31 +176,31 @@ export class Block {
     /**
      * Deserialize the block from the string.
      */
-    public static fromString(value: string): Block {
-        const parts = value.split(".");
-        const blockId = parseInt(parts[0], 16);
-        const block = new Block(blockId);
-        const format: ComponentTypeHeader[] = (BlockArgs as any)[block.name];
+    // public static fromString(value: string): Block {
+    //     const parts = value.split(".");
+    //     const blockId = parseInt(parts[0], 16);
+    //     const block = new Block(blockId);
+    //     const format: ComponentTypeHeader[] = (BlockArgs as any)[block.name];
 
-        if (parts.length > 1) {
-            const args = parts[1];
-            const buffer = BufferReader.from(Buffer.from(args, "hex"));
+    //     if (parts.length > 1) {
+    //         const args = parts[1];
+    //         const buffer = BufferReader.from(Buffer.from(args, "hex"));
 
-            for (let i = 0; i < (format?.length ?? 0); i++) {
-                block.data[i] = buffer.read(format[i]);
-            }
+    //         for (let i = 0; i < (format?.length ?? 0); i++) {
+    //             block.data[i] = buffer.read(format[i]);
+    //         }
 
-            // if ((BlockArgs as any)[block.name]) {
-            //     block.args_t = (BlockArgs as any)[block.name];
+    //         // if ((BlockArgs as any)[block.name]) {
+    //         //     block.args_t = (BlockArgs as any)[block.name];
 
-            //     for (const type of block.args_t) {
-            //         block.args.push(buffer.read(type));
-            //     }
-            // }
-        }
+    //         //     for (const type of block.args_t) {
+    //         //         block.args.push(buffer.read(type));
+    //         //     }
+    //         // }
+    //     }
 
-        return block;
-    }
+    //     return block;
+    // }
 
     /**
      * Provides a custom string representation of the block which
