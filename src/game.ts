@@ -213,6 +213,8 @@ export default class GameClient extends GameConnection {
      * of the callback function, you do permission checking on this instance to
      * determine if the player is allowed to execute the command.
      */
+    public listenCommand(commandName: string, callback: (player: Player, ...args: string[]) => void): this;
+
     public listenCommand(commandName: string, callback: (player: Player, ...args: string[]) => void): this {
         this.commands.on(commandName, callback);
         return this;
