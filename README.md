@@ -35,8 +35,10 @@ By setting the `localhost` flag (adding it to the import), the API server and Ga
 
 ## Contribution
 
-```
-npm install
+```sh
+npm install             # Install `node_modules`
+npm run generate-proto  # Build `.proto` files.
+npm run build           # Execute this after making changes to the library.
 ```
 
 Installing the node packages will also build the project into dist.
