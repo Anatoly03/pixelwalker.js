@@ -5,6 +5,7 @@ import Structure from "./structure.js";
 import Block from "./block.js";
 
 import { WorldMeta } from "../network/pixelwalker_pb.js";
+import BlockScheduler from "../scheduler/block.js";
 
 // export type WorldEvents = {
 //     Init: [Structure];
@@ -26,7 +27,21 @@ export default class World {
      * The internal reference to a structure instance. This attribute
      * is undefined, if the world did not process `PlayerInit` yet.
      */
-    public structure?: Structure<WorldMeta>;
+    public structure!: Structure<WorldMeta>;
+
+    /**
+     * The width of the world.
+     */
+    public get width(): number {
+        return this.structure.width;
+    }
+
+    /**
+     * The height of the world.
+     */
+    public get height(): number {
+        return this.structure.width;
+    }
 
     /**
      * The event attributes are the internal event emitters for the
@@ -34,7 +49,7 @@ export default class World {
      */
     // private events: EventEmitter<WorldEvents> = new EventEmitter();
 
-    public constructor(connection: GameConnection) {
+    public constructor(private connection: GameConnection, private scheduler: BlockScheduler) {
         /**
          * @event PlayerInit
          *
@@ -49,12 +64,33 @@ export default class World {
 
             if (buffer.subarray().length) {
                 console.error(`WorldSerializationFault: World data buffer has ${buffer.subarray().length} remaining bytes.`);
-                // connection.close();
+                connection.close();
                 return;
             }
 
             // this.events.emit("Init", this.structure);
         });
+
+        /**
+         * @event worldReloadedPacket
+         * 
+         * The `worldReloadedPacket` event is emitted when the world is reloaded.
+         */
+        connection.listen('worldReloadedPacket', message => {
+            const buffer = BufferReader.from(message.worldData);
+            const width = this.structure.width;
+            const height = this.structure.height;
+            const oldMeta = this.structure.meta;
+
+            this.structure = new Structure(width, height).deserialize(buffer) as Structure<WorldMeta>;
+            this.structure.meta = oldMeta;
+
+            if (buffer.subarray().length) {
+                console.error(`WorldSerializationFault: World data buffer has ${buffer.subarray().length} remaining bytes.`);
+                connection.close();
+                return;
+            }
+        })
 
         /**
          * @event WorldBlockPlaced
@@ -63,7 +99,7 @@ export default class World {
          */
         connection.listen("worldBlockPlacedPacket", ({ playerId, isFillOperation, blockId, layer, extraFields, positions }) => {
             const block = new Block(blockId);
-            block.deserialize_args(BufferReader.from(extraFields.buffer));
+            block.deserialize_args(BufferReader.from(extraFields), true);
 
             for (const { x, y } of positions) {
                 this.structure![layer][x][y] = block;
@@ -95,15 +131,38 @@ export default class World {
     //
     //
 
+    public async paste(xt: number, yt: number, fragment: Structure) {
+        const promises: Promise<boolean>[] = [];
+
+        for (let x = 0; x < fragment.width; x++) {
+            if (x + xt < 0 && x + xt >= this.width) continue;
+
+            for (let y = 0; y < fragment.height; y++) {
+                if (y + yt < 0 || y + yt >= this.height) continue;
+
+                for (let layer: any = 0; layer < Structure.LAYER_COUNT; layer++) {
+                    const block = fragment[layer][x][y] ?? new Block('empty');
+                    // if (block.id === 0 && !args.write_empty) continue;
+                    // to_be_placed.push([[layer, x + xt, y + yt], block]);
+
+                    this.scheduler.send({
+                        // $typeName: 'WorldPackets.WorldBlockPlacedPacket',
+                        // playerId: 0,
+                        // isFillOperation: false,
+                        extraFields: block.serialize_args(),
+                        x: x + xt, y:y + yt,
+                        // positions: [{ $typeName: 'WorldPackets.PointInteger', x: x + xt, y:y + yt }],
+                        layer,
+                        blockId: block.id,
+                    })
+                }
+            }
+        }
+
+        return Promise.all(promises);
+    }
+
     // public isInitialized(): this is World<true> {
     //     return this.structure !== undefined;
-    // }
-
-    // public get width(): Init extends true ? number : undefined {
-    //     return this.structure.width as any;
-    // }
-
-    // public get height(): Init extends true ? number : undefined {
-    //     return this.structure.width as any;
     // }
 }

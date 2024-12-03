@@ -10,7 +10,7 @@ import BufferReader, { ComponentTypeHeader } from "../util/buffer-reader.js";
  * block.name; // 'empty'
  * ```
  */
-export type BlockId = keyof typeof BlockMappingsReverse;
+export type BlockId = (typeof BlockMappings)[string];
 
 /**
  * This type represents the block mapping name that can be used in the game.
@@ -32,7 +32,12 @@ export type BlockName = keyof typeof BlockMappings;
  * console.log(Block['EMPTY']); // Block[empty]
  * ```
  */
-export class Block<Index extends BlockId = BlockId> {
+export class Block {
+    /**
+     * @todo
+     */
+    public static Mappings = BlockMappings;
+
     /**
      * Retrieve the block argument based on the argument number.
      *
@@ -48,7 +53,7 @@ export class Block<Index extends BlockId = BlockId> {
      * The unique id of a block. Block ID changes accross updates.
      * If you want to save persistant data, refer the block mapping.
      */
-    public readonly id: Index;
+    public readonly id: BlockId;
 
     /**
      * Block arguments are additional data that is sent with the block.
@@ -64,14 +69,14 @@ export class Block<Index extends BlockId = BlockId> {
     /**
      * Create a new block instance based on its' block id or block mapping.
      */
-    public constructor(id: Index | (typeof BlockMappingsReverse)[Index]) {
+    public constructor(id: BlockId | BlockName) {
         switch (true) {
             case id === undefined:
                 throw new Error("Block id is undefined");
             // this.id = 0 as Index;
             // break;
             case typeof id === "string" && BlockMappings[id] !== undefined:
-                this.id = BlockMappings[id] as Index;
+                this.id = BlockMappings[id];
                 break;
             case typeof id === "number":
                 this.id = id;
@@ -98,14 +103,14 @@ export class Block<Index extends BlockId = BlockId> {
     /**
      * Retrieves the mapping name of the block based on its' id.
      */
-    public get name(): (typeof BlockMappingsReverse)[Index] {
+    public get name(): BlockName {
         return BlockMappingsReverse[this.id];
     }
 
     /**
      * Returns if two blocks are equal based on their id and arguments.
      */
-    public equals(other: Block<number>): other is Block<Index> {
+    public equals(other: Block): boolean {
         if ((this.id as number) !== other.id) return false;
         if (this.data.length !== other.data.length) return false;
 
@@ -142,6 +147,11 @@ export class Block<Index extends BlockId = BlockId> {
     public static deserialize(buffer: BufferReader): Block {
         const blockId = buffer.readUInt32LE();
         const block = new Block(blockId);
+
+        if (blockId == 72) {
+            console.log(buffer.subarray(undefined, 15))
+        }
+
         block.deserialize_args(buffer);
         return block;
     }
@@ -149,11 +159,15 @@ export class Block<Index extends BlockId = BlockId> {
     /**
      * Deserialize a block arguments from the buffer reader.
      */
-    public deserialize_args(buffer: BufferReader): Block {
+    public deserialize_args(buffer: BufferReader, flag = false): this {
         const format: ComponentTypeHeader[] = (BlockArgs as any)[this.name];
 
         for (let i = 0; i < (format?.length ?? 0); i++) {
-            this.data[i] = buffer.read(format[i]);
+            if (flag) {
+                buffer.expectUInt8(format[i]);
+            }
+            
+            this.data[i] = buffer.read(format[i], !flag);
         }
 
         return this;
@@ -162,31 +176,31 @@ export class Block<Index extends BlockId = BlockId> {
     /**
      * Deserialize the block from the string.
      */
-    public static fromString(value: string): Block {
-        const parts = value.split(".");
-        const blockId = parseInt(parts[0], 16);
-        const block = new Block(blockId);
-        const format: ComponentTypeHeader[] = (BlockArgs as any)[block.name];
+    // public static fromString(value: string): Block {
+    //     const parts = value.split(".");
+    //     const blockId = parseInt(parts[0], 16);
+    //     const block = new Block(blockId);
+    //     const format: ComponentTypeHeader[] = (BlockArgs as any)[block.name];
 
-        if (parts.length > 1) {
-            const args = parts[1];
-            const buffer = BufferReader.from(Buffer.from(args, "hex"));
+    //     if (parts.length > 1) {
+    //         const args = parts[1];
+    //         const buffer = BufferReader.from(Buffer.from(args, "hex"));
 
-            for (let i = 0; i < (format?.length ?? 0); i++) {
-                block.data[i] = buffer.read(format[i]);
-            }
+    //         for (let i = 0; i < (format?.length ?? 0); i++) {
+    //             block.data[i] = buffer.read(format[i]);
+    //         }
 
-            // if ((BlockArgs as any)[block.name]) {
-            //     block.args_t = (BlockArgs as any)[block.name];
+    //         // if ((BlockArgs as any)[block.name]) {
+    //         //     block.args_t = (BlockArgs as any)[block.name];
 
-            //     for (const type of block.args_t) {
-            //         block.args.push(buffer.read(type));
-            //     }
-            // }
-        }
+    //         //     for (const type of block.args_t) {
+    //         //         block.args.push(buffer.read(type));
+    //         //     }
+    //         // }
+    //     }
 
-        return block;
-    }
+    //     return block;
+    // }
 
     /**
      * Provides a custom string representation of the block which

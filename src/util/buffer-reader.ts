@@ -233,14 +233,14 @@ export default class BufferReader {
      *
      */
     public get length() {
-        return this.#buffer.length;
+        return this.#buffer.length - this.#offset;
     }
 
     /**
      *
      */
     public subarray(start: number = this.#offset, end: number = this.length): BufferReader {
-        return new BufferReader(this.#buffer.subarray(start, end));
+        return new BufferReader(this.#buffer.subarray(start, this.#offset + end));
     }
 
     /**
@@ -425,6 +425,16 @@ export default class BufferReader {
     /**
      *
      */
+    public expectUInt8(value: number) {
+        const tmp = this.#buffer.readUInt8(this.#offset);
+        this.#offset += 1;
+        if (tmp !== value) throw new Error(`Expected ${value} but got ${tmp}`);
+        return tmp;
+    }
+
+    /**
+     *
+     */
     public readUInt8() {
         const tmp = this.#buffer.readUInt8(this.#offset);
         this.#offset += 1;
@@ -548,33 +558,33 @@ export default class BufferReader {
         return tmp;
     }
 
-    public read(tt: ComponentTypeHeader): string | number | bigint | boolean | Buffer;
-    public read(tt: ComponentTypeHeader.String): string;
-    public read(tt: ComponentTypeHeader.Byte): number;
-    public read(tt: ComponentTypeHeader.Int16): number;
-    public read(tt: ComponentTypeHeader.Int32): number;
-    public read(tt: ComponentTypeHeader.Int64): bigint;
-    public read(tt: ComponentTypeHeader.Float): number;
-    public read(tt: ComponentTypeHeader.Double): number;
-    public read(tt: ComponentTypeHeader.Boolean): boolean;
-    public read(tt: ComponentTypeHeader.ByteArray): Buffer;
+    public read(tt: ComponentTypeHeader, littleEndian?: boolean): string | number | bigint | boolean | Buffer;
+    public read(tt: ComponentTypeHeader.String, littleEndian?: boolean): string;
+    public read(tt: ComponentTypeHeader.Byte, littleEndian?: boolean): number;
+    public read(tt: ComponentTypeHeader.Int16, littleEndian?: boolean): number;
+    public read(tt: ComponentTypeHeader.Int32, littleEndian?: boolean): number;
+    public read(tt: ComponentTypeHeader.Int64, littleEndian?: boolean): bigint;
+    public read(tt: ComponentTypeHeader.Float, littleEndian?: boolean): number;
+    public read(tt: ComponentTypeHeader.Double, littleEndian?: boolean): number;
+    public read(tt: ComponentTypeHeader.Boolean, littleEndian?: boolean): boolean;
+    public read(tt: ComponentTypeHeader.ByteArray, littleEndian?: boolean): Buffer;
 
-    public read(tt: ComponentTypeHeader): string | number | bigint | boolean | Buffer {
+    public read(tt: ComponentTypeHeader, little = true): string | number | bigint | boolean | Buffer {
         switch (tt) {
             case ComponentTypeHeader.String:
                 return this.readDynamicBuffer().toString("ascii");
             case ComponentTypeHeader.Byte:
                 return this.readUInt8();
             case ComponentTypeHeader.Int16:
-                return this.readInt16LE();
+                return little ? this.readInt16LE() : this.readInt16BE();
             case ComponentTypeHeader.Int32:
-                return this.readInt32LE();
+                return little ? this.readInt32LE() : this.readInt32BE();
             case ComponentTypeHeader.Int64:
-                return this.readBigInt64LE();
+                return little ? this.readBigInt64LE() : this.readBigInt64BE();
             case ComponentTypeHeader.Float:
-                return this.readFloatLE();
+                return little ? this.readFloatLE() : this.readFloatBE();
             case ComponentTypeHeader.Double:
-                return this.readDoubleLE();
+                return little ? this.readDoubleLE() : this.readDoubleBE();
             case ComponentTypeHeader.Boolean:
                 return !!this.readUInt8();
             case ComponentTypeHeader.ByteArray:
@@ -740,5 +750,17 @@ export default class BufferReader {
         }
 
         return arr;
+    }
+
+    [Symbol.for("nodejs.util.inspect.custom")]() {
+        let s = '<BufferReader';
+        let copy = BufferReader.from(this.#buffer);
+        copy.#offset = this.#offset;
+
+        for (let i = 0; i < 20 && this.#offset + i < this.length - 1; i++) {
+            s += ' ' + copy.readUInt8().toString(16).padStart(2, '0');
+        }
+
+        return s + '>';
     }
 }
