@@ -1,4 +1,4 @@
-import Scheduler from "./base";
+import Scheduler from "./base.js";
 
 import GameConnection from "../game.connection";
 import { WorldBlockPlacedPacket } from "../network/pixelwalker_pb";
