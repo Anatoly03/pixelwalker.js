@@ -10,7 +10,7 @@ import BufferReader, { ComponentTypeHeader } from "../util/buffer-reader.js";
  * block.name; // 'empty'
  * ```
  */
-export type BlockId = (typeof BlockMappings)[string];
+export type BlockId = (typeof BlockMappings)[BlockName];
 
 /**
  * This type represents the block mapping name that can be used in the game.
