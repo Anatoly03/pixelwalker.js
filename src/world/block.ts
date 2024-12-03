@@ -159,7 +159,7 @@ export class Block {
     /**
      * Deserialize a block arguments from the buffer reader.
      */
-    public deserialize_args(buffer: BufferReader, flag = false): Block {
+    public deserialize_args(buffer: BufferReader, flag = false): this {
         const format: ComponentTypeHeader[] = (BlockArgs as any)[this.name];
 
         for (let i = 0; i < (format?.length ?? 0); i++) {

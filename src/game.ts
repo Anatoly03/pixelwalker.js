@@ -1,8 +1,10 @@
+import EventEmitter from "events";
 import GameConnection from "./game.connection.js";
 
 import LobbyClient from "./lobby.js";
 import PlayerMap from "./players/map.js";
 import World from "./world/world.js";
+import Player from "./types/player.js";
 
 /**
  * The GameClient is a connection interface with the game server. It is used to
@@ -51,6 +53,50 @@ export default class GameClient extends GameConnection {
      * The receiver is emitted on incoming connections.
      */
     // #receiver: EventEmitter<Events> = new EventEmitter();
+
+    /**
+     * The command prefix is a list of prefixes that are used to identify
+     * bot commands in the chat.
+     */
+    public commandPrefix: string[] = ["!", "."];
+
+    /**
+     * The command event is called to handle chat commands from players.
+     * You can listen for commands like in the example below.
+     *
+     * ```ts
+     * game.commands.on('giveedit', ([player, username]) => {
+     *     // `player` is the command caller, `username` is the argument.
+     *     // You can do permission checking here.
+     *
+     *     game.send('playerChatPacket', {
+     *         message: `/giveedit ${username}`,
+     *     })
+     * })
+     */
+    private commands = new EventEmitter<{ [commandName: string]: [Player, ...string[]] }>();
+
+    /**
+     * This static variable is used for command argument parsing. You
+     * can test it at a website like [Regex101](https://regex101.com/)
+     *
+     * The regular expression consists of three components: a double
+     * quoted string, a single quoted string and a word. The string
+     * components consists of a bracket structure to match for beginning
+     * and end of a string. The center part `(\\"|\\.|.)*?` matches for
+     * string escapes non-greedy. The word component `\S+` matches for
+     * a word (any combination of non-whitespace characters.)
+     * 
+     * @example
+     * 
+     * Here is an example of a command and the resulting matches.
+     * 
+     * ```
+     * !test "Hello, \"World!\"" 256 wonderful-evening! --help
+     *  ^^^^ ^^^^^^^^^^^^^^^^^^^ ^^^ ^^^^^^^^^^^^^^^^^^ ^^^^^^
+     * ```
+     */
+    private static CommandLineParser = /"(\\"|\\.|.)*?"|'(\\'|\\.|.)*?'|\S+/mg;
 
     /**
      *
@@ -131,14 +177,44 @@ export default class GameClient extends GameConnection {
             super.send("playerInitReceived");
         });
 
+        /**
+         * @event PlayerChat
+         *
+         * The `PlayerChat` event is emitted when a player sends a chat message.
+         * This event handler will only listen for chat commands and emit the
+         * command manager.
+         */
+        super.listen("playerChatPacket", ({ playerId, message }) => {
+            let idx = this.commandPrefix.findIndex((prefix) => message.startsWith(prefix));
+            if (idx === -1) return;
+
+            const [command, ...args] = message.substring(this.commandPrefix[idx].length).match(GameClient.CommandLineParser) ?? [];
+            if (!command) return;
+
+            const player = this.players[playerId];
+            if (!player) return;
+
+            this.commands.emit(command, player, ...args);
+        });
+
         return this;
     }
 
-
-    public registerCommand(commandName: string): this;
-
-    public registerCommand(commandName: string): this {
-
+    /**
+     * Register a command handler. The command handler is called when a player
+     * sends a chat message that starts with the command prefix. The command
+     * arguments are then parsed with a regular expression and passes the results
+     * to the callback function.
+     * 
+     * @param commandName The name of the command to listen for. This is the first
+     * argument of the command message.
+     * 
+     * @param player The player who sent the command. This is the first argument
+     * of the callback function, you do permission checking on this instance to
+     * determine if the player is allowed to execute the command.
+     */
+    public listenCommand(commandName: string, callback: (player: Player, ...args: string[]) => void): this {
+        this.commands.on(commandName, callback);
         return this;
     }
 }
