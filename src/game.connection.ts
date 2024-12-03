@@ -200,8 +200,8 @@ export default class GameConnection {
          * promise rejections to the event emitter.
          */
         process.on("unhandledRejection", (error) => {
-            if (!(error instanceof Error)) return console.error("Unhandled Rejection:", error);
-            console.error(`Unhandled Rejection: ${error.name}: ${error.message}\n${error.stack}`);
+            // if (!(error instanceof Error)) return console.error("Unhandled Rejection:", error);
+            // console.error(`Unhandled Rejection: ${error.name}: ${error.message}\n${error.stack}`);
         });
 
         /**

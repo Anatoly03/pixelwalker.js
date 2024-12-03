@@ -5,6 +5,7 @@ const DEFAULT_PRIORITY = 10;
 class Entry<V> {
     public priority: number = DEFAULT_PRIORITY;
     public timeSince: number = performance.now();
+    public ignoreThisLoop = false;
 
     constructor(public value: V) {}
 }
@@ -110,7 +111,7 @@ export default abstract class Scheduler<V> {
     /**
      * Send a ticket to the scheduler.
      */
-    public send(value: V, priority: number = DEFAULT_PRIORITY): Promise<void> {
+    public send(value: V, priority?: number): Promise<void> {
         const ticket = this.createKey(value);
         return this.add(ticket, value, priority);
     }
@@ -149,6 +150,13 @@ export default abstract class Scheduler<V> {
     }
 
     /**
+     * Returns a list of all entries in the queue.
+     */
+    protected entries() {
+        return Array.from(this.#queue.entries());
+    }
+
+    /**
      * Sets the timer to activate the main loop.
      */
     private tryLoop() {
@@ -169,6 +177,11 @@ export default abstract class Scheduler<V> {
         this.#lastTimeBusy = performance.now();
 
         for (const [key, entry] of this.nextEntries()) {
+            if (entry.ignoreThisLoop) {
+                entry.ignoreThisLoop = false;
+                continue;
+            }
+
             this.trySend(entry.value);
             entry.priority += 1;
 
@@ -181,7 +194,7 @@ export default abstract class Scheduler<V> {
     /**
      * Add a ticket to the queue.
      */
-    protected add(key: string, value: V, priority: number) {
+    protected add(key: string, value: V, priority: number = DEFAULT_PRIORITY) {
         if (!this.isRunning) return Promise.reject("Scheduler running state was set to false.");
 
         // If thekey already exists, store the old value.
@@ -213,7 +226,7 @@ export default abstract class Scheduler<V> {
      * @todo
      */
     protected map(key: string, cb: (value: V) => V) {
-        throw new Error('Unimplemented!')
+        throw new Error("Unimplemented!");
     }
 
     /**
@@ -257,6 +270,6 @@ export default abstract class Scheduler<V> {
      * Await till the entire queue is empty.
      */
     public async awaitEmpty() {
-        return Promise.all([...this.#promises.values()])
+        return Promise.all([...this.#promises.values()]);
     }
 }

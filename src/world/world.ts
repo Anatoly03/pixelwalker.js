@@ -125,11 +125,12 @@ export default class World {
                     // to_be_placed.push([[layer, x + xt, y + yt], block]);
 
                     this.scheduler.send({
-                        $typeName: 'WorldPackets.WorldBlockPlacedPacket',
-                        playerId: 0,
-                        isFillOperation: false,
+                        // $typeName: 'WorldPackets.WorldBlockPlacedPacket',
+                        // playerId: 0,
+                        // isFillOperation: false,
                         extraFields: block.serialize_args(),
-                        positions: [{ $typeName: 'WorldPackets.PointInteger', x: x + xt, y:y + yt }],
+                        x: x + xt, y:y + yt,
+                        // positions: [{ $typeName: 'WorldPackets.PointInteger', x: x + xt, y:y + yt }],
                         layer,
                         blockId: block.id,
                     })
