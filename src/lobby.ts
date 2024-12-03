@@ -10,6 +10,7 @@ import PublicWorld from "./types/public-world.js";
 import PrivateWorld from "./types/private-world.js";
 import PublicProfile from "./types/public-profile.js";
 import Friend, { FriendRequest } from "./types/friends.js";
+import { JoinData } from "./game.connection.js";
 
 /**
  * The LobbyClient connects with the
@@ -217,12 +218,12 @@ export default class LobbyClient<Auth extends boolean = false> {
 
     /**
      * Returns an array of all online, visible worlds.
-     * 
+     *
      * @example
-     * 
+     *
      * ```ts
-     * // Example response: 
-     * 
+     * // Example response:
+     *
      * {
      *   "visibleRooms": [
      *     {
@@ -242,9 +243,9 @@ export default class LobbyClient<Auth extends boolean = false> {
      *   "onlinePlayerCount": 10
      * }
      * ```
-     * 
+     *
      * The `data` segment contains the `type` field, which is one of the following:
-     * 
+     *
      * - `0`: Saved World (Worlds that players own, e.g. Public Worlds)
      * - `1`: Unsaved World (Non-persistant Worlds, e.g. Martens' Realms)
      * - `2`: Legacy World (Worlds from the EE archive)
@@ -412,5 +413,22 @@ export default class LobbyClient<Auth extends boolean = false> {
     public async connection(this: LobbyClient<true>, world_id: string, roomType?: (typeof RoomTypes)[0]): Promise<GameClient> {
         const token = await this.getJoinKey(world_id, roomType);
         return new GameClient(token);
+    }
+
+    /**
+     * Create a new world on the game server. This method requires a title,
+     * 
+     * The join data is a collection of all the possible messages that can be
+     * sent to create or join a world.
+     * 
+     * Width and Height are restricted to values between 25 and 400 and it has
+     * to be in multiples of 25, with the exception of `636` assigned to width.
+     *
+     * @since 1.3.3
+     */
+    public async createUnsavedWorld(this: LobbyClient<true>, joinData: JoinData, roomType?: (typeof RoomTypes)[0]): Promise<GameClient> {
+        const generatedId = "pw-js-" + Math.random().toString(36).substring(2, 9);
+        const token = await this.getJoinKey(generatedId);
+        return new GameClient(token, joinData);
     }
 }

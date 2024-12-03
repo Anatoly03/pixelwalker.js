@@ -1,5 +1,5 @@
 import EventEmitter from "events";
-import GameConnection from "./game.connection.js";
+import GameConnection, { JoinData } from "./game.connection.js";
 
 import LobbyClient from "./lobby.js";
 import PlayerMap from "./players/map.js";
@@ -141,8 +141,8 @@ export default class GameClient extends GameConnection {
      * You need to manually call the `bind` method to establish a connection, after
      * registering event handlersand managing the state of your program.
      */
-    constructor(joinkey: string) {
-        super(joinkey);
+    constructor(joinkey: string, joinData?: JoinData) {
+        super(joinkey, joinData);
 
         // this.chat = new Chat(this.connection);
         this.players = new PlayerMap(this);
