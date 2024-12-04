@@ -14,7 +14,7 @@ export const Type = {
     Double: BufferReader.Double,
     Boolean: BufferReader.Boolean,
     ByteArray: BufferReader.ByteArray,
-}
+};
 
 export { default as LobbyClient } from "./lobby.js";
 export { default as GameConnection } from "./game.connection.js";
@@ -25,6 +25,6 @@ export { default as PlayerMap } from "./players/map.js";
 export { default as Block, BlockId, BlockName } from "./world/block.js";
 export { default as Layer } from "./world/layer.js";
 export { default as Structure } from "./world/structure.js";
-// export { default as World } from "./world/world.js";
+export { default as World } from "./world/world.js";
 
-// export { default as Chat } from "./chat/chat.js";
+export { sleep } from "./util/sleep.js";
