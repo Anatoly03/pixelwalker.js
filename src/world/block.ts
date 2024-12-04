@@ -1,9 +1,10 @@
 import { BlockMappings, BlockMappingsReverse } from "../data/block-mappings.js";
+import { WorldBlockFilledPacket, WorldBlockPlacedPacket } from "../network/pixelwalker_pb.js";
 import BufferReader, { ComponentTypeHeader } from "../util/buffer-reader.js";
 
 /**
  * This type represents the block numeric id that can be used in the game.
- * 
+ *
  * ```ts
  * const blockId: BlockId = 0;
  * const block = new Block(blockId);
@@ -14,7 +15,7 @@ export type BlockId = (typeof BlockMappings)[string];
 
 /**
  * This type represents the block mapping name that can be used in the game.
- * 
+ *
  * ```ts
  * const blockName: BlockName = 'empty';
  * const block = new Block(blockName);
@@ -108,6 +109,45 @@ export class Block {
     }
 
     /**
+     * Create a packet to place the block in the world.
+     *
+     * @since 1.3.4
+     */
+    public toPacket(layer: 0 | 1, ...positions: { x: number; y: number }[]): ["worldBlockPlacedPacket", WorldBlockPlacedPacket] {
+        return [
+            "worldBlockPlacedPacket",
+            {
+                $typeName: "WorldPackets.WorldBlockPlacedPacket",
+                playerId: 0,
+                isFillOperation: false,
+                extraFields: new Uint8Array(),
+                positions: positions.map((pos) => ({ $typeName: "WorldPackets.PointInteger", ...pos })),
+                layer: layer,
+                blockId: this.id,
+            },
+        ];
+    }
+
+    /**
+     * Create a fill packet to place the block in the world.
+     *
+     * @since 1.3.4
+     */
+    public toFillPacket(layer: 0 | 1, position: { x: number; y: number }, args?: { ignoreLayers: boolean }): ["worldBlockFilledPacket", WorldBlockFilledPacket] {
+        return [
+            "worldBlockFilledPacket",
+            {
+                $typeName: "WorldPackets.WorldBlockFilledPacket",
+                extraFields: new Uint8Array(),
+                ignoreLayers: false,
+                position: { $typeName: "WorldPackets.PointInteger", ...position },
+                layer: layer,
+                blockId: this.id,
+            },
+        ];
+    }
+
+    /**
      * Returns if two blocks are equal based on their id and arguments.
      */
     public equals(other: Block): boolean {
@@ -149,7 +189,7 @@ export class Block {
         const block = new Block(blockId);
 
         if (blockId == 72) {
-            console.log(buffer.subarray(undefined, 15))
+            console.log(buffer.subarray(undefined, 15));
         }
 
         block.deserialize_args(buffer);
@@ -166,7 +206,7 @@ export class Block {
             if (flag) {
                 buffer.expectUInt8(format[i]);
             }
-            
+
             this.data[i] = buffer.read(format[i], !flag);
         }
 
@@ -214,7 +254,7 @@ export class Block {
      * Returns a string representation of the block as understood by the API.
      */
     public toString(): string {
-        return `Block[${this.name ?? this.id}${this.data.length > 0 ? ';' + this.data.toString() : ''}]`;
+        return `Block[${this.name ?? this.id}${this.data.length > 0 ? ";" + this.data.toString() : ""}]`;
     }
 }
 
