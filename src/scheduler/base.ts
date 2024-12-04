@@ -1,4 +1,5 @@
 import GameConnection from "../game.connection.js";
+import { sleep } from "../util/sleep.js";
 
 const DEFAULT_PRIORITY = 10;
 
@@ -112,6 +113,14 @@ export default abstract class Scheduler<V> {
      * Send a ticket to the scheduler.
      */
     public send(value: V, priority?: number): Promise<void> {
+        try {
+            if (this.verify(value)) {
+                return Promise.resolve();
+            }
+        } catch (e) {
+            return Promise.reject(e);
+        }
+
         const ticket = this.createKey(value);
         return this.add(ticket, value, priority);
     }
@@ -125,6 +134,16 @@ export default abstract class Scheduler<V> {
      * Send a ticket to the scheduler.
      */
     protected abstract trySend(value: V): void;
+
+    /**
+     * Optionally create a verifier and accept tickets that are already
+     * implemented.
+     * 
+     * @throws {Error} If the ticket is invalid, rejecting the promise.
+     */
+    protected verify(value: V): boolean {
+        return false;
+    }
 
     /**
      * Gets the queue of tickets to be processed.
@@ -168,7 +187,7 @@ export default abstract class Scheduler<V> {
     /**
      * The main loop of the scheduler.
      */
-    private loop() {
+    private async loop() {
         if (!this.isRunning) return this.stop();
         if (this.#queue.size == 0) return this.unbusy();
         if (performance.now() - this.#lastTimeBusy < this.LOOP_FREQUENCY) return this.tryLoop();
@@ -185,7 +204,7 @@ export default abstract class Scheduler<V> {
             this.trySend(entry.value);
             entry.priority += 1;
 
-            // TODO inbetween delay
+            await sleep(this.INBETWEEN_DELAY);
         }
 
         return this.tryLoop();

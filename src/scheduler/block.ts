@@ -1,7 +1,8 @@
 import Scheduler from "./base.js";
 
-import GameConnection from "../game.connection";
-import { WorldBlockPlacedPacket } from "../network/pixelwalker_pb";
+import GameConnection from "../game.connection.js";
+import { WorldBlockPlacedPacket } from "../network/pixelwalker_pb.js";
+import GameClient from "../game.js";
 
 type Change = {
     x: number;
@@ -18,10 +19,10 @@ export default class BlockScheduler extends Scheduler<Change> {
     override RETRY_FREQUENCY = 500;
     public BLOCKS_PER_TICK = 400;
 
-    constructor(connection: GameConnection) {
-        super(connection);
+    constructor(private game: GameClient) {
+        super(game);
 
-        connection.listen("worldBlockPlacedPacket", ({ positions, layer, blockId, extraFields }) => {
+        game.listen("worldBlockPlacedPacket", ({ positions, layer, blockId, extraFields }) => {
             for (const { x, y } of positions) {
                 this.receive(
                     this.createKey({
@@ -33,9 +34,15 @@ export default class BlockScheduler extends Scheduler<Change> {
                     })
                 );
             }
-
-            // this.receive(this.createKey(message));
         });
+    }
+
+    protected override verify({ layer, x, y, blockId, extraFields }: Change): boolean {
+        if (![0, 1].includes(layer)) throw new Error(`Layer expected to be 0 or 1, got ${layer}`);
+        if (x < 0 || x >= this.game.world.width) throw new Error(`X out of bounds: 0 <= ${x} < ${this.game.world.width}`);
+        if (y < 0 || y >= this.game.world.height) throw new Error(`Y out of bounds: 0 <= ${y} < ${this.game.world.height}`);
+
+        return false;
     }
 
     protected override createKey({ layer, x, y, blockId, extraFields }: Change): string {
