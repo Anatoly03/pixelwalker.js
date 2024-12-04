@@ -144,7 +144,21 @@ export default class GameClient extends GameConnection {
     constructor(joinkey: string, joinData?: JoinData) {
         super(joinkey, joinData);
 
-        // this.chat = new Chat(this.connection);
+        /**
+         * @event PlayerInit
+         *
+         * Upon receiving the `PlayerInit` event, the server requires
+         * the client to send the `PlayerInit` event as well back to
+         * the server.
+         * 
+         * @note This event needs to be appended before the `bind` method
+         * is called, to make sure other listeners are **not**
+         * prioritized.
+         */
+        super.listen("playerInitPacket", () => {
+            super.send("playerInitReceived");
+        });
+
         this.players = new PlayerMap(this);
         this.world = new World(this, this.blockScheduler);
     }
@@ -172,17 +186,6 @@ export default class GameClient extends GameConnection {
          */
         super.listen("ping", () => {
             super.send("ping");
-        });
-
-        /**
-         * @event PlayerInit
-         *
-         * Upon receiving the `PlayerInit` event, the server requires
-         * the client to send the `PlayerInit` event as well back to
-         * the server.
-         */
-        super.listen("playerInitPacket", () => {
-            super.send("playerInitReceived");
         });
 
         /**
