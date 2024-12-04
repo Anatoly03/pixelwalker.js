@@ -27,9 +27,7 @@
   },
   "devDependencies": {
     "@bufbuild/protoc-gen-es": "^2.2.2",
-    "@types/jest": "^29.5.14",
     "@types/ws": "^8.5.13",
-    "jest": "^29.7.0",
     "typedoc": "^0.25.13",
     "vite": "^5.4.11",
     "vitest": "^2.1.8"
