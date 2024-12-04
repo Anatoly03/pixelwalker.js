@@ -29,6 +29,9 @@ jobs:
             - name: "Install dependencies"
               run: npm install
 
+            - name: "Build Protobuf Files"
+              run: npm run generate-proto
+
             - name: "Build project"
               run: npm run build
 
