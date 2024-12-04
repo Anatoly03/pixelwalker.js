@@ -1,6 +1,5 @@
 import Scheduler from "./base.js";
 
-import GameConnection from "../game.connection.js";
 import { WorldBlockPlacedPacket } from "../network/pixelwalker_pb.js";
 import GameClient from "../game.js";
 
@@ -15,8 +14,9 @@ type Change = {
 export default class BlockScheduler extends Scheduler<Change> {
     override LOOP_FREQUENCY = 25;
     override ELEMENTS_PER_TICK = 200;
-    override INBETWEEN_DELAY = 2;
+    override INBETWEEN_DELAY = 5;
     override RETRY_FREQUENCY = 500;
+
     public BLOCKS_PER_TICK = 400;
 
     constructor(private game: GameClient) {
