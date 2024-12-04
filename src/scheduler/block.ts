@@ -1,8 +1,8 @@
-import Scheduler from "./base";
+import Scheduler from "./base.js";
 
-import GameConnection from "../game.connection";
-import { WorldBlockPlacedPacket } from "../network/pixelwalker_pb";
-import GameClient from "../game";
+import GameConnection from "../game.connection.js";
+import { WorldBlockPlacedPacket } from "../network/pixelwalker_pb.js";
+import GameClient from "../game.js";
 
 type Change = {
     x: number;
