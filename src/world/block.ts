@@ -120,7 +120,7 @@ export class Block {
                 $typeName: "WorldPackets.WorldBlockPlacedPacket",
                 playerId: 0,
                 isFillOperation: false,
-                extraFields: new Uint8Array(),
+                extraFields: this.serialize_args(),
                 positions: positions.map((pos) => ({ $typeName: "WorldPackets.PointInteger", ...pos })),
                 layer: layer,
                 blockId: this.id,
@@ -138,7 +138,7 @@ export class Block {
             "worldBlockFilledPacket",
             {
                 $typeName: "WorldPackets.WorldBlockFilledPacket",
-                extraFields: new Uint8Array(),
+                extraFields: this.serialize_args(),
                 ignoreLayers: false,
                 position: { $typeName: "WorldPackets.PointInteger", ...position },
                 layer: layer,
@@ -187,11 +187,6 @@ export class Block {
     public static deserialize(buffer: BufferReader): Block {
         const blockId = buffer.readUInt32LE();
         const block = new Block(blockId);
-
-        if (blockId == 72) {
-            console.log(buffer.subarray(undefined, 15));
-        }
-
         block.deserialize_args(buffer);
         return block;
     }
