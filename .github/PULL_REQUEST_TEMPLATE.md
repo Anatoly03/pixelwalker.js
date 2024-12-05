@@ -3,9 +3,11 @@
 - [x] This is done. <!-- Add commit links here, when certain features where affected. -->
 - [ ] This is not done.
 
---- <!-- Add one or many examples of using the SDK with the newly implemented features, remove block if not needed. -->
+---
 
 **Motivating Examples**
+
+<!-- Add one or many examples of using the SDK with the newly implemented features, remove block if not needed. -->
 
 ```ts
 
