@@ -245,11 +245,40 @@ export default class GameClient {
      * @param player The player who sent the command. This is the first argument
      * of the callback function, you do permission checking on this instance to
      * determine if the player is allowed to execute the command.
+     * 
+     * @example
+     * 
+     * ```ts
+     * // The following registers an event listener that reacts to `!exit`
+     * game.listenCommand('exit', player => {
+     *     // Close the game (connection and schedulers)
+     *     game.close();
+     * });
+     * ```
      */
     public listenCommand(commandName: string, callback: (player: Player, ...args: string[]) => void): this;
 
     public listenCommand(commandName: string, callback: (player: Player, ...args: string[]) => void): this {
         this.commands.on(commandName, callback);
         return this;
+    }
+
+    /**
+     * Write a message to the chat.
+     * 
+     * @example
+     * 
+     * ```ts
+     * game.sendChat('Hello, World!');
+     * ```
+     * 
+     * @since 1.3.6
+     */
+    public sendChat(message: string): void;
+    
+    public sendChat(message: string) {
+        this.connection.send('playerChatPacket', {
+            message,
+        });
     }
 }
