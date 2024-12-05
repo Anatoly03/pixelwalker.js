@@ -20,20 +20,8 @@ jobs:
         runs-on: "ubuntu-latest"
 
         steps:
-            - uses: "actions/checkout@v4"
-
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: "21.4.0"
-
-            - name: "Install dependencies"
-              run: npm install
-
-            - name: "Build Protobuf Files"
-              run: npm run generate-proto
-
-            - name: "Build project"
-              run: npm run build
+            - name: Build Package
+              uses: Anatoly03/pixelwalker.js/.github/workflows/build.yml@main
 
             - name: "Building Documentation"
               run: npm run docs
