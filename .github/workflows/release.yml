@@ -8,28 +8,68 @@ on:
             - main
         paths-ignore:
             - ".github/workflows/**"
+            - "test/**"
 
 jobs:
-    create_release:
-        if: github.event.pull_request.merged == true && github.ref == 'refs/heads/main'
+    publish-release:
+        name: Publish release to NPM
         runs-on: ubuntu-latest
-
+        permissions:
+            contents: read
+            id-token: write
+        timeout-minutes: 3
         steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
+            - name: Checkout
+              uses: actions/checkout@v4
 
-            - name: Format tag name
-              id: format_tag_name
-              run: |
-                  TAG_NAME=$(echo "${{ github.event.pull_request.title }}" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')
-                  echo "::set-output name=formatted_tag_name::$TAG_NAME"
-
-            - name: Create GitHub release
-              uses: ncipollo/release-action@v1
+            - name: Setup node
+              uses: actions/setup-node@v4
               with:
-                  tag: ${{ steps.format_tag_name.outputs.formatted_tag_name }}
-                  name: ${{ github.event.pull_request.title }}
-                  token: ${{ secrets.GITHUB_TOKEN }}
-                  generateReleaseNotes: true
-                  draft: false
-                  prerelease: false
+                  node-version: "21.4.0"
+                  registry-url: "https://registry.npmjs.org"
+
+            - name: Install node modules
+              run: npm ci
+
+            - name: Build `.proto` files
+              run: npm run generate-proto
+
+            - name: Build the binary
+              run: npm run build
+
+            - name: Update version
+              run: npm version patch
+
+            - name: Push
+              uses: ad-m/github-push-action@master
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  branch: main
+
+            - run: npm publish --provenance --access public
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    # create_release:
+    #     if: github.event.pull_request.merged == true && github.ref == 'refs/heads/main'
+    #     runs-on: ubuntu-latest
+
+    #     steps:
+    #         - name: Checkout repository
+    #           uses: actions/checkout@v3
+
+    #         - name: Format tag name
+    #           id: format_tag_name
+    #           run: |
+    #               TAG_NAME=$(echo "${{ github.event.pull_request.title }}" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')
+    #               echo "::set-output name=formatted_tag_name::$TAG_NAME"
+
+    #         - name: Create GitHub release
+    #           uses: ncipollo/release-action@v1
+    #           with:
+    #               tag: ${{ steps.format_tag_name.outputs.formatted_tag_name }}
+    #               name: ${{ github.event.pull_request.title }}
+    #               token: ${{ secrets.GITHUB_TOKEN }}
+    #               generateReleaseNotes: true
+    #               draft: false
+    #               prerelease: false
