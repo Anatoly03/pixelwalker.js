@@ -10,7 +10,7 @@ import PublicWorld from "./types/public-world.js";
 import PrivateWorld from "./types/private-world.js";
 import PublicProfile from "./types/public-profile.js";
 import Friend, { FriendRequest } from "./types/friends.js";
-import { JoinData } from "./game.connection.js";
+import JoinData from "./types/join-data.js";
 
 /**
  * The LobbyClient connects with the

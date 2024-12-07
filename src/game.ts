@@ -1,11 +1,12 @@
 import EventEmitter from "events";
-import GameConnection, { JoinData } from "./game.connection.js";
+import GameConnection from "./game.connection.js";
 
 import LobbyClient from "./lobby.js";
 import PlayerMap from "./players/map.js";
 import World from "./world/world.js";
 import Player from "./types/player.js";
 import BlockScheduler from "./scheduler/block.js";
+import JoinData from "./types/join-data.js";
 
 /**
  * The GameClient is a connection interface with the game server. It is used to

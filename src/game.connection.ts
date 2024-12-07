@@ -2,19 +2,13 @@ import EventEmitter from "events";
 import WebSocket from "ws";
 
 import Config from "./data/config.js";
+import JoinData from "./types/join-data.js";
 import * as Protocol from "./network/pixelwalker_pb.js";
 import { toBinary, fromBinary, create } from "@bufbuild/protobuf";
 
 type WorldEventNames = Protocol.WorldPacket["packet"]["case"];
 type WorldEventData<Name extends WorldEventNames> = Protocol.WorldPacket["packet"] & { name: Name };
 export type Events = { [K in WorldEventNames & string]: [(WorldEventData<K> & { case: K })["value"]] };
-
-export type JoinData = Partial<{
-    world_title: string;
-    world_width: 636 | 400 | 375 | 350 | 325 | 300 | 275 | 250 | 225 | 200 | 175 | 150 | 125 | 100 | 75 | 50;
-    world_height: 400 | 375 | 350 | 325 | 300 | 275 | 250 | 225 | 200 | 175 | 150 | 125 | 100 | 75 | 50;
-    spawnId: number;
-}>;
 
 /**
  * The GameConnection is a connection to the game server at the
@@ -168,7 +162,8 @@ export default class GameConnection {
 
     /**
      * Binds the connection to the game server. Internally, this method
-     * creates a socket in the connection class and appends core event listeners.
+     * creates a socket in the connection class and appends core event
+     * listeners.
      */
     public bind(): this {
         let url = `${Config.GameServerSocketLink}/room/${this.joinkey}`;
