@@ -1,4 +1,4 @@
-import { ComponentTypeHeader } from "../util/buffer-reader";
+import { ComponentTypeHeader } from "../util/buffer-reader.js";
 
 /**
  * This mapping contains definitins of block data which require additional
