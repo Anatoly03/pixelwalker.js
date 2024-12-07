@@ -203,8 +203,29 @@ export default class GameConnection {
          */
         this.socket.on("message", (message: WithImplicitCoercion<ArrayBuffer>) => {
             const packet = fromBinary(Protocol.WorldPacketSchema, Buffer.from(message));
+            // console.debug(packet);
             this.#receiver.emit(packet.packet.case as any, packet.packet.value ?? {});
         });
+
+        /**
+         * @event error
+         */
+        this.socket.on('error', err => {
+            console.error(err)
+            this.close();
+        })
+
+        /**
+         * @event
+         * 
+         * This event is fired when sockets are terminated either successful
+         * or unexpected. See [Websocket Close Codes](https://github.com/Luka967/websocket-close-codes)
+         * for better understanding of it.
+         */
+        this.socket.on('close', (code, reason) => {
+            // console.warn(code, reason.toString('ascii'))
+            this.close();
+        })
 
         /**
          * @event
