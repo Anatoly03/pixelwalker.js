@@ -8,7 +8,14 @@ on:
             - "main"
 
 jobs:
+    build:
+        name: Build Package
+        uses: Anatoly03/pixelwalker.js/.github/workflows/build.yml@main
+
     publish-documentation:
+        runs-on: "ubuntu-latest"
+        needs: build
+
         permissions:
             id-token: "write"
             pages: "write"
@@ -17,12 +24,7 @@ jobs:
             name: "github-pages"
             url: "${{ steps.deployment.outputs.page_url }}"
 
-        runs-on: "ubuntu-latest"
-
         steps:
-            - name: Build Package
-              uses: Anatoly03/pixelwalker.js/.github/workflows/build.yml@main
-
             - name: "Building Documentation"
               run: npm run docs
 

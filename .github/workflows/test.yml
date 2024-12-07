@@ -23,11 +23,13 @@ on:
         types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
+    build:
+        name: Build Package
+        uses: Anatoly03/pixelwalker.js/.github/workflows/build.yml@main
+
     run-tests:
         runs-on: ubuntu-latest
+        needs: build
         steps:
-            - name: Build Package
-              uses: Anatoly03/pixelwalker.js/.github/workflows/build.yml@main
-
             - name: Run Tests
               run: npm test

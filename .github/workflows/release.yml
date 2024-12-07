@@ -11,16 +11,18 @@ on:
             - "test/**"
 
 jobs:
+    build:
+        name: Build Package
+        uses: Anatoly03/pixelwalker.js/.github/workflows/build.yml@main
+
     publish-release:
-        name: Publish release to NPM
         runs-on: ubuntu-latest
+        name: Publish release to NPM
+        needs: build
         permissions:
             contents: write
         timeout-minutes: 3
         steps:
-            - name: Build Package
-              uses: Anatoly03/pixelwalker.js/.github/workflows/build.yml@main
-
             - name: Update version
               run: npm version patch
 
