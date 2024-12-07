@@ -20,9 +20,9 @@ export default class BlockScheduler extends Scheduler<Change> {
     public BLOCKS_PER_TICK = 400;
 
     constructor(private game: GameClient) {
-        super(game);
+        super(game.connection);
 
-        game.listen("worldBlockPlacedPacket", ({ positions, layer, blockId, extraFields }) => {
+        game.connection.listen("worldBlockPlacedPacket", ({ positions, layer, blockId, extraFields }) => {
             for (const { x, y } of positions) {
                 this.receive(
                     this.createKey({
