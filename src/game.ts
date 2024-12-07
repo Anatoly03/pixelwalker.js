@@ -113,6 +113,11 @@ export default class GameClient {
     private blockScheduler = new BlockScheduler(this);
 
     /**
+     * The id of `self` (the bot client in the game).
+     */
+    public readonly selfId!: number;
+
+    /**
      *
      * @param joinkey The joinkey retrieved from the API server.
      *
@@ -162,8 +167,9 @@ export default class GameClient {
          * is called, to make sure other listeners are **not**
          * prioritized.
          */
-        this.connection.listen("playerInitPacket", () => {
+        this.connection.listen("playerInitPacket", message => {
             this.connection.send("playerInitReceived");
+            (this as any).selfId = message.playerProperties!.playerId;
         });
 
         this.players = new PlayerMap(this.connection);
