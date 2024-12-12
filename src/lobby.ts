@@ -251,7 +251,7 @@ export default class LobbyClient<Auth extends boolean = false> {
      * - `2`: Legacy World (Worlds from the EE archive)
      */
     public async online_worlds(roomType?: (typeof RoomTypes)[0]): Promise<OnlineWorlds> {
-        roomType = roomType ?? (process.env.LOCALHOST ? "pixelwalker_dev" : RoomTypes[0]);
+        roomType = roomType ?? (process?.env.LOCALHOST ? "pixelwalker_dev" : RoomTypes[0]);
 
         const response = await fetch(`${Config.GameServerLink}/room/list/${roomType}`);
         if (!response.ok) throw new Error("Failed to fetch online worlds.");
@@ -395,7 +395,7 @@ export default class LobbyClient<Auth extends boolean = false> {
      * @this LobbyClient<true>
      */
     public async getJoinKey(this: LobbyClient<true>, world_id: string, roomType?: (typeof RoomTypes)[0]): Promise<string> {
-        roomType = roomType ?? (process.env.LOCALHOST ? "pixelwalker_dev" : RoomTypes[0]);
+        roomType = roomType ?? (process?.env.LOCALHOST ? "pixelwalker_dev" : RoomTypes[0]);
         const { token } = await this.pocketbase.send(`/api/joinkey/${roomType}/${world_id}`, {});
         return token;
     }

@@ -172,7 +172,7 @@ export default class GameConnection {
             url += `?joinData=${btoa(JSON.stringify(this.joinData))}`;
         }
 
-        if (process.env.LOCALHOST) {
+        if (process?.env.LOCALHOST) {
             this.socket = new WebSocket(url, { port: 5148 });
         } else {
             this.socket = new WebSocket(url);
@@ -228,7 +228,7 @@ export default class GameConnection {
          * Report unhandled promises. This will log all unhandled
          * promise rejections to the event emitter.
          */
-        process.on("unhandledRejection", (error) => {
+        process?.on("unhandledRejection", (error) => {
             if (!(error instanceof Error)) return console.error("Unhandled Rejection:", error);
             console.error(`Unhandled Rejection: ${error.name}: ${error.message}\n${error.stack}`);
         });
@@ -241,7 +241,7 @@ export default class GameConnection {
          * of the socket tunnel, so the player instances don't
          * flood the world.
          */
-        process.on("SIGINT", (signals) => {
+        process?.on("SIGINT", (signals) => {
             this.close();
         });
 
