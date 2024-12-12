@@ -1,11 +1,12 @@
 import EventEmitter from "events";
-import GameConnection, { JoinData } from "./game.connection.js";
+import GameConnection from "./game.connection.js";
 
 import LobbyClient from "./lobby.js";
 import PlayerMap from "./players/map.js";
 import World from "./world/world.js";
 import Player from "./types/player.js";
 import BlockScheduler from "./scheduler/block.js";
+import JoinData from "./types/join-data.js";
 
 /**
  * The GameClient is a connection interface with the game server. It is used to
@@ -29,7 +30,13 @@ import BlockScheduler from "./scheduler/block.js";
  * game.bind();
  * ```
  */
-export default class GameClient extends GameConnection {
+export default class GameClient {
+    /**
+     * A reference to the game connection event. Use this to interact
+     * with the connection socket directly.
+     */
+    public connection: GameConnection;
+
     /**
      * The chat manager is a utility to manage chat messages in the game. It can
      * be used to listen for chat messages, bot command requests and send to chat.
@@ -106,6 +113,11 @@ export default class GameClient extends GameConnection {
     private blockScheduler = new BlockScheduler(this);
 
     /**
+     * The id of `self` (the bot client in the game).
+     */
+    public readonly selfId!: number;
+
+    /**
      *
      * @param joinkey The joinkey retrieved from the API server.
      *
@@ -119,12 +131,12 @@ export default class GameClient extends GameConnection {
      * @returns {GameClient} A new instance of the GameClient.
      *
      * ```ts
-     * const connection = GameClient.withJoinKey(joinkey);
+     * const game = GameClient.withJoinKey(joinkey);
      * ```
      */
-    // public static withJoinKey(joinkey: string) {
-    //     return new this(joinkey);
-    // }
+    public static withJoinKey(joinkey: string, joinData?: JoinData) {
+        return new this(joinkey, joinData);
+    }
 
     /**
      * @todo
@@ -142,7 +154,7 @@ export default class GameClient extends GameConnection {
      * registering event handlersand managing the state of your program.
      */
     constructor(joinkey: string, joinData?: JoinData) {
-        super(joinkey, joinData);
+        this.connection = GameConnection.withJoinKey(joinkey, joinData);
 
         /**
          * @event PlayerInit
@@ -155,12 +167,13 @@ export default class GameClient extends GameConnection {
          * is called, to make sure other listeners are **not**
          * prioritized.
          */
-        super.listen("playerInitPacket", () => {
-            super.send("playerInitReceived");
+        this.connection.listen("playerInitPacket", message => {
+            this.connection.send("playerInitReceived");
+            (this as any).selfId = message.playerProperties!.playerId;
         });
 
-        this.players = new PlayerMap(this);
-        this.world = new World(this, this.blockScheduler);
+        this.players = new PlayerMap(this.connection);
+        this.world = new World(this.connection, this.blockScheduler);
     }
 
     //
@@ -173,8 +186,8 @@ export default class GameClient extends GameConnection {
      * Binds the connection to the game server. Internally, this method
      * creates a socket in the connection class and appens core event listeners.
      */
-    public override bind(): this {
-        super.bind();
+    public bind(): this {
+        this.connection.bind();
         this.blockScheduler.start();
 
         /**
@@ -184,8 +197,8 @@ export default class GameClient extends GameConnection {
          * send back a pong back to the server. Clients which forget to send
          * a pong back to the server will be disconnected after a while.
          */
-        super.listen("ping", () => {
-            super.send("ping");
+        this.connection.listen("ping", () => {
+            this.connection.send("ping");
         });
 
         /**
@@ -195,7 +208,7 @@ export default class GameClient extends GameConnection {
          * This event handler will only listen for chat commands and emit the
          * command manager.
          */
-        super.listen("playerChatPacket", ({ playerId, message }) => {
+        this.connection.listen("playerChatPacket", ({ playerId, message }) => {
             let idx = this.commandPrefix.findIndex((prefix) => message.startsWith(prefix));
             if (idx === -1) return;
 
@@ -216,10 +229,16 @@ export default class GameClient extends GameConnection {
      * close the connection to the game server and stop the schedulers and
      * other running entities.
      */
-    public override close(): void {
-        super.close();
+    public close(): void {
+        this.connection.close();
         this.blockScheduler.stop();
     }
+
+    //
+    //
+    // SEND EVENTS
+    //
+    //
 
     /**
      * Register a command handler. The command handler is called when a player
@@ -233,11 +252,40 @@ export default class GameClient extends GameConnection {
      * @param player The player who sent the command. This is the first argument
      * of the callback function, you do permission checking on this instance to
      * determine if the player is allowed to execute the command.
+     * 
+     * @example
+     * 
+     * ```ts
+     * // The following registers an event listener that reacts to `!exit`
+     * game.listenCommand('exit', player => {
+     *     // Close the game (connection and schedulers)
+     *     game.close();
+     * });
+     * ```
      */
     public listenCommand(commandName: string, callback: (player: Player, ...args: string[]) => void): this;
 
     public listenCommand(commandName: string, callback: (player: Player, ...args: string[]) => void): this {
         this.commands.on(commandName, callback);
         return this;
+    }
+
+    /**
+     * Write a message to the chat.
+     * 
+     * @example
+     * 
+     * ```ts
+     * game.sendChat('Hello, World!');
+     * ```
+     * 
+     * @since 1.3.6
+     */
+    public sendChat(message: string): void;
+    
+    public sendChat(message: string) {
+        this.connection.send('playerChatPacket', {
+            message,
+        });
     }
 }
