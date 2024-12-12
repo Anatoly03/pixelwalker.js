@@ -1,14 +1,11 @@
 import PocketBase, { BaseAuthStore, RecordModel, RecordService } from "pocketbase";
 import { jwtDecode } from "jwt-decode";
 
-import Config from "./data/config.js";
 import RoomTypes from "./data/room-types.js";
 import GameClient from "./game.js";
 
-import OnlineWorlds from "./types/online-worlds.js";
-import PublicWorld from "./types/public-world.js";
+import LobbyGuestClient from "./lobby.guest.js";
 import PrivateWorld from "./types/private-world.js";
-import PublicProfile from "./types/public-profile.js";
 import Friend, { FriendRequest } from "./types/friends.js";
 import JoinData from "./types/join-data.js";
 
@@ -18,7 +15,7 @@ import JoinData from "./types/join-data.js";
  * and provides an interface with the {@link https://pocketbase.io/ PocketBase}
  * instance. (The backend framework which PixelWalker uses.)
  */
-export default class LobbyClient<Auth extends boolean = false> {
+export default class LobbyClient extends LobbyGuestClient {
     /**
      * The list of available room types. The room types are used when
      * opening a new room on the game server. The room types are currently
@@ -36,23 +33,25 @@ export default class LobbyClient<Auth extends boolean = false> {
      * server uses {@link https://pocketbase.io/ Pocketbase} as its'
      * backend framework.
      */
-    public readonly pocketbase!: PocketBase & {
-        authStore: BaseAuthStore & { isValid: Auth };
+    public override readonly pocketbase!: PocketBase & {
+        authStore: BaseAuthStore & { isValid: true };
     };
 
     /**
      * Returns whether the client is authorized (i.e. logged in).
      */
-    public get isAuthorized(): Auth {
+    private get isAuthorized(): true {
         return this.pocketbase.authStore.isValid;
     }
 
     /**
-     * Returns the client's own id. This is only available if the client
-     * is authorized and will be undefined otherwise.
+     * Returns the client's own connect user id. This is only available
+     * if the client is authorized and will be undefined otherwise.
      */
-    public get selfId(): Auth extends true ? string : undefined {
-        if (!this.isAuthorized) return undefined as any;
+    public get cuid(): string {
+        if (!this.isAuthorized)
+            throw new Error('`LobbyClient.cuid` was asked before ');
+
         return jwtDecode<{
             collectionId: "_pb_users_auth_";
             exp: number;
@@ -66,21 +65,24 @@ export default class LobbyClient<Auth extends boolean = false> {
      * token is invalid, it will return null.
      *
      * @param {string} token The object holding the token which is used
-     * to sign into pocketbase.
+     * to sign into pocketbase. You can get the token by logging in, in
+     * a browser of your choice and heading over to the developer tools
+     * on {@link https://pixelwalker.net}, then retrieving the cookies
+     * for `pocketbase_auth`, and getting the token.
      *
      * @example
      *
      * This is a standard way of creating a new Client instance
      *
      * ```ts
-     * import 'dotenv/config'
-     * const client = Client.new('eyj.......')
+     * import 'dotenv/config';
+     * const client = LobbyClient.withToken('eyj.......');
      * ```
      *
      * @static
      */
     public static withToken(token: string) {
-        const client = new this<true>();
+        const client = new this();
         client.pocketbase.authStore.save(token, { verified: true });
         if (!client.pocketbase.authStore.isValid) return null;
         return client;
@@ -89,9 +91,26 @@ export default class LobbyClient<Auth extends boolean = false> {
     /**
      * Create a new Client instance, by logging in with a username (or email) and
      * password. If invalid, returns a promise resolving. null.
+     *
+     * @param {string} username Username or email of the account you are trying to
+     * login with. Do not hardcode them in the application/ store in git but instead
+     * save them in a environment config file.
+     *
+     * @param {string} password Password of the account you are trying to login with.
+     * Do not hardcode them in the application/ store in git but instead save them in
+     * a environment config file.
+     *
+     * @example
+     *
+     * ```ts
+     * import 'dotenv/config';
+     * const client = LobbyClient.withUsernamePassword('ANATOLY', 'secret');
+     * ```
+     *
+     * @static
      */
     public static async withUsernamePassword(username: string, password: string) {
-        const client = new this<true>();
+        const client = new this();
         try {
             const auth = await client.pocketbase.collection("users").authWithPassword(username, password);
             if (!auth) return null;
@@ -112,86 +131,16 @@ export default class LobbyClient<Auth extends boolean = false> {
      *
      * @static
      */
-    public static guest(): LobbyClient<false> {
-        return new this();
+    public static guest(): LobbyGuestClient {
+        return new LobbyGuestClient();
     }
 
     /**
-     * @todo
+     * @ignore The constructor is hidden from public gaze. Use static
+     * methods.
      */
-    protected constructor() {
-        this.pocketbase = new PocketBase(Config.APIServerLink) as any;
-    }
-
-    /**
-     * Returns a Pocketbase [RecordService](https://github.com/pocketbase/js-sdk/blob/master/src/services/RecordService.ts).
-     * See usage at the [PocketBase](https://pocketbase.io/) website for [searching records](https://pocketbase.io/docs/api-records#listsearch-records).
-     * This method returns a collection handler that allows you to search through all public profiles.
-     *
-     * @example
-     *
-     * ```json
-     * // Test it out: https://api.pixelwalker.net/api/collections/public_profiles/records?perPage=500&page=1
-     *
-     * {
-     *   "admin": false,
-     *   "banned": false,
-     *   "collectionId": "0wl44rzm22wuf2q",
-     *   "collectionName": "public_profiles",
-     *   "created": "2024-04-17 08:50:37.671Z",
-     *   "face": 15,
-     *   "id": "5cy5r7za1r3splc",
-     *   "username": "ANATOLY"
-     * }
-     * ```
-     */
-    public profiles(): RecordService<PublicProfile> {
-        return this.pocketbase.collection("public_profiles");
-    }
-
-    /**
-     * Returns a Pocketbase [RecordService](https://github.com/pocketbase/js-sdk/blob/master/src/services/RecordService.ts).
-     * See usage at the [PocketBase](https://pocketbase.io/) website for [searching records](https://pocketbase.io/docs/api-records#listsearch-records).
-     * This method returns a collection handler that allows you to search through all public worlds.
-     *
-     * @note
-     *
-     * If you want to get a full list of worlds that you own and are not set to
-     * public, refer to the {@link LobbyClient.my_worlds} method.
-     *
-     * @example
-     *
-     * ```json
-     * // Test it out: https://api.pixelwalker.net/api/collections/public_worlds/records?perPage=500&page=1
-     *
-     * {
-     *   "collectionId": "rhrbt6wqhc4s0cp",
-     *   "collectionName": "public_worlds",
-     *   "description": "This is a 200x200 world",
-     *   "height": 200,
-     *   "id": "r450e0e380a815a",
-     *   "minimap": "r450e0e380a815a_6zNp6ir2pt.png",
-     *   "owner": "5cy5r7za1r3splc",
-     *   "plays": 654,
-     *   "title": "Statsu 418",
-     *   "width": 200
-     * }
-     * ```
-     *
-     * @example
-     *
-     * If you want to get only **public** worlds that you yourself own, you can
-     * use the `owner='selfId'` filter (with selfId being your own connect user id).
-     *
-     * ```ts
-     * LobbyClient.withToken(process.env.token);
-     *   .worlds()
-     *   .getFullList({ filter: `owner='${client.selfId}'` })
-     *   .then(console.log)
-     * ```
-     */
-    public worlds(): RecordService<PublicWorld> {
-        return this.pocketbase.collection("public_worlds");
+    private constructor() {
+        super();
     }
 
     /**
@@ -212,51 +161,8 @@ export default class LobbyClient<Auth extends boolean = false> {
      * @note To use this function you have to be logged in. (Login with
      * an authorized constructor, i.e. not {@link LobbyClient.guest})
      */
-    public my_worlds(this: LobbyClient<true>): RecordService<PrivateWorld> {
+    public my_worlds(): RecordService<PrivateWorld> {
         return this.pocketbase.collection("worlds");
-    }
-
-    /**
-     * Returns an array of all online, visible worlds.
-     *
-     * @example
-     *
-     * ```ts
-     * // Example response:
-     *
-     * {
-     *   "visibleRooms": [
-     *     {
-     *       "id": "mknckr7oqxq24xa",
-     *       "players": 1,
-     *       "max_players": 50,
-     *       "data": {
-     *         "title": "[Realms] Lobby",
-     *         "description": "Visit https://realms.martenm.nl to browse worlds.",
-     *         "plays": 1119,
-     *         "minimapEnabled": true,
-     *         "type": 0
-     *       }
-     *     }
-     *   ],
-     *   "onlineRoomCount": 5,
-     *   "onlinePlayerCount": 10
-     * }
-     * ```
-     *
-     * The `data` segment contains the `type` field, which is one of the following:
-     *
-     * - `0`: Saved World (Worlds that players own, e.g. Public Worlds)
-     * - `1`: Unsaved World (Non-persistant Worlds, e.g. Martens' Realms)
-     * - `2`: Legacy World (Worlds from the EE archive)
-     */
-    public async online_worlds(roomType?: (typeof RoomTypes)[0]): Promise<OnlineWorlds> {
-        roomType = roomType ?? (process?.env.LOCALHOST ? "pixelwalker_dev" : RoomTypes[0]);
-
-        const response = await fetch(`${Config.GameServerLink}/room/list/${roomType}`);
-        if (!response.ok) throw new Error("Failed to fetch online worlds.");
-
-        return response.json();
     }
 
     /**
@@ -295,8 +201,8 @@ export default class LobbyClient<Auth extends boolean = false> {
      *
      * @this LobbyClient<true>
      */
-    public async user(this: LobbyClient<true>): Promise<RecordModel> {
-        return this.pocketbase.collection("users").getOne(this.selfId);
+    public async user(): Promise<RecordModel> {
+        return this.pocketbase.collection("users").getOne(this.cuid);
     }
 
     /**
@@ -324,7 +230,7 @@ export default class LobbyClient<Auth extends boolean = false> {
      *
      * @this LobbyClient<true>
      */
-    public friends(this: LobbyClient<true>): Promise<Friend[]> {
+    public friends(): Promise<Friend[]> {
         return this.pocketbase.send("/api/friends", { token: this.pocketbase.authStore.token });
     }
 
@@ -352,7 +258,7 @@ export default class LobbyClient<Auth extends boolean = false> {
      *
      * @this LobbyClient<true>
      */
-    public async friend_requests(this: LobbyClient<true>): Promise<FriendRequest[]> {
+    public async friend_requests(): Promise<FriendRequest[]> {
         return this.pocketbase.send("/api/friends/requests", { token: this.pocketbase.authStore.token });
     }
 
@@ -394,7 +300,7 @@ export default class LobbyClient<Auth extends boolean = false> {
      *
      * @this LobbyClient<true>
      */
-    public async getJoinKey(this: LobbyClient<true>, world_id: string, roomType?: (typeof RoomTypes)[0]): Promise<string> {
+    public async getJoinKey(world_id: string, roomType?: (typeof RoomTypes)[0]): Promise<string> {
         roomType = roomType ?? (process?.env.LOCALHOST ? "pixelwalker_dev" : RoomTypes[0]);
         const { token } = await this.pocketbase.send(`/api/joinkey/${roomType}/${world_id}`, {});
         return token;
@@ -410,25 +316,25 @@ export default class LobbyClient<Auth extends boolean = false> {
      *
      * @this LobbyClient<true>
      */
-    public async connection(this: LobbyClient<true>, world_id: string, roomType?: (typeof RoomTypes)[0]): Promise<GameClient> {
+    public async connection(world_id: string, roomType?: (typeof RoomTypes)[0]): Promise<GameClient> {
         const token = await this.getJoinKey(world_id, roomType);
-        return new GameClient(token);
+        return GameClient.withJoinKey(token);
     }
 
     /**
      * Create a new world on the game server. This method requires a title,
-     * 
+     *
      * The join data is a collection of all the possible messages that can be
      * sent to create or join a world.
-     * 
+     *
      * Width and Height are restricted to values between 25 and 400 and it has
      * to be in multiples of 25, with the exception of `636` assigned to width.
      *
      * @since 1.3.3
      */
-    public async createUnsavedWorld(this: LobbyClient<true>, joinData: JoinData, roomType?: (typeof RoomTypes)[0]): Promise<GameClient> {
+    public async createUnsavedWorld(joinData: JoinData, roomType?: (typeof RoomTypes)[0]): Promise<GameClient> {
         const generatedId = "pw-js-" + Math.random().toString(36).substring(2, 9);
         const token = await this.getJoinKey(generatedId);
-        return new GameClient(token, joinData);
+        return GameClient.withJoinKey(token, joinData);
     }
 }

@@ -140,6 +140,7 @@ export default class GameClient {
 
     /**
      * @todo
+     * @ignore
      */
     public static async withPocketBaseToken(args: { token: string; world_id: string }) {
         const lobby = LobbyClient.withToken(args.token);
@@ -153,7 +154,7 @@ export default class GameClient {
      * You need to manually call the `bind` method to establish a connection, after
      * registering event handlersand managing the state of your program.
      */
-    constructor(joinkey: string, joinData?: JoinData) {
+    protected constructor(joinkey: string, joinData?: JoinData) {
         this.connection = GameConnection.withJoinKey(joinkey, joinData);
 
         /**
