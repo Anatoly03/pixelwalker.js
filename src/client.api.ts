@@ -5,6 +5,7 @@ import CONFIG from "./config";
 import PrivateWorld from "./types/private-world";
 import PublicProfile from "./types/public-profile";
 import PublicWorld from "./types/public-world";
+import GameClient from "./client.game";
 
 /**
  * The API Client is responsible for communication with the
@@ -206,7 +207,7 @@ export default class APIClient {
      *
      * Print all worlds that have a width of more than 500 blocks.
      *
-     * ```ts
+     * ```typescript
      * APIClient.withToken(process.env.TOKEN!)
      *     .worlds()
      *     .getFullList({ filter: 'width>500' })
@@ -240,7 +241,7 @@ export default class APIClient {
      *
      * Print all worlds that you own.
      *
-     * ```ts
+     * ```typescript
      * APIClient.withToken(process.env.TOKEN!)
      *   .myWorlds()
      *   .getFullList()
@@ -268,7 +269,7 @@ export default class APIClient {
      * connecting, and you will receive several messages logged
      * to the console.
      *
-     * ```ts
+     * ```typescript
      * export const client = APIClient.withToken(process.env.token);
      * const joinkey = await client.getJoinKey('4naaehf4xxexavv');
      * const socket = new WebSocket(`wss://game.pixelwalker.net/room/${joinkey}`);
@@ -294,5 +295,31 @@ export default class APIClient {
         const { token } = await this.pocketbase.send<{ token: string }>(`/api/joinkey/${roomType}/${worldId}`, {});
 
         return token;
+    }
+
+    /**
+     * Generate a game manager for a specific world id. This
+     * will return a {@link GameClient} instance that can be
+     * used to communicate to the game room. This method will
+     * not connect to the room yet, you must call {@link GameClient.bind}
+     * to start the connection. This is a design decision to
+     * have time to append even listeners to the game manager
+     * before the connection is established.
+     * 
+     * @example
+     * 
+     * This example will connect to the room and keep a running
+     * connection. If you do not wish to use a game manager you
+     * can create a custom socket connection with the join key.
+     * 
+     * ```typescript
+     * const client = APIClient.withToken(process.env.TOKEN!)!;
+     * const game = await client.createGame("r450e0e380a815a");
+     * game.bind();
+     * ```
+     */
+    public async createGame(worldId: string): Promise<GameClient> {
+        const token = await this.getJoinKey(worldId);
+        return new GameClient(token);
     }
 }
