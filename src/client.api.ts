@@ -1,5 +1,6 @@
 import PocketBase, { RecordService } from "pocketbase";
 
+import PrivateWorld from "./types/private-world";
 import PublicProfile from "./types/public-profile";
 import PublicWorld from "./types/public-world";
 
@@ -147,6 +148,10 @@ export default class APIClient {
      * collection. This allows you to search through all worlds
      * with public visibility. Legacy worlds are excluded.
      * 
+     * If you want to list all worlds you own, you should instead
+     * use {@link my_worlds} as it will contain more metadata such
+     * as the download URL of the world data.
+     * 
      * It is recommend to read more on the PocketBase website and
      * experiment with the PixelWalker API server to get intuition
      * on how to use this method effectively.
@@ -171,9 +176,55 @@ export default class APIClient {
      * }
      * ```
      * 
+     * @example
+     * 
+     * Print all worlds that have a width of more than 500 blocks.
+     *
+     * ```ts
+     * APIClient.withToken(process.env.TOKEN!)
+     *     .worlds()
+     *     .getFullList({ filter: 'width>500' })
+     *     .then(console.log);
+     * ```
+     * 
      * @since 1.4.0
      */
     public worlds(): RecordService<PublicWorld> {
         return this.pocketbase.collection("public_worlds");
     }
+
+    /**
+     * Returns a Pocketbase `RecordService` for the privately
+     * owned worlds collection. You should use this method if
+     * you want to look at the worlds you own.
+     * 
+     * It is recommend to read more on the PocketBase website and
+     * experiment with the PixelWalker API server to get intuition
+     * on how to use this method effectively.
+     * 
+     * - {@link https://pocketbase.io/docs/api-rules-and-filters/ Filter Syntax}
+     * - {@link https://api.pixelwalker.net/api/collections/public_worlds/records?perPage=500&page=1 Test the API}
+     *
+     * Returns a Pocketbase [RecordService](https://github.com/pocketbase/js-sdk/blob/master/src/services/RecordService.ts).
+     * See usage at the [PocketBase](https://pocketbase.io/) website for [searching records](https://pocketbase.io/docs/api-records#listsearch-records).
+     * This method returns a collection handler that allows you to search through
+     * all worlds owned by you.
+     *
+     * @example
+     * 
+     * Print all worlds that you own.
+     *
+     * ```ts
+     * APIClient.withToken(process.env.TOKEN!)
+     *   .my_worlds()
+     *   .getFullList()
+     *   .then(console.log)
+     * ```
+     * 
+     * @since 1.4.0
+     */
+    public my_worlds(): RecordService<PrivateWorld> {
+        return this.pocketbase.collection("worlds");
+    }
+
 }
