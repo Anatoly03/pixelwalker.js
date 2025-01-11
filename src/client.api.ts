@@ -1,6 +1,7 @@
 import PocketBase, { RecordService } from "pocketbase";
 
 import PublicProfile from "./types/public-profile";
+import PublicWorld from "./types/public-world";
 
 /**
  * The API Client is responsible for communication with the
@@ -134,8 +135,45 @@ export default class APIClient {
      *   "username": "ANATOLY"
      * }
      * ```
+     * 
+     * @since 1.4.0
      */
     public profiles(): RecordService<PublicProfile> {
         return this.pocketbase.collection("public_profiles");
+    }
+
+    /**
+     * Returns a Pocketbase `RecordService` for the public worlds
+     * collection. This allows you to search through all worlds
+     * with public visibility. Legacy worlds are excluded.
+     * 
+     * It is recommend to read more on the PocketBase website and
+     * experiment with the PixelWalker API server to get intuition
+     * on how to use this method effectively.
+     * 
+     * - {@link https://pocketbase.io/docs/api-rules-and-filters/ Filter Syntax}
+     * - {@link https://api.pixelwalker.net/api/collections/public_worlds/records?perPage=500&page=1 Test the API}
+     *
+     * @example
+     *
+     * ```json
+     * {
+     *   "collectionId": "rhrbt6wqhc4s0cp",
+     *   "collectionName": "public_worlds",
+     *   "description": "This is a 200x200 world",
+     *   "height": 200,
+     *   "id": "r450e0e380a815a",
+     *   "minimap": "r450e0e380a815a_6zNp6ir2pt.png",
+     *   "owner": "5cy5r7za1r3splc",
+     *   "plays": 654,
+     *   "title": "Statsu 418",
+     *   "width": 200
+     * }
+     * ```
+     * 
+     * @since 1.4.0
+     */
+    public worlds(): RecordService<PublicWorld> {
+        return this.pocketbase.collection("public_worlds");
     }
 }
