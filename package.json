@@ -7,7 +7,6 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "generate-proto": "npx buf generate",
     "docs": "npx typedoc src",
     "test": "vitest"
   },

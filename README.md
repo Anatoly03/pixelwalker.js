@@ -3,41 +3,22 @@
 
 [NPM](https://www.npmjs.com/package/pixelwalker.js) | [GitHub](https://github.com/Anatoly03/pixelwalker.js) | [Protocol](https://github.com/PixelWalkerGame/Protocol)
 
+> **THIS MODULE IS BEING REWRITTEN**
+> 
+> It is currently not usable.
+
 ```sh
 npm i --save pixelwalker.js
 ```
 
 ```ts
-import "dotenv/config"
-import { LobbyClient } from "pixelwalker.js"
-
-export const client = LobbyClient.withToken(process.env.token);
-export const game = await client.connection(process.env.world_id);
-
-game.listen('playerChatPacket', ({ playerId, message }) => {
-    if (message != '!ping') return;
-
-    game.send('playerChatPacket', {
-        message: `Pong, ${game.players[playerId].properties.username}!`,
-    })
-})
-
-game.bind();
+// TODO
 ```
-
-#### Testing in Local Development server
-
-```ts
-import { LobbyClient } from 'pixelwalker.js/localhost'
-```
-
-By setting the `localhost` flag (adding it to the import), the API server and Game server paths are derouted to the localhost ports equivalent.
 
 ## Contribution
 
 ```sh
 npm install             # Install `node_modules`
-npm run generate-proto  # Build `.proto` files.
 npm run build           # Execute this after making changes to the library.
 ```
 
