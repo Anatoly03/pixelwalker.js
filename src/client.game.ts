@@ -1,6 +1,9 @@
 import EventEmitter from "events";
 
-import CONFIG from "./config";
+import { Protocol } from "./index.js";
+import { toBinary, fromBinary, create } from "@bufbuild/protobuf";
+
+import CONFIG from "./config.js";
 
 /**
  * The Game Client is responsible for communication with the
@@ -39,7 +42,8 @@ export default class GameClient {
 
         this.socket.onmessage = (event) => {
             const buffer = Buffer.from(event.data as WithImplicitCoercion<ArrayBuffer>);
-            console.log(buffer);
+            const packet = fromBinary(Protocol.WorldPacketSchema, buffer);
+            console.log(packet);
         };
 
         this.socket.onclose = (event) => {};

@@ -2,7 +2,7 @@
 dist
 docs
 node_modules
-src/network
+*/protocol
 *lock.json
 
 # All Environment files need to be in gitignore

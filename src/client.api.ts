@@ -2,10 +2,10 @@ import PocketBase, { RecordService } from "pocketbase";
 
 import CONFIG from "./config";
 
-import PrivateWorld from "./types/private-world";
-import PublicProfile from "./types/public-profile";
-import PublicWorld from "./types/public-world";
-import GameClient from "./client.game";
+import PrivateWorld from "./types/private-world.js";
+import PublicProfile from "./types/public-profile.js";
+import PublicWorld from "./types/public-world.js";
+import GameClient from "./client.game.js";
 
 /**
  * The API Client is responsible for communication with the
