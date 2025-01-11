@@ -116,21 +116,17 @@ export default class APIClient {
      * method and will cache the room types for future use. If you
      * want to force a reload of the room types, you can pass `true`
      * as the first argument.
-     * 
-     * @ignore This method is used internally by the API Client,
-     * but is exposed for advanced users.
      */
-    public static async roomTypes(force_reload = false): Promise<string[]> {
+    public static async roomTypes(forceReload = false): Promise<string[]> {
         // Return the cached room types if they exist.
-        if (this.#roomTypes && !force_reload)
-            return this.#roomTypes;
+        if (this.#roomTypes && !forceReload) return this.#roomTypes;
 
         // Fetch the room types from the server.
         const response = await fetch(CONFIG.GAME_SERVER_HTTP + "/listroomtypes");
         const map: string[] = await response.json();
-        
+
         // Cache the room types for future use.
-        return this.#roomTypes = map
+        return (this.#roomTypes = map);
     }
 
     /**
@@ -255,5 +251,48 @@ export default class APIClient {
      */
     public myWorld(): RecordService<PrivateWorld> {
         return this.pocketbase.collection("worlds");
+    }
+
+    /**
+     * Generate a join key for a specific world id. Optionally
+     * overwrite room type. This key can then be used to connect
+     * to a websocket on the game server.
+     *
+     * @example
+     *
+     * In this example we will set up a custom socket connection
+     * with the server. After logging in with PocketBase, we will
+     * retrieve the join key, and use it to connect to a room.
+     * 
+     * Observe: You will be disconnected in some seconds after
+     * connecting, and you will receive several messages logged
+     * to the console.
+     *
+     * ```ts
+     * export const client = APIClient.withToken(process.env.token);
+     * const joinkey = await client.getJoinKey('4naaehf4xxexavv');
+     * const socket = new WebSocket(`wss://game.pixelwalker.net/room/${joinkey}`);
+     * socket.binaryType = 'arraybuffer';
+     *
+     * socket.onmessage = event => {
+     *     const buffer = Buffer.from(event.data as WithImplicitCoercion<ArrayBuffer>);
+     *     console.log(buffer)
+     * };
+     * ```
+     *
+     * // TODO explain how to keep indefinite connection running
+     *
+     * @since 1.4.0
+     */
+    public async getJoinKey(worldId: string): Promise<string> {
+        // Get the room type from the server. Since room types
+        // is an array. We destructure the first element.
+        const [roomType] = await APIClient.roomTypes();
+
+        // Get the join key from the server. This key can be
+        // used to connect to the game server.
+        const { token } = await this.pocketbase.send<{ token: string }>(`/api/joinkey/${roomType}/${worldId}`, {});
+
+        return token;
     }
 }
