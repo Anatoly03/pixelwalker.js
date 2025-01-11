@@ -37,7 +37,7 @@ export default class APIClient {
      * import 'dotenv/config';
      * import { APIClient } from 'pixelwalker';
      *
-     * const client = APIClient.withToken(process.env.TOKEN!);
+     * const client = APIClient.withToken(process.env.TOKEN!)!;
      * ```
      *
      * Note, in this example the environment variable `TOKEN!`
@@ -47,6 +47,8 @@ export default class APIClient {
      * environment.
      *
      * @returns Authenticated instance of the API Client.
+     *
+     * @since 1.4.0
      */
     public static withToken(token: string): APIClient | undefined {
         const client = new this();
@@ -56,6 +58,44 @@ export default class APIClient {
         if (!client.pocketbase.authStore.isValid) return;
 
         // Return the api client if the token is valid.
+        return client;
+    }
+
+    /**
+     * Create an authenticated instance of the API Client. This will
+     * make a request to the server to authenticate the user with the
+     * provided credentials. This callis **asynchronous** and yields
+     * a promise. If the credentials are invalid, the promise unwraps
+     * to `undefined`.
+     * 
+     * It is recommend practice to use environment variables for
+     * sensitive information like usernames and passwords. You can use
+     * {@link https://www.npmjs.com/package/dotenv dotenv} to load
+     * environment variables from a `.env` file. **Never commit this
+     * file** to a repository.
+     *
+     * @example
+     *
+     * ```typescript
+     * import 'dotenv/config';
+     * import { APIClient } from 'pixelwalker';
+     *
+     * const client = await APIClient.withCredentials(process.env.USERNAME!, process.env.PASSWORD!);
+     * ```
+     * 
+     * @returns Authenticated instance of the API Client.
+     *
+     * @since 1.4.0
+     */
+    public static async withCredentials(username: string, password: string): Promise<APIClient | undefined> {
+        const client = new this();
+
+        try {
+            await client.pocketbase.collection("users").authWithPassword(username, password);
+        } catch (_) {
+            return;
+        }
+
         return client;
     }
 
