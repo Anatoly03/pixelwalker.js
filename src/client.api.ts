@@ -25,6 +25,12 @@ export default class APIClient {
      */
     public readonly pocketbase: PocketBase;
 
+    //
+    //
+    // STATIC
+    //
+    //
+
     /**
      * This is the cache for the singleton produced by
      * {@link roomTypes}. Here the room types will be stored.
@@ -136,6 +142,12 @@ export default class APIClient {
     protected constructor() {
         this.pocketbase = new PocketBase(CONFIG.API_SERVER_HTTP);
     }
+
+    //
+    //
+    // METHODS
+    //
+    //
 
     /**
      * Returns a Pocketbase `RecordService` for the public profiles
