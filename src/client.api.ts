@@ -179,7 +179,7 @@ export default class APIClient {
      * with public visibility. Legacy worlds are excluded.
      *
      * If you want to list all worlds you own, you should instead
-     * use {@link my_worlds} as it will contain more metadata such
+     * use {@link myWorlds} as it will contain more metadata such
      * as the download URL of the world data.
      *
      * It is recommend to read more on the PocketBase website and
@@ -246,14 +246,14 @@ export default class APIClient {
      *
      * ```ts
      * APIClient.withToken(process.env.TOKEN!)
-     *   .my_worlds()
+     *   .myWorlds()
      *   .getFullList()
      *   .then(console.log)
      * ```
      *
      * @since 1.4.0
      */
-    public my_worlds(): RecordService<PrivateWorld> {
+    public myWorld(): RecordService<PrivateWorld> {
         return this.pocketbase.collection("worlds");
     }
 }
