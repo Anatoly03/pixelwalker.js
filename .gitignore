@@ -2,6 +2,7 @@
 dist
 node_modules
 src/network
+*lock.json
 
 # All Environment files need to be in gitignore
 *.env
