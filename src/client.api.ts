@@ -1,5 +1,7 @@
 import PocketBase, { RecordService } from "pocketbase";
 
+import CONFIG from "./config";
+
 import PrivateWorld from "./types/private-world";
 import PublicProfile from "./types/public-profile";
 import PublicWorld from "./types/public-world";
@@ -21,6 +23,12 @@ export default class APIClient {
      * this software kit is deemed not enough.
      */
     public readonly pocketbase: PocketBase;
+
+    /**
+     * This is the cache for the singleton produced by
+     * {@link roomTypes}. Here the room types will be stored.
+     */
+    static #roomTypes: string[] | undefined;
 
     /**
      * Create an authenticated instance of the API Client. If the
@@ -104,21 +112,43 @@ export default class APIClient {
     }
 
     /**
+     * Retrieves the room types from the server. This is a static
+     * method and will cache the room types for future use. If you
+     * want to force a reload of the room types, you can pass `true`
+     * as the first argument.
+     * 
+     * @ignore This method is used internally by the API Client,
+     * but is exposed for advanced users.
+     */
+    public static async roomTypes(force_reload = false): Promise<string[]> {
+        // Return the cached room types if they exist.
+        if (this.#roomTypes && !force_reload)
+            return this.#roomTypes;
+
+        // Fetch the room types from the server.
+        const response = await fetch(CONFIG.GAME_SERVER_HTTP + "/listroomtypes");
+        const map: string[] = await response.json();
+        
+        // Cache the room types for future use.
+        return this.#roomTypes = map
+    }
+
+    /**
      * // TODO document
      */
     protected constructor() {
-        this.pocketbase = new PocketBase("https://api.pixelwalker.net/");
+        this.pocketbase = new PocketBase(CONFIG.API_SERVER_HTTP);
     }
 
     /**
      * Returns a Pocketbase `RecordService` for the public profiles
      * collection. This allows you to search through all publicly
      * available profiles.
-     * 
+     *
      * It is recommend to read more on the PocketBase website and
      * experiment with the PixelWalker API server to get intuition
      * on how to use this method effectively.
-     * 
+     *
      * - {@link https://pocketbase.io/docs/api-rules-and-filters/ Filter Syntax}
      * - {@link https://api.pixelwalker.net/api/collections/public_profiles/records?perPage=500&page=1 Test the API}
      *
@@ -136,7 +166,7 @@ export default class APIClient {
      *   "username": "ANATOLY"
      * }
      * ```
-     * 
+     *
      * @since 1.4.0
      */
     public profiles(): RecordService<PublicProfile> {
@@ -147,15 +177,15 @@ export default class APIClient {
      * Returns a Pocketbase `RecordService` for the public worlds
      * collection. This allows you to search through all worlds
      * with public visibility. Legacy worlds are excluded.
-     * 
+     *
      * If you want to list all worlds you own, you should instead
      * use {@link my_worlds} as it will contain more metadata such
      * as the download URL of the world data.
-     * 
+     *
      * It is recommend to read more on the PocketBase website and
      * experiment with the PixelWalker API server to get intuition
      * on how to use this method effectively.
-     * 
+     *
      * - {@link https://pocketbase.io/docs/api-rules-and-filters/ Filter Syntax}
      * - {@link https://api.pixelwalker.net/api/collections/public_worlds/records?perPage=500&page=1 Test the API}
      *
@@ -175,9 +205,9 @@ export default class APIClient {
      *   "width": 200
      * }
      * ```
-     * 
+     *
      * @example
-     * 
+     *
      * Print all worlds that have a width of more than 500 blocks.
      *
      * ```ts
@@ -186,7 +216,7 @@ export default class APIClient {
      *     .getFullList({ filter: 'width>500' })
      *     .then(console.log);
      * ```
-     * 
+     *
      * @since 1.4.0
      */
     public worlds(): RecordService<PublicWorld> {
@@ -197,11 +227,11 @@ export default class APIClient {
      * Returns a Pocketbase `RecordService` for the privately
      * owned worlds collection. You should use this method if
      * you want to look at the worlds you own.
-     * 
+     *
      * It is recommend to read more on the PocketBase website and
      * experiment with the PixelWalker API server to get intuition
      * on how to use this method effectively.
-     * 
+     *
      * - {@link https://pocketbase.io/docs/api-rules-and-filters/ Filter Syntax}
      * - {@link https://api.pixelwalker.net/api/collections/public_worlds/records?perPage=500&page=1 Test the API}
      *
@@ -211,7 +241,7 @@ export default class APIClient {
      * all worlds owned by you.
      *
      * @example
-     * 
+     *
      * Print all worlds that you own.
      *
      * ```ts
@@ -220,11 +250,10 @@ export default class APIClient {
      *   .getFullList()
      *   .then(console.log)
      * ```
-     * 
+     *
      * @since 1.4.0
      */
     public my_worlds(): RecordService<PrivateWorld> {
         return this.pocketbase.collection("worlds");
     }
-
 }
