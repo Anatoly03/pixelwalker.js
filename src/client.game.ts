@@ -5,6 +5,8 @@ import { toBinary, fromBinary, create } from "@bufbuild/protobuf";
 
 import CONFIG from "./config.js";
 
+import PlayerMap from "./players/map.js";
+
 // The following TypoeScript dark magic is used to extract the
 // event types. The author of theses is Anatoly and if you want
 // to know more about them, you can ask him. They are used to
@@ -25,6 +27,8 @@ type Events = { [K in WorldEventNames & string]: [WorldEventData<K>["value"]] };
  * the "lobby" from which you can access the open game rooms
  * or join a world. Then you join a world and let the Game
  * Client take over.
+ * 
+ * @since 1.4.0
  */
 export default class GameClient {
     /**
@@ -42,6 +46,14 @@ export default class GameClient {
     private receiver = new EventEmitter<Events>();
 
     /**
+     * The player map is a map of all players in the world. This
+     * is synced with the server and is used to manage the world
+     * players. If you want to get a snapshot of players without
+     * interference use {@link PlayerMap.toArray}
+     */
+    public players = new PlayerMap();
+
+    /**
      * @returns `true` if the socket is connected to the server.
      */
     public get connected(): boolean {
@@ -53,7 +65,9 @@ export default class GameClient {
      *
      * @param joinKey
      */
-    public constructor(private joinKey: string) {}
+    public constructor(private joinKey: string) {
+        this.players.addListeners(this);
+    }
 
     //
     //
@@ -76,6 +90,20 @@ export default class GameClient {
      */
     public listen<Event extends keyof Events>(eventName: Event, callback: (e: Events[Event][0]) => void): this {
         this.receiver.on(eventName as any, callback as any);
+        return this;
+    }
+
+    /**
+     * Alternative call to {@link listen}. The difference is that
+     * {@link prependListen} will add the listener to the beginning of the
+     * listeners array. In general you should use this method when you want
+     * to ensure the game manager hasn't processed the event yet, like
+     * player leaving the world or world operations.
+     *
+     * @since 1.4.1
+     */
+    public prependListen<Event extends keyof Events>(eventName: Event, callback: (e: Events[Event][0]) => void): this {
+        this.receiver.prependListener(eventName as any, callback as any);
         return this;
     }
 

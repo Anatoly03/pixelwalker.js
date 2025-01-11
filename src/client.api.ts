@@ -16,6 +16,8 @@ import GameClient from "./client.game.js";
  * To compare it with how users sign up, the API Client is
  * the "lobby" from which you can access the open game rooms
  * or join a world.
+ * 
+ * @since 1.4.0
  */
 export default class APIClient {
     /**
