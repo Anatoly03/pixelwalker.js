@@ -1,4 +1,6 @@
-import PocketBase from "pocketbase";
+import PocketBase, { RecordService } from "pocketbase";
+
+import PublicProfile from "./types/public-profile";
 
 /**
  * The API Client is responsible for communication with the
@@ -67,7 +69,7 @@ export default class APIClient {
      * provided credentials. This callis **asynchronous** and yields
      * a promise. If the credentials are invalid, the promise unwraps
      * to `undefined`.
-     * 
+     *
      * It is recommend practice to use environment variables for
      * sensitive information like usernames and passwords. You can use
      * {@link https://www.npmjs.com/package/dotenv dotenv} to load
@@ -82,7 +84,7 @@ export default class APIClient {
      *
      * const client = await APIClient.withCredentials(process.env.USERNAME!, process.env.PASSWORD!);
      * ```
-     * 
+     *
      * @returns Authenticated instance of the API Client.
      *
      * @since 1.4.0
@@ -104,5 +106,36 @@ export default class APIClient {
      */
     protected constructor() {
         this.pocketbase = new PocketBase("https://api.pixelwalker.net/");
+    }
+
+    /**
+     * Returns a Pocketbase `RecordService` for the public profiles
+     * collection. This allows you to search through all publicly
+     * available profiles.
+     * 
+     * It is recommend to read more on the PocketBase website and
+     * experiment with the PixelWalker API server to get intuition
+     * on how to use this method effectively.
+     * 
+     * - {@link https://pocketbase.io/docs/api-rules-and-filters/ Filter Syntax}
+     * - {@link https://api.pixelwalker.net/api/collections/public_profiles/records?perPage=500&page=1 Test the API}
+     *
+     * @example
+     *
+     * ```json
+     * {
+     *   "admin": false,
+     *   "banned": false,
+     *   "collectionId": "0wl44rzm22wuf2q",
+     *   "collectionName": "public_profiles",
+     *   "created": "2024-04-17 08:50:37.671Z",
+     *   "face": 15,
+     *   "id": "5cy5r7za1r3splc",
+     *   "username": "ANATOLY"
+     * }
+     * ```
+     */
+    public profiles(): RecordService<PublicProfile> {
+        return this.pocketbase.collection("public_profiles");
     }
 }
