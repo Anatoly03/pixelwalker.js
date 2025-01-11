@@ -2,19 +2,13 @@ import EventEmitter from "events";
 import WebSocket from "ws";
 
 import Config from "./data/config.js";
+import JoinData from "./types/join-data.js";
 import * as Protocol from "./network/pixelwalker_pb.js";
 import { toBinary, fromBinary, create } from "@bufbuild/protobuf";
 
 type WorldEventNames = Protocol.WorldPacket["packet"]["case"];
 type WorldEventData<Name extends WorldEventNames> = Protocol.WorldPacket["packet"] & { name: Name };
 export type Events = { [K in WorldEventNames & string]: [(WorldEventData<K> & { case: K })["value"]] };
-
-export type JoinData = Partial<{
-    world_title: string;
-    world_width: 636 | 400 | 375 | 350 | 325 | 300 | 275 | 250 | 225 | 200 | 175 | 150 | 125 | 100 | 75 | 50;
-    world_height: 400 | 375 | 350 | 325 | 300 | 275 | 250 | 225 | 200 | 175 | 150 | 125 | 100 | 75 | 50;
-    spawnId: number;
-}>;
 
 /**
  * The GameConnection is a connection to the game server at the
@@ -168,7 +162,8 @@ export default class GameConnection {
 
     /**
      * Binds the connection to the game server. Internally, this method
-     * creates a socket in the connection class and appends core event listeners.
+     * creates a socket in the connection class and appends core event
+     * listeners.
      */
     public bind(): this {
         let url = `${Config.GameServerSocketLink}/room/${this.joinkey}`;
@@ -177,7 +172,7 @@ export default class GameConnection {
             url += `?joinData=${btoa(JSON.stringify(this.joinData))}`;
         }
 
-        if (process.env.LOCALHOST) {
+        if (process?.env.LOCALHOST) {
             this.socket = new WebSocket(url, { port: 5148 });
         } else {
             this.socket = new WebSocket(url);
@@ -203,8 +198,29 @@ export default class GameConnection {
          */
         this.socket.on("message", (message: WithImplicitCoercion<ArrayBuffer>) => {
             const packet = fromBinary(Protocol.WorldPacketSchema, Buffer.from(message));
+            // console.debug(packet);
             this.#receiver.emit(packet.packet.case as any, packet.packet.value ?? {});
         });
+
+        /**
+         * @event error
+         */
+        this.socket.on('error', err => {
+            console.error(err)
+            this.close();
+        })
+
+        /**
+         * @event
+         * 
+         * This event is fired when sockets are terminated either successful
+         * or unexpected. See [Websocket Close Codes](https://github.com/Luka967/websocket-close-codes)
+         * for better understanding of it.
+         */
+        this.socket.on('close', (code, reason) => {
+            // console.warn(code, reason.toString('ascii'))
+            this.close();
+        })
 
         /**
          * @event
@@ -212,7 +228,7 @@ export default class GameConnection {
          * Report unhandled promises. This will log all unhandled
          * promise rejections to the event emitter.
          */
-        process.on("unhandledRejection", (error) => {
+        process?.on("unhandledRejection", (error) => {
             if (!(error instanceof Error)) return console.error("Unhandled Rejection:", error);
             console.error(`Unhandled Rejection: ${error.name}: ${error.message}\n${error.stack}`);
         });
@@ -225,7 +241,7 @@ export default class GameConnection {
          * of the socket tunnel, so the player instances don't
          * flood the world.
          */
-        process.on("SIGINT", (signals) => {
+        process?.on("SIGINT", (signals) => {
             this.close();
         });
 

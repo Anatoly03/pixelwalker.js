@@ -1,6 +1,8 @@
 import BufferReader from "../util/buffer-reader.js";
+
 import Layer from "./layer.js";
-import Block, { BlockArgs, BlockName } from "./block.js";
+import Block, { BlockName } from "./block.js";
+import BlockArgs from "./block-extra.js";
 
 import structureMigrations from "./structure.migrations.js";
 

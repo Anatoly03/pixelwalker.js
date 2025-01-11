@@ -8,7 +8,14 @@ on:
             - "main"
 
 jobs:
+    build:
+        name: Build Package
+        uses: Anatoly03/pixelwalker.js/.github/workflows/build.yml@main
+
     publish-documentation:
+        runs-on: "ubuntu-latest"
+        needs: build
+
         permissions:
             id-token: "write"
             pages: "write"
@@ -17,24 +24,7 @@ jobs:
             name: "github-pages"
             url: "${{ steps.deployment.outputs.page_url }}"
 
-        runs-on: "ubuntu-latest"
-
         steps:
-            - uses: "actions/checkout@v4"
-
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: "21.4.0"
-
-            - name: "Install dependencies"
-              run: npm install
-
-            - name: "Build Protobuf Files"
-              run: npm run generate-proto
-
-            - name: "Build project"
-              run: npm run build
-
             - name: "Building Documentation"
               run: npm run docs
 
