@@ -6,6 +6,7 @@ import PrivateWorld from "./types/private-world.js";
 import PublicProfile from "./types/public-profile.js";
 import PublicWorld from "./types/public-world.js";
 import GameClient from "./client.game.js";
+import GameConnection from "./client.connection";
 
 /**
  * The API Client is responsible for communication with the
@@ -272,6 +273,10 @@ export default class APIClient {
      * Generate a join key for a specific world id. Optionally
      * overwrite room type. This key can then be used to connect
      * to a websocket on the game server.
+     * 
+     * You can pass this join key to {@link GameConnection} or
+     * {@link GameClient} to manage the connection for you or see
+     * the examples below how to create your own running socket.
      *
      * @example
      *
@@ -284,7 +289,7 @@ export default class APIClient {
      * to the console.
      *
      * ```typescript
-     * export const client = APIClient.withToken(process.env.token);
+     * export const client = APIClient.withToken(process.env.TOKEN!)!;
      * const joinkey = await client.getJoinKey('4naaehf4xxexavv');
      * const socket = new WebSocket(`wss://game.pixelwalker.net/room/${joinkey}`);
      * socket.binaryType = 'arraybuffer';
@@ -295,8 +300,66 @@ export default class APIClient {
      * };
      * ```
      *
-     * // TODO explain how to keep indefinite connection running
-     *
+     * @example
+     * 
+     * In this example we will set up a custom socket connection
+     * which runs indefinitely with the server. To achieve this we
+     * need only two considerations: Respond to pings as soon as we
+     * receive such from the server and to respond to init upon
+     * handshake establishment.
+     * 
+     * You will need the `@bufbuild/protobuf` dependency from npm.
+     * 
+     * ```typescript
+     * import "dotenv/config";
+     * import { Protocol, APIClient } from "pixelwalker.js";
+     * import { toBinary, fromBinary, create } from "@bufbuild/protobuf";
+     * 
+     * export const client = APIClient.withToken(process.env.TOKEN!)!;
+     * const joinkey = await client.getJoinKey("4naaehf4xxexavv");
+     * const socket = new WebSocket(`wss://game.pixelwalker.net/room/${joinkey}`);
+     * socket.binaryType = "arraybuffer";
+     * 
+     * socket.onmessage = (event) => {
+     *     const buffer = Buffer.from(event.data as WithImplicitCoercion<ArrayBuffer>);
+     *     const packet = fromBinary(Protocol.WorldPacketSchema, buffer);
+     * 
+     *     switch (packet.packet.case) {
+     *         case "playerInitPacket":
+     *             {
+     *                 let message = create(Protocol.WorldPacketSchema, {
+     *                     packet: { case: "playerInitReceived", value: {} },
+     *                 });
+     *                 let buffer = toBinary(Protocol.WorldPacketSchema, message);
+     *                 socket.send(buffer);
+     *                 console.log('init');
+     *             }
+     *             break;
+     * 
+     *         case "ping":
+     *             {
+     *                 let message = create(Protocol.WorldPacketSchema, {
+     *                     packet: { case: 'ping', value: {} },
+     *                 });
+     *                 let buffer = toBinary(Protocol.WorldPacketSchema, message);
+     *                 socket.send(buffer);
+     *                 console.log('ping');
+     *             }
+     *             break;
+     *     }
+     * };
+     * ```
+     * 
+     * This example will connect to a world and produce the console
+     * output `init ping ping ping ping ...`. Observe a pattern in 
+     * this example: The proper way to generate the appropriate
+     * binary for the server is by decoding a protobuf schema into
+     * bytes. You follow three steps:
+     * 
+     * 1. Create proper message object.
+     * 2. Decode message to bytes.
+     * 3. Send the byte array to the server.
+     * 
      * @since 1.4.0
      */
     public async getJoinKey(worldId: string): Promise<string> {
@@ -317,7 +380,7 @@ export default class APIClient {
      * used to communicate to the game room. This method will
      * not connect to the room yet, you must call {@link GameClient.bind}
      * to start the connection. This is a design decision to
-     * have time to append even listeners to the game manager
+     * have time to append event listeners to the game manager
      * before the connection is established.
      * 
      * @example
@@ -331,9 +394,45 @@ export default class APIClient {
      * const game = await client.createGame("r450e0e380a815a");
      * game.bind();
      * ```
+     * 
+     * @since 1.4.0
      */
     public async createGame(worldId: string): Promise<GameClient> {
         const token = await this.getJoinKey(worldId);
         return new GameClient(token);
+    }
+
+    /**
+     * Generate a connection manager for a specific world id.
+     * This will return a {@link GameConnection} instance that
+     * can be used to communicate to the game room. Note, that
+     * this will only connect to the room and will not store
+     * logic or state. If you want to have a prepared manager
+     * of the world, use {@link createGame} instead, which will
+     * also manage resources for you.
+     * 
+     * This method will not connect to the room yet, you must
+     * call {@link GameConnection.bind} to start the connection.
+     * This is a design decision to have time to append event
+     * listeners to the game manager before the connection is
+     * established.
+     * 
+     * @example
+     * 
+     * This example will connect to the room and keep a running
+     * connection. If you do not wish to use a game manager you
+     * can create a custom socket connection with the join key.
+     * 
+     * ```typescript
+     * const client = APIClient.withToken(process.env.TOKEN!)!;
+     * const connection = await client.createConnection("r450e0e380a815a");
+     * connection.bind();
+     * ```
+     * 
+     * @since 1.4.1
+     */
+    public async createConnection(worldId: string): Promise<GameConnection> {
+        const token = await this.getJoinKey(worldId);
+        return new GameConnection(token);
     }
 }

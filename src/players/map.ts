@@ -49,10 +49,12 @@ export default class PlayerMap {
     //
 
     public addListeners(client: GameClient) {
+        const { connection } = client;
+
         // Listen for player init packets to add self player to the
         // map. Since the player doesn't have much data, the player
         // world state is created empty.
-        client.listen("playerInitPacket", (pkt) => {
+        connection.listen("playerInitPacket", (pkt) => {
             const selfPlayer = {
                 properties: pkt.playerProperties!,
                 state: create(Protocol.PlayerWorldStateSchema),
@@ -65,7 +67,7 @@ export default class PlayerMap {
         // Listen for player joined packets to add other players to
         // the map. The player is added to the map with the player id
         // as the key.
-        client.listen("playerJoinedPacket", (pkt) => {
+        connection.listen("playerJoinedPacket", (pkt) => {
             const player = {
                 properties: pkt.properties!,
                 state: pkt.worldState!,
@@ -77,7 +79,7 @@ export default class PlayerMap {
         // Listen for player leave packets to collect garbage players
         // from the map. The JS object will not be removed while there
         // are external references to the object.
-        client.listen('playerLeftPacket', pkt => {
+        connection.listen('playerLeftPacket', pkt => {
             const player = this[pkt.playerId]!;
 
             if (player.state?.hasGoldCrown)
