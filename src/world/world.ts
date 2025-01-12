@@ -7,6 +7,7 @@ import GameClient from "../client.game.js";
  */
 type Events = {
     Clear: [];
+    Reload: [];
 };
 
 /**
@@ -58,10 +59,25 @@ export default class GameWorld {
     private addListeners() {
         const { connection } = this.game;
 
+        // Upon receiving player init, serialize the world buffer
+        // into understandable representation of blocks.
+        connection.listen("playerInitPacket", (packet) => {
+            // TODO packet.worldData
+            // TODO packet.worldWidth
+            // TODO packet.worldHeight
+        });
+
         // Upon world clearing, remove all blocks and leave only a
         // gray border in the foreground layer behind.
-        this.game.connection.listen("worldClearedPacket", () => {
+        connection.listen("worldClearedPacket", () => {
             this.receiver.emit("Clear");
+        });
+
+        // Upon world reload, process the new world data and set
+        // the blocks to its' new representation.
+        connection.listen("worldReloadedPacket", (packet) => {
+            // TODO process packet.worldData
+            this.receiver.emit("Reload");
         });
     }
 
@@ -74,7 +90,8 @@ export default class GameWorld {
      *
      * | Event Name         | Description |
      * |--------------------|-------------|
-     * | `playerInitPacket` | The message event is received when the client opens the connection.
+     * | `Clear`            | The world content was emptied.
+     * | `Reload`           | The world content was reloaded.
      *
      * @since 1.4.2
      */
@@ -94,5 +111,21 @@ export default class GameWorld {
      */
     public async clear() {
         this.game.sendChat("/clearworld");
+    }
+
+    /**
+     * Requests to reload the world. This will sync the world with
+     * its' persistant storage.
+     */
+    public async reload() {
+        this.game.sendChat("/reloadworld");
+    }
+
+    /**
+     * Requests to reload the world. This will sync the world with
+     * its' persistant storage.
+     */
+    public async save() {
+        this.game.sendChat("/saveworld");
     }
 }
