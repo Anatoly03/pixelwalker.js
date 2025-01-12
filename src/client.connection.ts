@@ -38,6 +38,8 @@ export default class GameConnection {
      * An **optional** instance of the websocket. It is
      * instantiated when the `bind` method is called and
      * dropped on disconnect.
+     * 
+     * @since 1.4.1
      */
     private socket?: WebSocket;
 
@@ -45,11 +47,15 @@ export default class GameConnection {
      * The event emitter is used to emit events when the
      * socket receives a message. The events are then
      * distributed to the listeners.
+     * 
+     * @since 1.4.1
      */
     private receiver = new EventEmitter<Events>();
 
     /**
      * @returns `true` if the socket is connected to the server.
+     * 
+     * @since 1.4.1
      */
     public get connected(): boolean {
         return this.socket !== undefined && this.socket.readyState === WebSocket.OPEN;

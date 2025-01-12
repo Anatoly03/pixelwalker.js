@@ -32,21 +32,16 @@ type Events = {
  */
 export default class GameClient {
     /**
-     * An **optional** instance of the websocket. It is
-     * instantiated when the `bind` method is called and
-     * dropped on disconnect.
-     */
-    private socket?: WebSocket;
-
-    /**
      * The event emitter is used to emit events when the
      * socket receives a message. The events are then
      * distributed to the listeners.
+     * 
+     * @since 1.4.0
      */
     private receiver = new EventEmitter<Events>();
 
     /**
-     *
+     * @since 1.4.0
      */
     public connection: GameConnection;
 
@@ -55,16 +50,22 @@ export default class GameClient {
      * is synced with the server and is used to manage the world
      * players. If you want to get a snapshot of players without
      * interference use {@link PlayerMap.toArray}
+     * 
+     * @since 1.4.1
      */
     public players = new PlayerMap();
 
     /**
-     *
+     * // TODO
+     * 
+     * @since 1.4.2
      */
     public world: GameWorld;
 
     /**
      * @returns `true` if the connection to the server is running.
+     * 
+     * @since 1.4.0
      */
     public get connected(): boolean {
         return this.connection.connected;
@@ -103,12 +104,12 @@ export default class GameClient {
      * Adds the listener function to the end of the listeners array for the
      * event named `eventName`. No checks are made to see if the listener has
      * already been added. Multiple calls passing the same combination of
-     * `eventNameand` listener will result in the listener being added, and
+     * `eventName` and listener will result in the listener being added, and
      * called, multiple times.
      *
      * | Event Name         | Description |
      * |--------------------|-------------|
-     * | `playerInitPacket` | The message event is received when the client opens the connection.
+     * | `Init`             | Game emit `Init` after processing all inits synchronously: {@link PlayerMap}, {@link GameWorld}
      *
      * @since 1.4.0
      */
@@ -120,6 +121,8 @@ export default class GameClient {
     /**
      * Sends a chat message to the game server. Internally this invokes
      * the `playerChatPacket` event.
+     * 
+     * @since 1.4.1
      */
     public sendChat(message: string) {
         this.connection.send("playerChatPacket", { message });
