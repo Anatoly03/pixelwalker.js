@@ -1,14 +1,12 @@
 import EventEmitter from "events";
 
-import GameConnection from "./client.connection.js";
-import PlayerMap from "./players/map.js";
-import GameWorld from "./world/world.js";
+import GameClient from "../client.game.js";
 
 /**
- *
+ * // TODO
  */
 type Events = {
-    Init: [];
+    Clear: [];
 };
 
 /**
@@ -28,16 +26,9 @@ type Events = {
  * where as this class is more focused on implementation of
  * logic.
  *
- * @since 1.4.0
+ * @since 1.4.2
  */
-export default class GameClient {
-    /**
-     * An **optional** instance of the websocket. It is
-     * instantiated when the `bind` method is called and
-     * dropped on disconnect.
-     */
-    private socket?: WebSocket;
-
+export default class GameWorld {
     /**
      * The event emitter is used to emit events when the
      * socket receives a message. The events are then
@@ -46,37 +37,9 @@ export default class GameClient {
     private receiver = new EventEmitter<Events>();
 
     /**
-     *
-     */
-    public connection: GameConnection;
-
-    /**
-     * The player map is a map of all players in the world. This
-     * is synced with the server and is used to manage the world
-     * players. If you want to get a snapshot of players without
-     * interference use {@link PlayerMap.toArray}
-     */
-    public players = new PlayerMap();
-
-    /**
-     *
-     */
-    public world: GameWorld;
-
-    /**
-     * @returns `true` if the connection to the server is running.
-     */
-    public get connected(): boolean {
-        return this.connection.connected;
-    }
-
-    /**
      * // TODO document
      */
-    public constructor(joinKey: string) {
-        this.connection = new GameConnection(joinKey);
-        this.world = new GameWorld(this);
-        this.players.addListeners(this);
+    public constructor(private game: GameClient) {
         this.addListeners();
     }
 
@@ -90,12 +53,15 @@ export default class GameClient {
      * This method is invoked on construction of the connection
      * and adds the required listeners to the receiver.
      *
-     * @since 1.4.1
+     * @since 1.4.2
      */
     private addListeners() {
-        // Upon player init received, send init.
-        this.connection.listen("playerInitPacket", () => {
-            this.receiver.emit("Init");
+        const { connection } = this.game;
+
+        // Upon world clearing, remove all blocks and leave only a
+        // gray border in the foreground layer behind.
+        this.game.connection.listen("worldClearedPacket", () => {
+            this.receiver.emit("Clear");
         });
     }
 
@@ -110,19 +76,11 @@ export default class GameClient {
      * |--------------------|-------------|
      * | `playerInitPacket` | The message event is received when the client opens the connection.
      *
-     * @since 1.4.0
+     * @since 1.4.2
      */
     public listen<Event extends keyof Events>(eventName: Event, callback: (...e: Events[Event]) => void): this {
         this.receiver.on(eventName as any, callback as any);
         return this;
-    }
-
-    /**
-     * Sends a chat message to the game server. Internally this invokes
-     * the `playerChatPacket` event.
-     */
-    public sendChat(message: string) {
-        this.connection.send("playerChatPacket", { message });
     }
 
     //
@@ -132,23 +90,9 @@ export default class GameClient {
     //
 
     /**
-     * Binds the socket connection to the game server. The method
-     * will create a new WebSocket instance and connect to the
-     * game room. It will also start processing the incoming
-     * messages and emit events.
-     *
-     * @since 1.4.0
+     * Requests to clear the world.
      */
-    public bind() {
-        this.connection.bind();
-    }
-
-    /**
-     * Closes the socket connection to the game server.
-     *
-     * @since 1.4.0
-     */
-    public close() {
-        this.connection.close();
+    public async clear() {
+        this.game.sendChat("/clearworld");
     }
 }
