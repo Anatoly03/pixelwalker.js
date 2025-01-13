@@ -1,10 +1,9 @@
-import CONFIG from "../config.js";
 import { BlockMap, BlockMapReverse } from "../build/block-mappings.js";
 
 /**
  * @since 1.4.2
  */
-export default class Block<BlockId extends (typeof BlockMap)[string]> {
+export default class Block<BlockId extends (typeof BlockMap)[string] = number> {
     /**
      * The block id. This is a number that represents the block in the
      * current game version. If you want to get a persistant block
