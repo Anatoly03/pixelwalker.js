@@ -50,6 +50,12 @@ export default class Layer {
         }
     }
 
+    //
+    //
+    // METHODS
+    //
+    //
+
     /**
      * This method is used to clear the layer. This sets all blocks
      * to empty. While "cleared layer" and "cleared world" sound similar,

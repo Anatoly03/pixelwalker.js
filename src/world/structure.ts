@@ -44,6 +44,12 @@ export default class Structure {
         }
     }
 
+    //
+    //
+    // GETTERS
+    //
+    //
+
     /**
      * Reference to the background layer of the structure.
      *
@@ -69,6 +75,8 @@ export default class Structure {
     //
 
     /**
+     * Prints the location of matching blocks to the console.
+     * 
      * @deprecated
      *
      * @since 1.4.2

@@ -14,22 +14,6 @@ export default class Block {
      */
     public readonly id: number;
 
-    /**
-     * The block mapping. This is a string that represents the block via
-     * a persistant identifier. When the block mapping changes, the block
-     * is usually updated with migration files. This is the recommended
-     * way to save block data.
-     *
-     * If you are saving structured world data, it is recommended that you
-     * add a `palette` entry which map the internal id's to the block name
-     * and update the palette with migration files if needed.
-     *
-     * @since 1.4.2
-     */
-    public get mapping(): (typeof BlockMapReverse)[keyof typeof BlockMapReverse] {
-        return BlockMapReverse[this.id];
-    }
-
     //
     //
     // STATIC
@@ -83,6 +67,28 @@ export default class Block {
      */
     private constructor(id: number) {
         this.id = id;
+    }
+
+    //
+    //
+    // GETTERS
+    //
+    //
+
+    /**
+     * The block mapping. This is a string that represents the block via
+     * a persistant identifier. When the block mapping changes, the block
+     * is usually updated with migration files. This is the recommended
+     * way to save block data.
+     *
+     * If you are saving structured world data, it is recommended that you
+     * add a `palette` entry which map the internal id's to the block name
+     * and update the palette with migration files if needed.
+     *
+     * @since 1.4.2
+     */
+    public get mapping(): (typeof BlockMapReverse)[keyof typeof BlockMapReverse] {
+        return BlockMapReverse[this.id];
     }
 
     //
