@@ -12,7 +12,17 @@ npm i --save pixelwalker.js
 ```
 
 ```ts
-// TODO
+import "dotenv/config";
+import { APIClient, Block } from "pixelwalker.js";
+
+const client = APIClient.withToken(process.env.TOKEN!)!;
+const game = await client.createGame("r450e0e380a815a");
+
+game.listen("Init", () => {
+    console.log("Init!");
+});
+
+game.bind();
 ```
 
 ## Contribution
