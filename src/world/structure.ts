@@ -55,4 +55,89 @@ export default class Structure {
         return this[1];
     }
 
+    //
+    //
+    // STORAGE I/O
+    //
+    //
+
+    
+    /**
+     * Read the structure from a parser implementation and
+     * return a Structure instance. *The default parser is JSON.*
+     *
+     * @example
+     *
+     * ```ts
+     * const value = fs.readFileSync("structure.json");
+     * const data = Structure.fromString(value);
+     * ```
+     */
+    public static fromString(value: string): Structure;
+
+    /**
+     * Read the structure from a JSON parser implementation and
+     * return a Structure instance.
+     *
+     * @example
+     *
+     * ```ts
+     * const value = fs.readFileSync("structure.json");
+     * const data = Structure.fromString(value, JSON);
+     * ```
+     */
+    public static fromString(value: string, format: JSON): Structure;
+
+    /**
+     * Read the structure from a custom parser implementation and
+     * return a Structure instance.
+     *
+     * @example
+     *
+     * ```ts
+     * import YAML from "yaml";
+     *
+     * const value = fs.readFileSync("structure.yaml");
+     * const data = Structure.fromString(value, YAML);
+     * ```
+     */
+    public static fromString(value: string, parser: { parse(v: string): any }): Structure;
+
+    public static fromString(value: string, parser: { parse(v: string): any } = JSON): Structure {
+        throw new Error("Not implemented");
+    }
+
+    /**
+     * Write the structure into a writeable stream and return an
+     * JSON string representation of the structure.
+     *
+     * @example
+     *
+     * ```ts
+     * const structure = ...;
+     * const data = structure.toString(JSON);
+     * fs.writeFileSync("structure.json", data);
+     * ```
+     */
+    public toString(format: JSON): string;
+
+    /**
+     * Write the structure into a writeable stream and return a custom
+     * object encoding string.
+     *
+     * @example
+     *
+     * ```ts
+     * import YAML from "yaml";
+     *
+     * const structure = ...;
+     * const data = structure.toString(YAML);
+     * fs.writeFileSync("structure.yaml", data);
+     * ```
+     */
+    public toString(parser: { stringify(v: any): string }): string;
+
+    public toString(parser: { stringify(v: any): string }): string {
+        throw new Error("Not implemented");
+    }
 }
