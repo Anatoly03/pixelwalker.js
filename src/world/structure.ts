@@ -1,5 +1,6 @@
 import BufferReader from "../util/buffer.js";
 
+import Block from "./block.js";
 import Layer from "./layer.js";
 
 /**
@@ -59,6 +60,29 @@ export default class Structure {
      */
     public get foreground(): Layer {
         return this[1];
+    }
+
+    //
+    //
+    // METHODS
+    //
+    //
+
+    /**
+     * @deprecated
+     *
+     * @since 1.4.2
+     */
+    public _debug_print_position(callback: (block: Block) => boolean) {
+        for (let i = 0; i < LAYER_COUNT; i++) {
+            for (let x = 0; x < this.width; x++) {
+                for (let y = 0; y < this.height; y++) {
+                    if (callback(this[i][x][y])) {
+                        console.debug(`Layer ${i} at (${x}, ${y}): ${this[i][x][y]}`);
+                    }
+                }
+            }
+        }
     }
 
     //
