@@ -12,6 +12,7 @@ import CONFIG from "../config.js";
 
 const response = await fetch(CONFIG.GAME_SERVER_HTTP + "/mappings");
 export const BlockMap: { [keys: string]: number } = await response.json();
+export const BlockMapReverse: { [keys: number]: string } = Object.fromEntries(Object.entries(BlockMap).map((a) => a.reverse()));
 
 /**
  * This is the build script and will be executed upon program start.
@@ -25,5 +26,7 @@ if (import.meta.dirname)
 // This is auto generated in the project.
 
 export declare const BlockMap: ${JSON.stringify(BlockMap, undefined, 4)};
+
+export declare const BlockMapReverse: ${JSON.stringify(BlockMapReverse, undefined, 4)};
 `
     );
