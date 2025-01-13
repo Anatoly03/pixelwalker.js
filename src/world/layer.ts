@@ -1,3 +1,5 @@
+import BufferReader from "../util/buffer.js";
+
 import Block from "./block.js";
 import GameWorld from "./world.js";
 
@@ -73,4 +75,24 @@ export default class Layer {
             }
         }
     }
+
+    //
+    //
+    // GAME SERIALIZATION
+    //
+    //
+
+    /**
+     * // TODO document
+     * 
+     * @since 1.4.2
+     */
+    public deserialize(buffer: BufferReader) {
+        for (let x = 0; x < this.width; x++) {
+            for (let y = 0; y < this.height; y++) {
+                this[x][y].deserialize(buffer);
+            }
+        }
+    }
+
 }

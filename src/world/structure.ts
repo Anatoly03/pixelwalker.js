@@ -1,3 +1,5 @@
+import BufferReader from "../util/buffer.js";
+
 import Layer from "./layer.js";
 
 /**
@@ -28,7 +30,7 @@ export default class Structure {
     public readonly height: number;
 
     /**
-     * 
+     *
      * @param width The width of the structure
      * @param height The height of the structure
      */
@@ -43,6 +45,8 @@ export default class Structure {
 
     /**
      * Reference to the background layer of the structure.
+     *
+     * @since 1.4.2
      */
     public get background(): Layer {
         return this[0];
@@ -50,9 +54,34 @@ export default class Structure {
 
     /**
      * Reference to the foreground layer of the structure.
+     *
+     * @since 1.4.2
      */
     public get foreground(): Layer {
         return this[1];
+    }
+
+    //
+    //
+    // GAME SERIALIZATION
+    //
+    //
+
+    /**
+     * // TODO document
+     *
+     * @since 1.4.2
+     */
+    public deserialize(source: WithImplicitCoercion<ArrayBuffer> | Buffer) {
+        const buffer = BufferReader.from(source);
+
+        for (let i = 0; i < LAYER_COUNT; i++) {
+            this[i].deserialize(buffer);
+        }
+
+        if (buffer.length) {
+            throw new Error(`buffer length is not zero, outdated or corrupt world serialization: ${buffer.length}`);
+        }
     }
 
     //
@@ -61,7 +90,6 @@ export default class Structure {
     //
     //
 
-    
     /**
      * Read the structure from a parser implementation and
      * return a Structure instance. *The default parser is JSON.*
@@ -72,6 +100,8 @@ export default class Structure {
      * const value = fs.readFileSync("structure.json");
      * const data = Structure.fromString(value);
      * ```
+     *
+     * @since 1.4.2
      */
     public static fromString(value: string): Structure;
 
@@ -85,6 +115,8 @@ export default class Structure {
      * const value = fs.readFileSync("structure.json");
      * const data = Structure.fromString(value, JSON);
      * ```
+     *
+     * @since 1.4.2
      */
     public static fromString(value: string, format: JSON): Structure;
 
@@ -100,6 +132,8 @@ export default class Structure {
      * const value = fs.readFileSync("structure.yaml");
      * const data = Structure.fromString(value, YAML);
      * ```
+     *
+     * @since 1.4.2
      */
     public static fromString(value: string, parser: { parse(v: string): any }): Structure;
 
@@ -118,6 +152,8 @@ export default class Structure {
      * const data = structure.toString(JSON);
      * fs.writeFileSync("structure.json", data);
      * ```
+     *
+     * @since 1.4.2
      */
     public toString(format: JSON): string;
 
@@ -134,6 +170,8 @@ export default class Structure {
      * const data = structure.toString(YAML);
      * fs.writeFileSync("structure.yaml", data);
      * ```
+     *
+     * @since 1.4.2
      */
     public toString(parser: { stringify(v: any): string }): string;
 

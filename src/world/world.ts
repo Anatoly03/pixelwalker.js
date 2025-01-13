@@ -1,6 +1,7 @@
 import EventEmitter from "events";
 
 import GameClient from "../client.game.js";
+import Structure from "./structure.js";
 
 /**
  * // TODO
@@ -40,6 +41,11 @@ export default class GameWorld {
     /**
      * // TODO document
      */
+    public structure!: Structure;
+
+    /**
+     * // TODO document
+     */
     public constructor(private game: GameClient) {
         this.addListeners();
     }
@@ -62,9 +68,8 @@ export default class GameWorld {
         // Upon receiving player init, serialize the world buffer
         // into understandable representation of blocks.
         connection.listen("playerInitPacket", (packet) => {
-            // TODO packet.worldData
-            // TODO packet.worldWidth
-            // TODO packet.worldHeight
+            this.structure = new Structure(packet.worldWidth, packet.worldHeight);
+            this.structure.deserialize(packet.worldData);
         });
 
         // Upon world clearing, remove all blocks and leave only a
