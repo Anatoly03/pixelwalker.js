@@ -26,7 +26,7 @@ export default class Block {
      *
      * @since 1.4.2
      */
-    public get mapping(): (typeof BlockMapReverse)[number] {
+    public get mapping(): (typeof BlockMapReverse)[keyof typeof BlockMapReverse] {
         return BlockMapReverse[this.id];
     }
 
@@ -72,7 +72,7 @@ export default class Block {
      *
      * @since 1.4.2
      */
-    public static fromMapping(mapping: (typeof BlockMapReverse)[number]): Block {
+    public static fromMapping(mapping: (typeof BlockMapReverse)[keyof typeof BlockMapReverse]): Block {
         const id = BlockMap[mapping];
         if (id === undefined) throw new Error(`block mapping ${mapping} is not found in the block map`);
         return new Block(id);
