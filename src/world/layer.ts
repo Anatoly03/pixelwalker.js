@@ -82,6 +82,43 @@ export default class Layer {
         }
     }
 
+    /**
+     * Copies a subset of the structure into a new structure.
+     * If this structure is managed by a {@link GameWorld}, the
+     * new structure will not be synced by the world.
+     * 
+     * The dimensions of the new structure are given by the axis
+     * difference. You can copy beyond the world boundaries,
+     * which will fill the missing blocks with empty blocks.
+     * 
+     * @since 1.4.3
+     */
+    public copy(x1: number, y1: number, x2: number, y2: number): Layer {
+        // TODO bug: since blocks are cloned by reference here, blocks in new structure are updated in original structure and vice versa
+
+        if (x2 < x1) {
+            let tmp = x2;
+            x2 = x1;
+            x1 = tmp;
+        }
+
+        if (y2 < y1) {
+            let tmp = y2;
+            y2 = y1;
+            y1 = tmp;
+        }
+
+        const layer = new Layer(x2 - x1 + 1, y2 - y1 + 1);
+
+        for (let x = x1; x <= x2; x++)
+            for (let y = y1; y <= y2; y++) {
+                if (x < 0 || y < 0 || x >= this.width || y >= this.height) continue;
+                layer[x - x1][y - y1] = this[x][y];
+            }
+
+        return layer;
+    }
+
     //
     //
     // GAME SERIALIZATION

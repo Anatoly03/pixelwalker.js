@@ -95,6 +95,29 @@ export default class Structure {
     }
 
     /**
+     * This method is used to clear the entire structure. This sets all
+     * blocks to empty. While "cleared structure" and "cleared world" sound
+     * similar, they are not quite the same. When a {@link GameWorld} is
+     * cleared, the foreground layer remains with a border of gray basic blocks.
+     * 
+     * This method clears all blocks in all layers. If you want to clear
+     * a world like the behaviour in PixelWalker, it is recommended to
+     * use the following pseudo code:
+     * 
+     * ```typescript
+     * structure.clear();
+     * structure.foreground.set_border(Block.fromMapping('gray_basic_block'));
+     * ```
+     * 
+     * @since 1.4.2
+     */
+    public clear() {
+        for (let i = 0; i < LAYER_COUNT; i++) {
+            this[i].clear();
+        }
+    }
+
+    /**
      * Copies a subset of the structure into a new structure.
      * If this structure is managed by a {@link GameWorld}, the
      * new structure will not be synced by the world.
@@ -121,13 +144,10 @@ export default class Structure {
         }
 
         const world = new Structure(x2 - x1 + 1, y2 - y1 + 1);
-
-        for (let x = x1; x <= x2; x++)
-            for (let y = y1; y <= y2; y++) {
-                if (x < 0 || y < 0 || x >= this.width || y >= this.height) continue;
-                world.background[x - x1][y - y1] = this.background[x][y];
-                world.foreground[x - x1][y - y1] = this.foreground[x][y];
-            }
+        
+        for (let i = 0; i < LAYER_COUNT; i++) {
+            (world as any)[i] = this[i].copy(x1, y1, x2, y2);
+        }
 
         return world;
     }
