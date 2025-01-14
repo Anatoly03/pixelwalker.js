@@ -93,6 +93,22 @@ export default class Block {
 
     //
     //
+    // METHODS
+    //
+    //
+
+    /**
+     * Returns a value copy of the block. This is used to
+     * desync block references from the original block.
+     * 
+     * @since 1.4.3
+     */
+    public copy() {
+        return new Block(this.id);
+    }
+
+    //
+    //
     // GAME SERIALIZATION
     //
     //
@@ -155,6 +171,9 @@ export default class Block {
         // Inspiration: https://github.com/Anatoly03/pixelwalker.js/blob/9bb3c7e39a45006086a2abae8c515599bd3db835/src/world/block.ts#L201
 
         // TODO use the block data to update the block instance
+
+        // TODO do not allow overwriting id, use static method instead: deserializeFromWorldData
+        // id has to be immutable, and this is a strict constraint
 
         if (options.readId) {
             // The new block id of this block instance. If instead the

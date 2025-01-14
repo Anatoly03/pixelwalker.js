@@ -94,8 +94,6 @@ export default class Layer {
      * @since 1.4.3
      */
     public copy(x1: number, y1: number, x2: number, y2: number): Layer {
-        // TODO bug: since blocks are cloned by reference here, blocks in new structure are updated in original structure and vice versa
-
         if (x2 < x1) {
             let tmp = x2;
             x2 = x1;
@@ -113,10 +111,29 @@ export default class Layer {
         for (let x = x1; x <= x2; x++)
             for (let y = y1; y <= y2; y++) {
                 if (x < 0 || y < 0 || x >= this.width || y >= this.height) continue;
-                layer[x - x1][y - y1] = this[x][y];
+                layer[x - x1][y - y1] = this[x][y].copy();
             }
 
         return layer;
+    }
+
+    /**
+     * Set the border of the layer to a particular block.
+     * 
+     * @since 1.4.3
+     */
+    public setBorder(border: Block) {
+        for (let x = 0; x < this.width; x++) {
+            (this as any)[x][0] = border.copy();
+            (this as any)[x][this.height - 1] = border.copy();
+        }
+        
+        // Because the corners have already been set, we can skip
+        // them, hence y = 1 and upper end - 1.
+        for (let y = 1; y < this.height - 1; y++) {
+            (this as any)[0][y] = border.copy();
+            (this as any)[this.width - 1][y] = border.copy();
+        }
     }
 
     //
