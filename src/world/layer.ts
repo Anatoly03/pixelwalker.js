@@ -1,5 +1,5 @@
 import { BlockMapReverse } from "../build/block-mappings.js";
-import WorldPosition from "../types/world-position.js";
+import LayerPosition from "../types/layer-position.js";
 import BufferReader from "../util/buffer.js";
 
 import Block from "./block.js";
@@ -128,9 +128,9 @@ export default class Layer {
      *
      * @since 1.4.3
      */
-    public replaceAll(from: (typeof BlockMapReverse)[keyof typeof BlockMapReverse], to: Block): WorldPosition[];
+    public listAll(from: (typeof BlockMapReverse)[keyof typeof BlockMapReverse]): LayerPosition[];
 
-    public replaceAll(from: string | Block, to: Block): WorldPosition[] {
+    public listAll(from: string | Block): LayerPosition[] {
         switch (typeof from) {
             case "string":
                 from = Block.fromMapping(from);
@@ -140,15 +140,35 @@ export default class Layer {
                 throw new Error("method not implemented");
         }
 
-        let positions: WorldPosition[] = [];
+        let positions: LayerPosition[] = [];
 
         for (let x = 0; x < this.width; x++) {
             for (let y = 0; y < this.height; y++) {
                 if (this[x][y].id !== from.id) continue;
                 // TODO if block data is stored, allow strict checking
 
-                this[x][y] = to.copy();
+                positions.push({ x, y });
             }
+        }
+
+        return positions;
+    }
+
+    /**
+     * Replace all blocks in the layer with a particular block
+     * by its' mapping. Returns the positions of all changed
+     * blocks. It is guaranteed that `replaceAll().length === 0`
+     * if no blocks were replaced.
+     *
+     * @since 1.4.3
+     */
+    public replaceAll(from: (typeof BlockMapReverse)[keyof typeof BlockMapReverse], to: Block): LayerPosition[];
+
+    public replaceAll(from: string, to: Block): LayerPosition[] {
+        const positions = this.listAll(from);
+
+        for (const { x, y } of positions) {
+            this[x][y] = to.copy();
         }
 
         return positions;
