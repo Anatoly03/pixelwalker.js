@@ -126,13 +126,18 @@ export default class Block {
      * PlayerInit {
      *     worldWidth: 2,
      *     worldHeight: 1,
-     *     data: [0x00, ????, 0, 0, 0, 0xFF] // Coin Gold Door with value = 255
+     *     data: [0x00, ????, 0xFF, 0, 0, 0] // Coin Gold Door with value = 255
      *     //     ^^^^ block id (top left): empty block
      *     //           ^^^^ block id of the coin gold door
      *     //                | type byte of following data omitted
      *     //                 ^^^^^^^^^^^^^ data
      * }
      * ```
+     * 
+     * ### Summary
+     * 
+     * - Block ID is 4 bytes, followed by block-specific data
+     * - Numbers are in **Little Endian**, type bytes are omitted
      *
      * @since 1.4.2
      */
@@ -153,6 +158,11 @@ export default class Block {
      *     //           ^^^^^^^^^^^^^ data
      * }
      * ```
+     * 
+     * ### Summary
+     * 
+     * - Numbers are in **Big Endian**, type bytes are included
+     *   in the block data.
      * 
      * @since 1.4.3
      */
