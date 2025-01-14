@@ -104,12 +104,43 @@ export default class Block {
      * where each data entry **skips** the type byte. Little Endian
      * is used in the world data.
      *
-     * Deserialization of block data from a world block placed packet
-     * is **currently not supported**.
+     * @example
+     * 
+     * ```typescript
+     * PlayerInit {
+     *     worldWidth: 2,
+     *     worldHeight: 1,
+     *     data: [0x00, ????, 0, 0, 0, 0xFF] // Coin Gold Door with value = 255
+     *     //     ^^^^ block id (top left): empty block
+     *     //           ^^^^ block id of the coin gold door
+     *     //                | type byte of following data omitted
+     *     //                 ^^^^^^^^^^^^^ data
+     * }
+     * ```
      *
      * @since 1.4.2
      */
     public deserialize(buffer: BufferReader): void;
+
+    /**
+     * Deserializes a block from a {@link BufferReader} and converts
+     * itself into the block of that type. This particular method will
+     * scan block data in big endian format, reading type bytes.
+     * 
+     * @example
+     * 
+     * ```typescript
+     * WorldBlockPlacedPacket {
+     *     blockId: coin_gold_door.id,
+     *     data: [0x03, 0, 0, 0, 0xFF] // Coin Gold Door with value = 255
+     *     //     ^^^^ type byte
+     *     //           ^^^^^^^^^^^^^ data
+     * }
+     * ```
+     * 
+     * @since 1.4.3
+     */
+    public deserialize(buffer: BufferReader, options: { endian: 'big', readId: false, readTypeByte: true }): void;
 
     // TODO describe behaviour with options set
 
@@ -125,10 +156,6 @@ export default class Block {
 
         // TODO use the block data to update the block instance
 
-        // TODO use options
-
-        // TODO reminder: block data serialization from world block placed packet is different (endian and leading type byte)!
-
         if (options.readId) {
             // The new block id of this block instance. If instead the
             // buffer should not be read, the field `readId` has to be
@@ -141,39 +168,39 @@ export default class Block {
             case "coin_blue_door":
             case "coin_gold_gate":
             case "coin_blue_gate":
-                buffer.read(ComponentTypeHeader.Int32, true);
+                buffer.read(ComponentTypeHeader.Int32, options);
                 break;
 
             case "effects_jump_height":
-                buffer.read(ComponentTypeHeader.Int32, true);
+                buffer.read(ComponentTypeHeader.Int32, options);
                 break;
 
             case "effects_fly":
-                buffer.read(ComponentTypeHeader.Boolean, true);
+                buffer.read(ComponentTypeHeader.Boolean, options);
                 break;
 
             case "effects_speed":
-                buffer.read(ComponentTypeHeader.Int32, true);
+                buffer.read(ComponentTypeHeader.Int32, options);
                 break;
 
             case "effects_invulnerability":
-                buffer.read(ComponentTypeHeader.Boolean, true);
+                buffer.read(ComponentTypeHeader.Boolean, options);
                 break;
 
             case "effects_curse":
-                buffer.read(ComponentTypeHeader.Int32, true);
+                buffer.read(ComponentTypeHeader.Int32, options);
                 break;
 
             case "effects_zombie":
-                buffer.read(ComponentTypeHeader.Int32, true);
+                buffer.read(ComponentTypeHeader.Int32, options);
                 break;
 
             case "effects_gravityforce":
-                buffer.read(ComponentTypeHeader.Int32, true);
+                buffer.read(ComponentTypeHeader.Int32, options);
                 break;
 
             case "effects_multi_jump":
-                buffer.read(ComponentTypeHeader.Int32, true);
+                buffer.read(ComponentTypeHeader.Int32, options);
                 break;
 
             // gravity effects no data
@@ -181,7 +208,7 @@ export default class Block {
             // effects zombie
 
             case "tool_portal_world_spawn":
-                buffer.read(ComponentTypeHeader.Int32, true);
+                buffer.read(ComponentTypeHeader.Int32, options);
                 break;
 
             case "sign_normal":
@@ -189,19 +216,19 @@ export default class Block {
             case "sign_green":
             case "sign_blue":
             case "sign_gold":
-                buffer.read(ComponentTypeHeader.String, true);
+                buffer.read(ComponentTypeHeader.String, options);
                 break;
 
             case "portal":
             case "portal_invisible":
-                buffer.read(ComponentTypeHeader.Int32, true);
-                buffer.read(ComponentTypeHeader.Int32, true);
-                buffer.read(ComponentTypeHeader.Int32, true);
+                buffer.read(ComponentTypeHeader.Int32, options);
+                buffer.read(ComponentTypeHeader.Int32, options);
+                buffer.read(ComponentTypeHeader.Int32, options);
                 break;
 
             case "portal_world":
-                buffer.read(ComponentTypeHeader.String, true);
-                buffer.read(ComponentTypeHeader.Int32, true);
+                buffer.read(ComponentTypeHeader.String, options);
+                buffer.read(ComponentTypeHeader.Int32, options);
                 break;
 
             case "switch_local_toggle":
@@ -210,29 +237,29 @@ export default class Block {
             case "switch_local_gate":
             case "switch_global_door":
             case "switch_global_gate":
-                buffer.read(ComponentTypeHeader.Int32, true);
+                buffer.read(ComponentTypeHeader.Int32, options);
                 break;
 
             case "switch_local_activator":
             case "switch_global_activator":
-                buffer.read(ComponentTypeHeader.Int32, true);
-                buffer.read(ComponentTypeHeader.Boolean, true);
+                buffer.read(ComponentTypeHeader.Int32, options);
+                buffer.read(ComponentTypeHeader.Boolean, options);
                 break;
 
             case "switch_local_resetter":
             case "switch_global_resetter":
-                buffer.read(ComponentTypeHeader.Boolean, true);
+                buffer.read(ComponentTypeHeader.Boolean, options);
                 break;
 
             case "hazard_death_door":
             case "hazard_death_gate":
-                buffer.read(ComponentTypeHeader.Int32, true);
+                buffer.read(ComponentTypeHeader.Int32, options);
                 break;
 
             case "note_drum":
             case "note_piano":
             case "note_guitar":
-                buffer.read(ComponentTypeHeader.ByteArray, true);
+                buffer.read(ComponentTypeHeader.ByteArray, options);
                 break;
         }
     }

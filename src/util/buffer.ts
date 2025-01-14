@@ -64,7 +64,7 @@ export default class BufferReader {
      * @param {string} value
      * @returns {Buffer}
      */
-    public static String(value: string = ''): Buffer {
+    public static String(value: string = ""): Buffer {
         const stringByteLen = Buffer.byteLength(value);
         const lengthByteCount = this.length7BitInt(stringByteLen);
 
@@ -180,7 +180,7 @@ export default class BufferReader {
      * @returns {Buffer}
      */
     public static Magic(value: number): Buffer {
-        if (value === undefined) throw new Error('Received undefined magic byte')
+        if (value === undefined) throw new Error("Received undefined magic byte");
         return Buffer.from([value]);
     }
 
@@ -556,18 +556,30 @@ export default class BufferReader {
         return tmp;
     }
 
-    public read(tt: ComponentTypeHeader, littleEndian?: boolean): string | number | bigint | boolean | Buffer;
-    public read(tt: ComponentTypeHeader.String, littleEndian?: boolean): string;
-    public read(tt: ComponentTypeHeader.Byte, littleEndian?: boolean): number;
-    public read(tt: ComponentTypeHeader.Int16, littleEndian?: boolean): number;
-    public read(tt: ComponentTypeHeader.Int32, littleEndian?: boolean): number;
-    public read(tt: ComponentTypeHeader.Int64, littleEndian?: boolean): bigint;
-    public read(tt: ComponentTypeHeader.Float, littleEndian?: boolean): number;
-    public read(tt: ComponentTypeHeader.Double, littleEndian?: boolean): number;
-    public read(tt: ComponentTypeHeader.Boolean, littleEndian?: boolean): boolean;
-    public read(tt: ComponentTypeHeader.ByteArray, littleEndian?: boolean): Buffer;
+    public read(tt: ComponentTypeHeader, options?: { endian: "little" | "big"; readTypeByte: boolean }): string | number | bigint | boolean | Buffer;
+    public read(tt: ComponentTypeHeader.String, options?: { endian: "little" | "big"; readTypeByte: boolean }): string;
+    public read(tt: ComponentTypeHeader.Byte, options?: { endian: "little" | "big"; readTypeByte: boolean }): number;
+    public read(tt: ComponentTypeHeader.Int16, options?: { endian: "little" | "big"; readTypeByte: boolean }): number;
+    public read(tt: ComponentTypeHeader.Int32, options?: { endian: "little" | "big"; readTypeByte: boolean }): number;
+    public read(tt: ComponentTypeHeader.Int64, options?: { endian: "little" | "big"; readTypeByte: boolean }): bigint;
+    public read(tt: ComponentTypeHeader.Float, options?: { endian: "little" | "big"; readTypeByte: boolean }): number;
+    public read(tt: ComponentTypeHeader.Double, options?: { endian: "little" | "big"; readTypeByte: boolean }): number;
+    public read(tt: ComponentTypeHeader.Boolean, options?: { endian: "little" | "big"; readTypeByte: boolean }): boolean;
+    public read(tt: ComponentTypeHeader.ByteArray, options?: { endian: "little" | "big"; readTypeByte: boolean }): Buffer;
 
-    public read(tt: ComponentTypeHeader, little = true): string | number | bigint | boolean | Buffer {
+    public read(tt: ComponentTypeHeader, options?: { endian: "little" | "big"; readTypeByte: boolean }): string | number | bigint | boolean | Buffer {
+        options ||= {
+            endian: "little",
+            readTypeByte: false,
+        };
+
+        const little = options.endian === "little";
+        const readTypeByte = options.readTypeByte;
+
+        if (readTypeByte) {
+            this.expectUInt8(tt);
+        }
+
         switch (tt) {
             case ComponentTypeHeader.String:
                 return this.readDynamicBuffer().toString("ascii");
@@ -751,14 +763,14 @@ export default class BufferReader {
     }
 
     [Symbol.for("nodejs.util.inspect.custom")]() {
-        let s = '<BufferReader';
+        let s = "<BufferReader";
         let copy = BufferReader.from(this.#buffer);
         copy.#offset = this.#offset;
 
         for (let i = 0; i < 20 && this.#offset + i < this.length - 1; i++) {
-            s += ' ' + copy.readUInt8().toString(16).padStart(2, '0');
+            s += " " + copy.readUInt8().toString(16).padStart(2, "0");
         }
 
-        return s + '>';
+        return s + ">";
     }
 }

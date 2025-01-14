@@ -1,7 +1,9 @@
 import EventEmitter from "events";
 
 import GameClient from "../client.game.js";
+import Block from "./block.js";
 import Structure from "./structure.js";
+import BufferReader from "../util/buffer.js";
 
 /**
  * // TODO
@@ -72,18 +74,49 @@ export default class GameWorld {
             this.structure.deserialize(packet.worldData);
         });
 
+        // Upon world reload, process the new world data and set
+        // the blocks to its' new representation.
+        connection.listen("worldReloadedPacket", (packet) => {
+            this.structure.deserialize(packet.worldData);
+            this.receiver.emit("Reload");
+        });
+
         // Upon world clearing, remove all blocks and leave only a
         // gray border in the foreground layer behind.
         connection.listen("worldClearedPacket", () => {
             this.receiver.emit("Clear");
         });
 
-        // Upon world reload, process the new world data and set
-        // the blocks to its' new representation.
-        connection.listen("worldReloadedPacket", (packet) => {
-            // TODO process packet.worldData
-            this.receiver.emit("Reload");
+        // Upon receiving meta update, process the meta update.
+        // This contains attributes like the world name, description,
+        // play count and other.
+        connection.listen("worldMetaUpdatePacket", (meta) => {
+            // TODO handle meta update
         });
+
+        // Upon receiving a block placement, update the block in the
+        // structure.
+        connection.listen("worldBlockPlacedPacket", (packet) => {
+            const { layer } = packet;
+
+            for (const { x, y } of packet.positions) {
+                const block = Block.fromId(packet.blockId);
+
+                block.deserialize(BufferReader.from(packet.extraFields), {
+                    endian: "big",
+                    readId: false,
+                    readTypeByte: true,
+                });
+
+                this.structure[layer][x][y] = block;
+            }
+        });
+
+        // TODO globalSwitchChangedPacket
+
+        // TODO globalSwitchResetPacket
+
+        // TODO performWorldActionPacket
     }
 
     /**
