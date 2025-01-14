@@ -17,6 +17,14 @@ export default class Block {
      */
     public readonly id: number;
 
+    // /**
+    //  * The sign content of the block. This is used to store the text
+    //  * of a sign block. This is only available if the block is a sign
+    //  * block. To check if the block can use this attribute, use
+    //  * {@link isPortal}.
+    //  */
+    // private signContent!: string;
+
     //
     //
     // STATIC
@@ -74,6 +82,43 @@ export default class Block {
 
     //
     //
+    // GUARDS
+    //
+    //
+
+    /**
+     * Is true if the block is a portal block. This is used to
+     * check if the block is a portal block and typehint relative
+     * attributes.
+     *
+     * @since 1.4.3
+     */
+    public isSign(): this is Block & {
+        /**
+         * The string content of the portal block. This is used to
+         * store the world name of the portal block. This is only
+         * available if the block is a portal block. To check if the
+         * block can use this attribute, use the {@link isPortal}
+         * guard.
+         *
+         * @since 1.4.3
+         */
+        content: string;
+    } {
+        switch (this.mapping) {
+            case "sign_normal":
+            case "sign_red":
+            case "sign_green":
+            case "sign_blue":
+            case "sign_gold":
+                return true;
+        }
+
+        return false;
+    }
+
+    //
+    //
     // GETTERS
     //
     //
@@ -108,6 +153,24 @@ export default class Block {
      */
     public copy() {
         return new Block(this.id);
+    }
+
+    /**
+     * Returns wether two blocks are equal. This is used to
+     * compare blocks in the game, mostly by the block
+     * scheduler to verify placed blocks.
+     *
+     * Any two blocks are equal if and only if their id and
+     * their block data is equal.
+     *
+     * @since 1.4.3
+     */
+    public equals(other: Block): boolean {
+        if (this.id !== other.id) return false;
+
+        // TODO implement block data comparison
+
+        return true;
     }
 
     //
@@ -248,7 +311,8 @@ export default class Block {
             case "sign_green":
             case "sign_blue":
             case "sign_gold":
-                buffer.read(ComponentTypeHeader.String, options);
+                if (!this.isSign()) throw new Error("unreachable");
+                this.content = buffer.read(ComponentTypeHeader.String, options);
                 break;
 
             case "portal":
@@ -315,7 +379,7 @@ export default class Block {
      * Returns a {@link WorldBlockPlacedPacket} that represents the
      * block placed packet for this block. This is used to send the
      * block over the game server.
-     * 
+     *
      * Note, that this packet will not implement the block positions
      * and the layer. This has to be done by the caller.
      */

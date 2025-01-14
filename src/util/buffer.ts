@@ -556,7 +556,6 @@ export default class BufferReader {
         return tmp;
     }
 
-    public read(tt: ComponentTypeHeader, options?: { endian: "little" | "big"; readTypeByte: boolean }): string | number | bigint | boolean | Buffer;
     public read(tt: ComponentTypeHeader.String, options?: { endian: "little" | "big"; readTypeByte: boolean }): string;
     public read(tt: ComponentTypeHeader.Byte, options?: { endian: "little" | "big"; readTypeByte: boolean }): number;
     public read(tt: ComponentTypeHeader.Int16, options?: { endian: "little" | "big"; readTypeByte: boolean }): number;
@@ -566,6 +565,7 @@ export default class BufferReader {
     public read(tt: ComponentTypeHeader.Double, options?: { endian: "little" | "big"; readTypeByte: boolean }): number;
     public read(tt: ComponentTypeHeader.Boolean, options?: { endian: "little" | "big"; readTypeByte: boolean }): boolean;
     public read(tt: ComponentTypeHeader.ByteArray, options?: { endian: "little" | "big"; readTypeByte: boolean }): Buffer;
+    public read(tt: ComponentTypeHeader, options?: { endian: "little" | "big"; readTypeByte: boolean }): string | number | bigint | boolean | Buffer;
 
     public read(tt: ComponentTypeHeader, options?: { endian: "little" | "big"; readTypeByte: boolean }): string | number | bigint | boolean | Buffer {
         options ||= {
