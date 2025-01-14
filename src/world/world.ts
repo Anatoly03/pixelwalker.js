@@ -4,9 +4,12 @@ import GameClient from "../game.js";
 import Block from "./block.js";
 import Structure from "./structure.js";
 import BufferReader from "../util/buffer.js";
+import WorldPosition from "../types/world-position.js";
+import { create } from "@bufbuild/protobuf";
+import { PointIntegerSchema } from "../protocol/world_pb.js";
 
 /**
- * // TODO
+ * // TODO document, expand events
  */
 type Events = {
     Clear: [];
@@ -146,24 +149,65 @@ export default class GameWorld {
 
     /**
      * Requests to clear the world.
+     * 
+     * // TODO document return, scheduling and await
+     * 
+     * @since 1.4.2
      */
     public async clear() {
         this.game.sendChat("/clearworld");
+
+        // TODO return promise, schedule chat and await world clear packet
     }
 
     /**
      * Requests to reload the world. This will sync the world with
      * its' persistant storage.
+     * 
+     * // TODO document return, scheduling and await
+     * 
+     * @since 1.4.2
      */
     public async reload() {
         this.game.sendChat("/reloadworld");
+
+        // TODO return promise, schedule chat and await world reload packet
     }
 
     /**
      * Requests to reload the world. This will sync the world with
      * its' persistant storage.
+     * 
+     * // TODO document return, scheduling and await
+     * 
+     * @since 1.4.2
      */
     public async save() {
         this.game.sendChat("/saveworld");
+
+        // TODO return promise, schedule chat and await "World saved" message
+    }
+
+    /**
+     * Places a block at the specified positions. The block is placed
+     * in the specified positions which include the layer. The packet is
+     * sent up to a maximum of {@link Structure.LAYER_COUNT} times and
+     * compress the positions per layer into one packet.
+     * 
+     * // TODO document return, scheduling and await
+     * 
+     * @since 1.4.3
+     */
+    public async placeBlock(block: Block, ...positions: WorldPosition[]) {
+        const packet = block.toPacket();
+
+        for (let i = 0; i < Structure.LAYER_COUNT; i++) {
+            packet.layer = i;
+            packet.positions = positions.filter((pos) => pos.layer === i).map((pos) => create(PointIntegerSchema, pos));
+            if (packet.positions.length === 0) continue;
+            this.game.connection.send("worldBlockPlacedPacket", packet);
+        }
+
+        // TODO return promise, schedule blocks and await
     }
 }

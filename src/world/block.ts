@@ -1,6 +1,9 @@
 import { BlockMap, BlockMapReverse } from "../build/block-mappings.js";
 import BufferReader, { ComponentTypeHeader } from "../util/buffer.js";
 
+import { create } from "@bufbuild/protobuf";
+import { WorldBlockPlacedPacket, WorldBlockPlacedPacketSchema } from "../protocol/world_pb.js";
+
 /**
  * @since 1.4.2
  */
@@ -100,7 +103,7 @@ export default class Block {
     /**
      * Returns a value copy of the block. This is used to
      * desync block references from the original block.
-     * 
+     *
      * @since 1.4.3
      */
     public copy() {
@@ -121,7 +124,7 @@ export default class Block {
      * is used in the world data.
      *
      * @example
-     * 
+     *
      * ```typescript
      * PlayerInit {
      *     worldWidth: 2,
@@ -133,9 +136,9 @@ export default class Block {
      *     //                 ^^^^^^^^^^^^^ data
      * }
      * ```
-     * 
+     *
      * ### Summary
-     * 
+     *
      * - Block ID is 4 bytes, followed by block-specific data
      * - Numbers are in **Little Endian**, type bytes are omitted
      *
@@ -147,9 +150,9 @@ export default class Block {
      * Deserializes a block from a {@link BufferReader} and converts
      * itself into the block of that type. This particular method will
      * scan block data in big endian format, reading type bytes.
-     * 
+     *
      * @example
-     * 
+     *
      * ```typescript
      * WorldBlockPlacedPacket {
      *     blockId: coin_gold_door.id,
@@ -158,15 +161,15 @@ export default class Block {
      *     //           ^^^^^^^^^^^^^ data
      * }
      * ```
-     * 
+     *
      * ### Summary
-     * 
+     *
      * - Numbers are in **Big Endian**, type bytes are included
      *   in the block data.
-     * 
+     *
      * @since 1.4.3
      */
-    public deserialize(buffer: BufferReader, options: { endian: 'big', readId: false, readTypeByte: true }): void;
+    public deserialize(buffer: BufferReader, options: { endian: "big"; readId: false; readTypeByte: true }): void;
 
     // TODO describe behaviour with options set
 
@@ -291,5 +294,35 @@ export default class Block {
                 buffer.read(ComponentTypeHeader.ByteArray, options);
                 break;
         }
+    }
+
+    /**
+     * Serializes the block into a buffer. This is used to convert
+     * the block into a binary format that can be sent over the game
+     * server.
+     *
+     * @deprecated This method is not implemented yet.
+     */
+    public serialize(): Buffer;
+
+    public serialize(options?: { endian: "little" | "big"; readId: boolean; readTypeByte: boolean }): Buffer {
+        // TODO implement
+
+        return Buffer.alloc(0);
+    }
+
+    /**
+     * Returns a {@link WorldBlockPlacedPacket} that represents the
+     * block placed packet for this block. This is used to send the
+     * block over the game server.
+     * 
+     * Note, that this packet will not implement the block positions
+     * and the layer. This has to be done by the caller.
+     */
+    public toPacket(): WorldBlockPlacedPacket {
+        return create(WorldBlockPlacedPacketSchema, {
+            blockId: this.id,
+            extraFields: this.serialize(),
+        });
     }
 }

@@ -56,7 +56,7 @@ export default class GameClient {
     public players = new PlayerMap();
 
     /**
-     * // TODO
+     * // TODO document
      * 
      * @since 1.4.2
      */

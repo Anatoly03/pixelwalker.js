@@ -5,11 +5,6 @@ import Layer from "./layer.js";
 import GameWorld from "./world.js";
 
 /**
- * The number of layers in a structure.
- */
-const LAYER_COUNT = 2;
-
-/**
  * Represents a structure in the world.
  *
  * @since 1.4.2
@@ -31,6 +26,19 @@ export default class Structure {
      */
     public readonly height: number;
 
+    //
+    //
+    // STATIC
+    //
+    //
+
+    /**
+     * The number of layers in a structure.
+     * 
+     * @since 1.4.3
+     */
+    public static readonly LAYER_COUNT = 2;
+
     /**
      *
      * @param width The width of the structure
@@ -40,7 +48,7 @@ export default class Structure {
         this.width = width;
         this.height = height;
 
-        for (let i = 0; i < LAYER_COUNT; i++) {
+        for (let i = 0; i < Structure.LAYER_COUNT; i++) {
             (this as any)[i] = new Layer(width, height);
         }
     }
@@ -83,7 +91,7 @@ export default class Structure {
      * @since 1.4.2
      */
     public _debug_print_position(callback: (block: Block) => boolean) {
-        for (let i = 0; i < LAYER_COUNT; i++) {
+        for (let i = 0; i < Structure.LAYER_COUNT; i++) {
             for (let x = 0; x < this.width; x++) {
                 for (let y = 0; y < this.height; y++) {
                     if (callback(this[i][x][y])) {
@@ -112,7 +120,7 @@ export default class Structure {
      * @since 1.4.2
      */
     public clear() {
-        for (let i = 0; i < LAYER_COUNT; i++) {
+        for (let i = 0; i < Structure.LAYER_COUNT; i++) {
             this[i].clear();
         }
     }
@@ -129,8 +137,6 @@ export default class Structure {
      * @since 1.4.3
      */
     public copy(x1: number, y1: number, x2: number, y2: number): Structure {
-        // TODO bug: since blocks are cloned by reference here, blocks in new structure are updated in original structure and vice versa
-
         if (x2 < x1) {
             let tmp = x2;
             x2 = x1;
@@ -145,7 +151,7 @@ export default class Structure {
 
         const world = new Structure(x2 - x1 + 1, y2 - y1 + 1);
         
-        for (let i = 0; i < LAYER_COUNT; i++) {
+        for (let i = 0; i < Structure.LAYER_COUNT; i++) {
             (world as any)[i] = this[i].copy(x1, y1, x2, y2);
         }
 
@@ -166,7 +172,7 @@ export default class Structure {
     public deserialize(source: WithImplicitCoercion<ArrayBuffer> | Buffer) {
         const buffer = BufferReader.from(source);
 
-        for (let i = 0; i < LAYER_COUNT; i++) {
+        for (let i = 0; i < Structure.LAYER_COUNT; i++) {
             this[i].deserialize(buffer);
         }
 
