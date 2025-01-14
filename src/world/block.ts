@@ -1,5 +1,6 @@
 import { BlockMap, BlockMapReverse } from "../build/block-mappings.js";
 import BufferReader, { ComponentTypeHeader } from "../util/buffer.js";
+import { BlockData } from "./block-args.js";
 
 import { create } from "@bufbuild/protobuf";
 import { WorldBlockPlacedPacket, WorldBlockPlacedPacketSchema } from "../protocol/world_pb.js";
@@ -16,6 +17,11 @@ export default class Block {
      * @since 1.4.2
      */
     public readonly id: number;
+
+    /**
+     * 
+     */
+    public readonly data: (boolean | number | bigint | string | Uint8Array)[] = [];
 
     // /**
     //  * The sign content of the block. This is used to store the text
@@ -57,6 +63,7 @@ export default class Block {
      */
     public static fromId(id: number): Block {
         if (id < 0 || this.BlockCount <= id) throw new Error(`block id ${id} is out of range: expected 0-${this.BlockCount - 1}`);
+
         return new Block(id);
     }
 
@@ -76,7 +83,7 @@ export default class Block {
     /**
      * // TODO document
      */
-    private constructor(id: number) {
+    protected constructor(id: number) {
         this.id = id;
     }
 
@@ -86,36 +93,98 @@ export default class Block {
     //
     //
 
-    /**
-     * Is true if the block is a portal block. This is used to
-     * check if the block is a portal block and typehint relative
-     * attributes.
-     *
-     * @since 1.4.3
-     */
-    public isSign(): this is Block & {
-        /**
-         * The string content of the portal block. This is used to
-         * store the world name of the portal block. This is only
-         * available if the block is a portal block. To check if the
-         * block can use this attribute, use the {@link isPortal}
-         * guard.
-         *
-         * @since 1.4.3
-         */
-        content: string;
-    } {
-        switch (this.mapping) {
-            case "sign_normal":
-            case "sign_red":
-            case "sign_green":
-            case "sign_blue":
-            case "sign_gold":
-                return true;
-        }
+    // /**
+    //  * Is true, if the block is a coin-triggered block. These
+    //  * are coin-based doors and gates.
+    //  *
+    //  * @since 1.4.3
+    //  */
+    // public isCoinTriggered(): this is Block & {
+    //     /**
+    //      * The amount of coins needed to trigger the effect,
+    //      * either lock or unlock a door/ gate.
+    //      *
+    //      * @since 1.4.3
+    //      */
+    //     coins: number;
+    // } {
+    //     switch (this.mapping) {
+    //         case "coin_gold_door":
+    //         case "coin_blue_door":
+    //         case "coin_gold_gate":
+    //         case "coin_blue_gate":
+    //             return true;
+    //         default:
+    //             return false;
+    //     }
+    // }
 
-        return false;
-    }
+    // /**
+    //  * Is true if the block is a **sign**. This is used to typehint
+    //  * relative attributes.
+    //  *
+    //  * @since 1.4.3
+    //  */
+    // public isSign(): this is SignBlock {
+    //     return this instanceof SignBlock;
+    // }
+
+    // /**
+    //  * Is true if the block is a **portal**. This is used to typehint
+    //  * relative attributes.
+    //  *
+    //  * This is not to be confused with the **world portal**, guarded
+    //  * behind {@link isWorldPortal}. The portal block is a block that
+    //  * teleports the player to another location in the world, not an
+    //  * entirely different world.
+    //  *
+    //  * @since 1.4.3
+    //  */
+    // public isPortal() {
+    //     switch (this.mapping) {
+    //         case "portal":
+    //         case "portal_invisible":
+    //             return true;
+    //         default:
+    //             return false;
+    //     }
+    // }
+
+    // /**
+    //  * Is true if the block is a **world portal**. This is used to
+    //  * typehint relative attributes.
+    //  *
+    //  * This is not to be confused with the **portal**, guarded behind
+    //  * {@link isPortal}. The world portal block is a block that teleports
+    //  * the player to another world.
+    //  *
+    //  * @since 1.4.3
+    //  */
+    // public isWorldPortal(): this is Block & {
+    //     /**
+    //      * The target world id of the portal block. This is the world
+    //      * players get sent to if redirected.
+    //      * 
+    //     *
+    //      * @since 1.4.3
+    //     */
+    //     // TODO replace string with world id class and provide better methods.
+    //     targetWorldId: string;
+
+    //     /**
+    //      * // TODO document
+    //      *
+    //      * @since 1.4.3
+    //      */
+    //     spawnId: number;
+    // } {
+    //     switch (this.mapping) {
+    //         case "portal_world":
+    //             return true;
+    //         default:
+    //             return false;
+    //     }
+    // }
 
     //
     //
@@ -246,8 +315,6 @@ export default class Block {
         // TODO refactor to better pattern
         // Inspiration: https://github.com/Anatoly03/pixelwalker.js/blob/9bb3c7e39a45006086a2abae8c515599bd3db835/src/world/block.ts#L201
 
-        // TODO use the block data to update the block instance
-
         // TODO do not allow overwriting id, use static method instead: deserializeFromWorldData
         // id has to be immutable, and this is a strict constraint
 
@@ -258,105 +325,12 @@ export default class Block {
             (this as any).id = buffer.readUInt32LE();
         }
 
-        switch (this.mapping) {
-            case "coin_gold_door":
-            case "coin_blue_door":
-            case "coin_gold_gate":
-            case "coin_blue_gate":
-                buffer.read(ComponentTypeHeader.Int32, options);
-                break;
-
-            case "effects_jump_height":
-                buffer.read(ComponentTypeHeader.Int32, options);
-                break;
-
-            case "effects_fly":
-                buffer.read(ComponentTypeHeader.Boolean, options);
-                break;
-
-            case "effects_speed":
-                buffer.read(ComponentTypeHeader.Int32, options);
-                break;
-
-            case "effects_invulnerability":
-                buffer.read(ComponentTypeHeader.Boolean, options);
-                break;
-
-            case "effects_curse":
-                buffer.read(ComponentTypeHeader.Int32, options);
-                break;
-
-            case "effects_zombie":
-                buffer.read(ComponentTypeHeader.Int32, options);
-                break;
-
-            case "effects_gravityforce":
-                buffer.read(ComponentTypeHeader.Int32, options);
-                break;
-
-            case "effects_multi_jump":
-                buffer.read(ComponentTypeHeader.Int32, options);
-                break;
-
-            // gravity effects no data
-            // effects off
-            // effects zombie
-
-            case "tool_portal_world_spawn":
-                buffer.read(ComponentTypeHeader.Int32, options);
-                break;
-
-            case "sign_normal":
-            case "sign_red":
-            case "sign_green":
-            case "sign_blue":
-            case "sign_gold":
-                if (!this.isSign()) throw new Error("unreachable");
-                this.content = buffer.read(ComponentTypeHeader.String, options);
-                break;
-
-            case "portal":
-            case "portal_invisible":
-                buffer.read(ComponentTypeHeader.Int32, options);
-                buffer.read(ComponentTypeHeader.Int32, options);
-                buffer.read(ComponentTypeHeader.Int32, options);
-                break;
-
-            case "portal_world":
-                buffer.read(ComponentTypeHeader.String, options);
-                buffer.read(ComponentTypeHeader.Int32, options);
-                break;
-
-            case "switch_local_toggle":
-            case "switch_global_toggle":
-            case "switch_local_door":
-            case "switch_local_gate":
-            case "switch_global_door":
-            case "switch_global_gate":
-                buffer.read(ComponentTypeHeader.Int32, options);
-                break;
-
-            case "switch_local_activator":
-            case "switch_global_activator":
-                buffer.read(ComponentTypeHeader.Int32, options);
-                buffer.read(ComponentTypeHeader.Boolean, options);
-                break;
-
-            case "switch_local_resetter":
-            case "switch_global_resetter":
-                buffer.read(ComponentTypeHeader.Boolean, options);
-                break;
-
-            case "hazard_death_door":
-            case "hazard_death_gate":
-                buffer.read(ComponentTypeHeader.Int32, options);
-                break;
-
-            case "note_drum":
-            case "note_piano":
-            case "note_guitar":
-                buffer.read(ComponentTypeHeader.ByteArray, options);
-                break;
+        const blockData = BlockData[this.mapping as keyof typeof BlockData] ?? [];
+        this.data.length = 0;
+        
+        for (const dataType of blockData) {
+            const entry = buffer.read(dataType, options);
+            this.data.push(entry);
         }
     }
 
