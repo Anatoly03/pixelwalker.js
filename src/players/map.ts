@@ -1,7 +1,7 @@
 import { Protocol } from "../index.js";
 import { create } from "@bufbuild/protobuf";
 
-import GameClient from "../client.game";
+import GameClient from "../game.js";
 import GamePlayer from "../types/game-player.js";
 
 /**

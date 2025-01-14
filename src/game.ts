@@ -1,6 +1,6 @@
 import EventEmitter from "events";
 
-import GameConnection from "./client.connection.js";
+import GameConnection from "./connection.js";
 import PlayerMap from "./players/map.js";
 import GameWorld from "./world/world.js";
 

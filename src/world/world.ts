@@ -1,6 +1,6 @@
 import EventEmitter from "events";
 
-import GameClient from "../client.game.js";
+import GameClient from "../game.js";
 import Block from "./block.js";
 import Structure from "./structure.js";
 import BufferReader from "../util/buffer.js";
