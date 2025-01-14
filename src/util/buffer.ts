@@ -687,7 +687,7 @@ export default class BufferReader {
      */
     public readDynamicBuffer() {
         const length = this.read7BitInt();
-        const value = this.subarray(this.#offset, this.#offset + length);
+        const value = this.subarray(this.#offset, length);
         this.#offset += length;
         return value.toBuffer();
     }
