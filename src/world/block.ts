@@ -19,9 +19,9 @@ export default class Block {
     public readonly id: number;
 
     /**
-     * 
+     *
      */
-    public readonly data: (boolean | number | bigint | string | Uint8Array)[] = [];
+    public readonly data: (boolean | number | bigint | string | Buffer)[] = [];
 
     // /**
     //  * The sign content of the block. This is used to store the text
@@ -164,7 +164,7 @@ export default class Block {
     //     /**
     //      * The target world id of the portal block. This is the world
     //      * players get sent to if redirected.
-    //      * 
+    //      *
     //     *
     //      * @since 1.4.3
     //     */
@@ -205,6 +205,8 @@ export default class Block {
      * @since 1.4.2
      */
     public get mapping(): (typeof BlockMapReverse)[keyof typeof BlockMapReverse] {
+        // TODO lazy save the block mapping.
+
         return BlockMapReverse[this.id];
     }
 
@@ -236,8 +238,11 @@ export default class Block {
      */
     public equals(other: Block): boolean {
         if (this.id !== other.id) return false;
+        if (this.data.length !== other.data.length) return false;
 
-        // TODO implement block data comparison
+        for (let i = 0; i < this.data.length; i++) {
+            if (this.data[i] !== other.data[i]) return false;
+        }
 
         return true;
     }
@@ -327,7 +332,7 @@ export default class Block {
 
         const blockData = BlockData[this.mapping as keyof typeof BlockData] ?? [];
         this.data.length = 0;
-        
+
         for (const dataType of blockData) {
             const entry = buffer.read(dataType, options);
             this.data.push(entry);
@@ -339,14 +344,51 @@ export default class Block {
      * the block into a binary format that can be sent over the game
      * server.
      *
-     * @deprecated This method is not implemented yet.
+     * - Little Endian
+     * - With Id
+     * - Type Byte omitted
+     *
+     * @since 1.4.3
      */
     public serialize(): Buffer;
 
-    public serialize(options?: { endian: "little" | "big"; readId: boolean; readTypeByte: boolean }): Buffer {
-        // TODO implement
+    /**
+     * Serializes the block into a buffer. This is used to convert
+     * the block into a binary format that can be sent over the game
+     * server.
+     *
+     * - Big Endian
+     * - No Id
+     * - Type Byte included
+     *
+     * @since 1.4.3
+     */
+    public serialize(options: { endian: "big"; writeId: false; readTypeByte: true }): Buffer;
 
-        return Buffer.alloc(0);
+    public serialize(options?: { endian: "little" | "big"; writeId: boolean; readTypeByte: boolean }): Buffer {
+        options ||= {
+            endian: "little",
+            writeId: true,
+            readTypeByte: false,
+        };
+
+        const buffer: Buffer[] = [];
+
+        if (options.writeId) {
+            const idBuffer = Buffer.alloc(4);
+            idBuffer.writeUInt32LE(this.id);
+            buffer.push(idBuffer);
+        }
+
+        const blockData = BlockData[this.mapping as keyof typeof BlockData] ?? [];
+        let idx = 0;
+
+        for (const dataType of blockData) {
+            const entry = BufferReader.Dynamic(dataType, this.data[idx++]);
+            buffer.push(entry);
+        }
+
+        return Buffer.concat(buffer);
     }
 
     /**
@@ -356,11 +398,13 @@ export default class Block {
      *
      * Note, that this packet will not implement the block positions
      * and the layer. This has to be done by the caller.
+     * 
+     * @since 1.4.3
      */
     public toPacket(): WorldBlockPlacedPacket {
         return create(WorldBlockPlacedPacketSchema, {
             blockId: this.id,
-            extraFields: this.serialize(),
+            extraFields: this.serialize({ endian: "big", writeId: false, readTypeByte: true }),
         });
     }
 }

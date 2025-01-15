@@ -14,6 +14,7 @@ import { PointIntegerSchema } from "../protocol/world_pb.js";
 type Events = {
     Clear: [];
     Reload: [];
+    Block: [Block, WorldPosition[]];
 };
 
 /**
@@ -101,18 +102,27 @@ export default class GameWorld {
         // structure.
         connection.listen("worldBlockPlacedPacket", (packet) => {
             const { layer } = packet;
+            const block = Block.fromId(packet.blockId);
+
+            block.deserialize(BufferReader.from(packet.extraFields), {
+                endian: "big",
+                readId: false,
+                readTypeByte: true,
+            });
 
             for (const { x, y } of packet.positions) {
-                const block = Block.fromId(packet.blockId);
-
-                block.deserialize(BufferReader.from(packet.extraFields), {
-                    endian: "big",
-                    readId: false,
-                    readTypeByte: true,
-                });
-
-                this.structure[layer][x][y] = block;
+                this.structure[layer][x][y] = block.copy();
             }
+
+            this.receiver.emit(
+                "Block",
+                block,
+                packet.positions.map(({ x, y }) => ({
+                    x,
+                    y,
+                    layer,
+                }))
+            );
         });
 
         // TODO globalSwitchChangedPacket
@@ -149,9 +159,9 @@ export default class GameWorld {
 
     /**
      * Requests to clear the world.
-     * 
+     *
      * // TODO document return, scheduling and await
-     * 
+     *
      * @since 1.4.2
      */
     public async clear() {
@@ -163,9 +173,9 @@ export default class GameWorld {
     /**
      * Requests to reload the world. This will sync the world with
      * its' persistant storage.
-     * 
+     *
      * // TODO document return, scheduling and await
-     * 
+     *
      * @since 1.4.2
      */
     public async reload() {
@@ -177,9 +187,9 @@ export default class GameWorld {
     /**
      * Requests to reload the world. This will sync the world with
      * its' persistant storage.
-     * 
+     *
      * // TODO document return, scheduling and await
-     * 
+     *
      * @since 1.4.2
      */
     public async save() {
@@ -193,9 +203,9 @@ export default class GameWorld {
      * in the specified positions which include the layer. The packet is
      * sent up to a maximum of {@link Structure.LAYER_COUNT} times and
      * compress the positions per layer into one packet.
-     * 
+     *
      * // TODO document return, scheduling and await
-     * 
+     *
      * @since 1.4.3
      */
     public async placeBlock(block: Block, ...positions: WorldPosition[]) {
