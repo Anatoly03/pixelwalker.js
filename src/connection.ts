@@ -184,7 +184,13 @@ export default class GameConnection {
     public send<Event extends keyof Events>(eventName: Event, value: Events[Event][0] = <any>{}) {
         const message = create(Protocol.WorldPacketSchema, { packet: { case: eventName, value } } as any);
         const buffer = toBinary(Protocol.WorldPacketSchema, message);
-        this.socket!.send(buffer);
+
+        if (!this.socket) {
+            this.close();
+            return;
+        }
+
+        this.socket.send(buffer);
     }
 
     //

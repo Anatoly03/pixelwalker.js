@@ -181,15 +181,15 @@ export default class Layer {
      */
     public setBorder(border: Block) {
         for (let x = 0; x < this.width; x++) {
-            (this as any)[x][0] = border.copy();
-            (this as any)[x][this.height - 1] = border.copy();
+            this[x][0] = border.copy();
+            this[x][this.height - 1] = border.copy();
         }
 
         // Because the corners have already been set, we can skip
         // them, hence y = 1 and upper end - 1.
         for (let y = 1; y < this.height - 1; y++) {
-            (this as any)[0][y] = border.copy();
-            (this as any)[this.width - 1][y] = border.copy();
+            this[0][y] = border.copy();
+            this[this.width - 1][y] = border.copy();
         }
     }
 
@@ -207,7 +207,7 @@ export default class Layer {
     public deserialize(buffer: BufferReader) {
         for (let x = 0; x < this.width; x++) {
             for (let y = 0; y < this.height; y++) {
-                this[x][y].deserialize(buffer);
+                this[x][y] = Block.deserialize(buffer, { endian: "little", readTypeByte: false });
             }
         }
     }

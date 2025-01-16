@@ -106,7 +106,6 @@ export default class GameWorld {
 
             block.deserialize(BufferReader.from(packet.extraFields), {
                 endian: "big",
-                readId: false,
                 readTypeByte: true,
             });
 
@@ -147,7 +146,7 @@ export default class GameWorld {
      * @since 1.4.2
      */
     public listen<Event extends keyof Events>(eventName: Event, callback: (...e: Events[Event]) => void): this {
-        this.receiver.on(eventName as any, callback as any);
+        this.receiver.on(eventName, callback as any);
         return this;
     }
 

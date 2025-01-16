@@ -259,6 +259,90 @@ export default class Block {
      * id (4 bytes) from the buffer followed by optional block data,
      * where each data entry **skips** the type byte. Little Endian
      * is used in the world data.
+     * 
+     * **The difference between the static and the instance method is
+     * that static method will serialize the block and create a new
+     * block instance, while the instance method will modify the block.**
+     *
+     * @example
+     *
+     * ```typescript
+     * PlayerInit {
+     *     worldWidth: 2,
+     *     worldHeight: 1,
+     *     data: [0x00, ????, 0xFF, 0, 0, 0] // Coin Gold Door with value = 255
+     *     //     ^^^^ block id (top left): empty block
+     *     //           ^^^^ block id of the coin gold door
+     *     //                | type byte of following data omitted
+     *     //                 ^^^^^^^^^^^^^ data
+     * }
+     * ```
+     *
+     * ### Summary
+     *
+     * - Block ID is 4 bytes, followed by block-specific data
+     * - Numbers are in **Little Endian**, type bytes are omitted
+     *
+     * @since 1.4.4
+     */
+    public static deserialize(buffer: BufferReader, options: { endian: "little"; readTypeByte: false }): Block;
+
+    public static deserialize(buffer: BufferReader, options?: { endian: "little" | "big"; readTypeByte: boolean }): Block {
+        options ||= {
+            endian: "little",
+            readTypeByte: false,
+        };
+
+        const blockId = buffer.readUInt32LE();
+        const block = new Block(blockId);
+
+        block.deserialize(buffer, options);
+
+        return block;
+    }
+
+    /**
+     * Deserializes a block from a {@link BufferReader} and converts
+     * itself into the block of that type. This will scan the block
+     * id (4 bytes) from the buffer followed by optional block data,
+     * where each data entry **skips** the type byte. Little Endian
+     * is used in the world data.
+     *
+     * @example
+     *
+     * ```typescript
+     * PlayerInit {
+     *     worldWidth: 2,
+     *     worldHeight: 1,
+     *     data: [0x00, ????, 0xFF, 0, 0, 0] // Coin Gold Door with value = 255
+     *     //     ^^^^ block id (top left): empty block
+     *     //           ^^^^ block id of the coin gold door
+     *     //                | type byte of following data omitted
+     *     //                 ^^^^^^^^^^^^^ data
+     * }
+     * ```
+     *
+     * ### Summary
+     *
+     * - Block ID is 4 bytes, followed by block-specific data
+     * - Numbers are in **Little Endian**, type bytes are omitted
+     * 
+     * @deprecated Set the options to `endian = "little"` and
+     * `readTypeByte = false`. The options object will be required
+     * in future versions.
+     *
+     * @since 1.4.2
+     */
+    // TODO deprecated: remove in 1.5.0
+    // TODO make options required in 1.5.0
+    public deserialize(buffer: BufferReader): void;
+
+    /**
+     * Deserializes a block from a {@link BufferReader} and converts
+     * itself into the block of that type. This will scan the block
+     * id (4 bytes) from the buffer followed by optional block data,
+     * where each data entry **skips** the type byte. Little Endian
+     * is used in the world data.
      *
      * @example
      *
@@ -281,7 +365,7 @@ export default class Block {
      *
      * @since 1.4.2
      */
-    public deserialize(buffer: BufferReader): void;
+    public deserialize(buffer: BufferReader, options: { endian: "little"; readTypeByte: false }): void;
 
     /**
      * Deserializes a block from a {@link BufferReader} and converts
@@ -306,29 +390,36 @@ export default class Block {
      *
      * @since 1.4.3
      */
-    public deserialize(buffer: BufferReader, options: { endian: "big"; readId: false; readTypeByte: true }): void;
+    public deserialize(buffer: BufferReader, options: { endian: "big"; readTypeByte: true }): void;
+
+    /**
+     * This signature provides a custom signature to deserialize the
+     * block with custom options. **If you read this, you are likely
+     * using the method wrong.**
+     * 
+     * Deserializes a block from a {@link BufferReader} and converts
+     * itself into the block of that type. This particular method will
+     * scan block data in big endian format, reading type bytes.
+     * 
+     * For deserialization from world data, use `endian = "big"` and
+     * `readTypeByte = true`, for deserialization from packets, use
+     * `endian = "little"` and `readTypeByte = false`, or omit options
+     * entirely.
+     *
+     * @since 1.4.4
+     */
+    public deserialize(buffer: BufferReader, options?: { endian: "little" | "big"; readTypeByte: boolean }): void;
 
     // TODO describe behaviour with options set
 
-    public deserialize(buffer: BufferReader, options?: { endian: "little" | "big"; readId: boolean; readTypeByte: boolean }) {
+    public deserialize(buffer: BufferReader, options?: { endian: "little" | "big"; readTypeByte: boolean }) {
         options ||= {
             endian: "little",
-            readId: true,
             readTypeByte: false,
         };
 
         // TODO refactor to better pattern
         // Inspiration: https://github.com/Anatoly03/pixelwalker.js/blob/9bb3c7e39a45006086a2abae8c515599bd3db835/src/world/block.ts#L201
-
-        // TODO do not allow overwriting id, use static method instead: deserializeFromWorldData
-        // id has to be immutable, and this is a strict constraint
-
-        if (options.readId) {
-            // The new block id of this block instance. If instead the
-            // buffer should not be read, the field `readId` has to be
-            // unset. Then the id is kept as it is.
-            (this as any).id = buffer.readUInt32LE();
-        }
 
         const blockData = BlockData[this.mapping as keyof typeof BlockData] ?? [];
         this.data.length = 0;
@@ -398,7 +489,7 @@ export default class Block {
      *
      * Note, that this packet will not implement the block positions
      * and the layer. This has to be done by the caller.
-     * 
+     *
      * @since 1.4.3
      */
     public toPacket(): WorldBlockPlacedPacket {
