@@ -1,5 +1,5 @@
 import { BlockMap, BlockMapReverse } from "../build/block-mappings.js";
-import BufferReader, { ComponentTypeHeader } from "../util/buffer.js";
+import BufferReader from "../util/buffer.js";
 import { BlockData } from "./block-args.js";
 
 import { create } from "@bufbuild/protobuf";
@@ -259,7 +259,7 @@ export default class Block {
      * id (4 bytes) from the buffer followed by optional block data,
      * where each data entry **skips** the type byte. Little Endian
      * is used in the world data.
-     * 
+     *
      * **The difference between the static and the instance method is
      * that static method will serialize the block and create a new
      * block instance, while the instance method will modify the block.**
@@ -326,7 +326,7 @@ export default class Block {
      *
      * - Block ID is 4 bytes, followed by block-specific data
      * - Numbers are in **Little Endian**, type bytes are omitted
-     * 
+     *
      * @deprecated Set the options to `endian = "little"` and
      * `readTypeByte = false`. The options object will be required
      * in future versions.
@@ -390,17 +390,17 @@ export default class Block {
      *
      * @since 1.4.3
      */
-    public deserialize(buffer: BufferReader, options: { endian: "big"; readTypeByte: true }): void;
+    public deserialize(buffer: BufferReader | WithImplicitCoercion<ArrayBuffer>, options: { endian: "big"; readTypeByte: true }): void;
 
     /**
      * This signature provides a custom signature to deserialize the
      * block with custom options. **If you read this, you are likely
      * using the method wrong.**
-     * 
+     *
      * Deserializes a block from a {@link BufferReader} and converts
      * itself into the block of that type. This particular method will
      * scan block data in big endian format, reading type bytes.
-     * 
+     *
      * For deserialization from world data, use `endian = "big"` and
      * `readTypeByte = true`, for deserialization from packets, use
      * `endian = "little"` and `readTypeByte = false`, or omit options
@@ -408,15 +408,22 @@ export default class Block {
      *
      * @since 1.4.4
      */
-    public deserialize(buffer: BufferReader, options?: { endian: "little" | "big"; readTypeByte: boolean }): void;
+    public deserialize(buffer: BufferReader | WithImplicitCoercion<ArrayBuffer>, options?: { endian: "little" | "big"; readTypeByte: boolean }): void;
 
     // TODO describe behaviour with options set
 
-    public deserialize(buffer: BufferReader, options?: { endian: "little" | "big"; readTypeByte: boolean }) {
+    public deserialize(buffer: BufferReader | WithImplicitCoercion<ArrayBuffer>, options?: { endian: "little" | "big"; readTypeByte: boolean }) {
         options ||= {
             endian: "little",
             readTypeByte: false,
         };
+
+        // If the buffer is not a BufferReader, convert it to one.
+        // We allow implicit coercion to make the method more flexible
+        // with other buffer types.
+        if (!(buffer instanceof BufferReader)) {
+            buffer = BufferReader.from(buffer);
+        }
 
         // TODO refactor to better pattern
         // Inspiration: https://github.com/Anatoly03/pixelwalker.js/blob/9bb3c7e39a45006086a2abae8c515599bd3db835/src/world/block.ts#L201
@@ -444,24 +451,23 @@ export default class Block {
     public serialize(): Buffer;
 
     /**
-     * Serializes the block into a buffer. This is used to convert
-     * the block into a binary format that can be sent over the game
-     * server.
-     *
-     * - Big Endian
-     * - No Id
-     * - Type Byte included
+     * // TODO document
      *
      * @since 1.4.3
      */
-    public serialize(options: { endian: "big"; writeId: false; readTypeByte: true }): Buffer;
+    public serialize(options: { endian: "big"; writeId: false; writeTypeByte: true }): Buffer;
 
-    public serialize(options?: { endian: "little" | "big"; writeId: boolean; readTypeByte: boolean }): Buffer {
+    public serialize(options?: { endian: "little" | "big"; writeId: boolean; writeTypeByte: boolean }): Buffer {
         options ||= {
             endian: "little",
             writeId: true,
-            readTypeByte: false,
+            writeTypeByte: false,
         };
+
+        // TODO writeTypeByte currently unused because it's always true (it's in buffer util)
+        if (!options.writeTypeByte) {
+            console.warn("writeTypeByte was set to false: your program uses unsupported serialization options");
+        }
 
         const buffer: Buffer[] = [];
 
@@ -495,7 +501,7 @@ export default class Block {
     public toPacket(): WorldBlockPlacedPacket {
         return create(WorldBlockPlacedPacketSchema, {
             blockId: this.id,
-            extraFields: this.serialize({ endian: "big", writeId: false, readTypeByte: true }),
+            extraFields: this.serialize({ endian: "big", writeId: false, writeTypeByte: true }),
         });
     }
 }
