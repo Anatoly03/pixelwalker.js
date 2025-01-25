@@ -4,6 +4,7 @@ import { Protocol } from "./index.js";
 import { toBinary, fromBinary, create } from "@bufbuild/protobuf";
 
 import CONFIG from "./config.js";
+import JoinData from "./types/join-data.js";
 
 // The following TypoeScript dark magic is used to extract the
 // event types. The author of theses is Anatoly and if you want
@@ -13,6 +14,11 @@ import CONFIG from "./config.js";
 type WorldEventNames = Protocol.WorldPacket["packet"]["case"];
 type WorldEventData<Name extends WorldEventNames> = Protocol.WorldPacket["packet"] & { case: Name };
 type Events = { [K in WorldEventNames & string]: [WorldEventData<K>["value"]] };
+
+// // Allowed world sizes.
+// // TODO this type system should be refactored to be used runtime or abandoned
+// type AllowedWidth = 636 | 400 | 375 | 350 | 325 | 300 | 275 | 250 | 225 | 200 | 175 | 150 | 125 | 100 | 75 | 50;
+// type AllowedHeight = 400 | 375 | 350 | 325 | 300 | 275 | 250 | 225 | 200 | 175 | 150 | 125 | 100 | 75 | 50;
 
 /**
  * The Game Client is responsible for communication with the
@@ -51,6 +57,15 @@ export default class GameConnection {
      * @since 1.4.1
      */
     private receiver = new EventEmitter<Events>();
+
+    /**
+     * Optional join data that can be sent to the game server
+     * upon connection. This can be used to load an unsaved
+     * world.
+     * 
+     * @since 1.4.4
+     */
+    private joinData: JoinData = {};
 
     /**
      * @returns `true` if the socket is connected to the server.
@@ -200,6 +215,46 @@ export default class GameConnection {
     //
 
     /**
+     * Set the unsaved world flag, the connection should create a new
+     * world, i.e. join the world if it does not exist.
+     * 
+     * // TODO security: set unsaved world flag, abort the connection as error if the joined world is not unsaved
+     * 
+     * @since 1.4.4
+     */
+    public addJoinData(joinData: JoinData): this {
+        // Input Validation. World Height has to be special value or incremental of 25.
+        // TODO input validation for special world 636x400 soon not to be possible
+        const allowedHeight = [400, 375, 350, 325, 300, 275, 250, 225, 200, 175, 150, 125, 100, 75, 50];
+        const allowedWidth = [636, ...allowedHeight];
+
+        if (joinData.world_height && !allowedHeight.includes(joinData.world_height)) {
+            throw new Error(`Invalid world height: ${joinData.world_height}, expected one of ${allowedHeight.join(", ")}`);
+        }
+
+        if (joinData.world_width && !allowedWidth.includes(joinData.world_width)) {
+            throw new Error(`Invalid world width: ${joinData.world_width}, expected one of ${allowedWidth.join(", ")}`);
+        }
+
+        this.joinData = { ...this.joinData, ...joinData };
+
+        return this;
+    }
+
+    /**
+     * Set the unsaved world flag, the connection should create a new
+     * world, i.e. join the world if it does not exist.
+     * 
+     * // TODO security: set unsaved world flag, abort the connection as error if the joined world is not unsaved
+     * 
+     * @since 1.4.4
+     */
+    public unsaved(world_title: string, world_width: number, world_height: number): this {
+        this.addJoinData({ world_title, world_width, world_height });
+        return this;
+    }
+
+    /**
      * Binds the socket connection to the game server. The method
      * will create a new WebSocket instance and connect to the
      * game room. It will also start processing the incoming
@@ -209,6 +264,13 @@ export default class GameConnection {
      */
     public bind() {
         let url = CONFIG.GAME_SERVER_SOCKET + "/room/" + this.joinKey;
+
+        // If join data is set, append it to the url.
+        if (Object.keys(this.joinData).length) {
+            // Encode the join data to base64 and append it to the url.
+            // This is how the server accepts the join data.
+            url += `?joinData=${btoa(JSON.stringify(this.joinData))}`;
+        }
 
         // TODO append join data to url
 

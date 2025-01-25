@@ -3,6 +3,7 @@ import EventEmitter from "events";
 import GameConnection from "./connection.js";
 import PlayerMap from "./players/map.js";
 import GameWorld from "./world/world.js";
+import JoinData from "./types/join-data.js";
 
 /**
  *
@@ -35,7 +36,7 @@ export default class GameClient {
      * The event emitter is used to emit events when the
      * socket receives a message. The events are then
      * distributed to the listeners.
-     * 
+     *
      * @since 1.4.0
      */
     private receiver = new EventEmitter<Events>();
@@ -50,21 +51,21 @@ export default class GameClient {
      * is synced with the server and is used to manage the world
      * players. If you want to get a snapshot of players without
      * interference use {@link PlayerMap.toArray}
-     * 
+     *
      * @since 1.4.1
      */
     public players = new PlayerMap();
 
     /**
      * // TODO document
-     * 
+     *
      * @since 1.4.2
      */
     public world: GameWorld;
 
     /**
      * @returns `true` if the connection to the server is running.
-     * 
+     *
      * @since 1.4.0
      */
     public get connected(): boolean {
@@ -121,7 +122,7 @@ export default class GameClient {
     /**
      * Sends a chat message to the game server. Internally this invokes
      * the `playerChatPacket` event.
-     * 
+     *
      * @since 1.4.1
      */
     public sendChat(message: string) {
@@ -133,6 +134,32 @@ export default class GameClient {
     // METHODS
     //
     //
+
+    /**
+     * Set the unsaved world flag, the connection should create a new
+     * world, i.e. join the world if it does not exist.
+     * 
+     * This is a wrapper method for {@link GameConnection#addJoinData}.
+     *
+     * @since 1.4.4
+     */
+    public addJoinData(joinData: JoinData): this {
+        this.connection.addJoinData(joinData);
+        return this;
+    }
+
+    /**
+     * Set the unsaved world flag, the connection should create a new
+     * world, i.e. join the world if it does not exist.
+     * 
+     * This is a wrapper method for {@link GameConnection#unsaved}.
+     * 
+     * @since 1.4.4
+     */
+    public unsaved(world_title: string, world_width: number, world_height: number): this {
+        this.connection.unsaved(world_title, world_width, world_height);
+        return this;
+    }
 
     /**
      * Binds the socket connection to the game server. The method
