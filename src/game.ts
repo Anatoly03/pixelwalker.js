@@ -4,6 +4,7 @@ import GameConnection from "./connection.js";
 import PlayerMap from "./players/map.js";
 import GameWorld from "./world/world.js";
 import JoinData from "./types/join-data.js";
+import GamePlayer from "./types/game-player.js";
 
 /**
  *
@@ -64,13 +65,48 @@ export default class GameClient {
     public world: GameWorld;
 
     /**
-     * @returns `true` if the connection to the server is running.
-     *
-     * @since 1.4.0
+     * Array of commands that are registered. The commands are
+     * emit when a player sends a command-prefixed chat.
+     * 
+     * @since 1.4.6
      */
-    public get connected(): boolean {
-        return this.connection.connected;
-    }
+    private commands: { command: string; callback: (player: GamePlayer, ...args: string[]) => void }[] = [];
+
+    /**
+     * The prefix that is used to identify a user-to-bot command
+     * in the chat.
+     * 
+     * @since 1.4.6
+     */
+    public COMMAND_PREFIXES = ['!', '.'];
+
+    //
+    //
+    // STATIC
+    //
+    //
+
+    /**
+     * This static variable is used for command argument parsing. You
+     * can test it at a website like [Regex101](https://regex101.com/)
+     *
+     * The regular expression consists of three components: a double
+     * quoted string, a single quoted string and a word. The string
+     * components consists of a bracket structure to match for beginning
+     * and end of a string. The center part `(\\"|\\.|.)*?` matches for
+     * string escapes non-greedy. The word component `\S+` matches for
+     * a word (any combination of non-whitespace characters.)
+     * 
+     * @example
+     * 
+     * Here is an example of a command and the resulting matches.
+     * 
+     * ```
+     * !test "Hello, \"World!\"" 256 wonderful-evening! --help
+     *  ^^^^ ^^^^^^^^^^^^^^^^^^^ ^^^ ^^^^^^^^^^^^^^^^^^ ^^^^^^
+     * ```
+     */
+    private static CommandLineParser = /"(\\"|\\.|.)*?"|'(\\'|\\.|.)*?'|\S+/mg;
 
     /**
      * // TODO document
@@ -80,6 +116,21 @@ export default class GameClient {
         this.world = new GameWorld(this);
         this.players.addListeners(this);
         this.addListeners();
+    }
+
+    //
+    //
+    // GETTERS
+    //
+    //
+
+    /**
+     * @returns `true` if the connection to the server is running.
+     *
+     * @since 1.4.0
+     */
+    public get connected(): boolean {
+        return this.connection.connected;
     }
 
     //
@@ -98,6 +149,22 @@ export default class GameClient {
         // Upon player init received, send init.
         this.connection.listen("playerInitPacket", () => {
             this.receiver.emit("Init");
+        });
+
+        this.connection.listen("playerChatPacket", (data) => {
+            const prefix = this.COMMAND_PREFIXES.find(i => data.message.startsWith(i));
+            if (!prefix) return;
+
+            const [cmd, ...args] = data.message.substring(prefix.length).match(GameClient.CommandLineParser) ?? [];
+            if (!cmd) return;
+
+            const player = this.players[data.playerId];
+            if (!player) return;
+
+            this.commands.forEach((command) => {
+                if (command.command !== cmd) return;
+                command.callback(player, ...args);
+            });
         });
     }
 
@@ -131,19 +198,20 @@ export default class GameClient {
 
     //
     //
-    // METHODS
+    // BUILDER METHODS
     //
     //
 
     /**
      * Set the unsaved world flag, the connection should create a new
      * world, i.e. join the world if it does not exist.
-     * 
+     *
      * This is a wrapper method for {@link GameConnection#addJoinData}.
      *
      * @since 1.4.4
      */
     public addJoinData(joinData: JoinData): this {
+        if (this.connection.connected) throw new Error("tried to add join data after connection was established");
         this.connection.addJoinData(joinData);
         return this;
     }
@@ -151,15 +219,22 @@ export default class GameClient {
     /**
      * Set the unsaved world flag, the connection should create a new
      * world, i.e. join the world if it does not exist.
-     * 
+     *
      * This is a wrapper method for {@link GameConnection#unsaved}.
-     * 
+     *
      * @since 1.4.4
      */
     public unsaved(world_title: string, world_width: number, world_height: number): this {
+        if (this.connection.connected) throw new Error("tried to add unsaved world flag after connection was established");
         this.connection.unsaved(world_title, world_width, world_height);
         return this;
     }
+
+    //
+    //
+    // METHODS
+    //
+    //
 
     /**
      * Binds the socket connection to the game server. The method
@@ -180,5 +255,17 @@ export default class GameClient {
      */
     public close() {
         this.connection.close();
+    }
+
+    /**
+     * Registers a command. The command is a string that is
+     * sent to the server. The server will then process the
+     * command and return a response.
+     *
+     * @since 1.4.6
+     */
+    public registerCommand(command: string, args: { callback: (player: GamePlayer, ...args: string[]) => {} }): this {
+        this.commands.push({ command, ...args });
+        return this;
     }
 }

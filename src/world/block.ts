@@ -57,17 +57,6 @@ export default class Block {
     //
 
     /**
-     * This static constant contains the mappings of block names to
-     * block IDs. This is used to map persistant block names to game
-     * blocks.
-     *
-     * @deprecated Use {@link Palette} instead.
-     *
-     * @since 1.4.2
-     */
-    public static readonly Map: typeof Mappings = Mappings;
-
-    /**
      * This static constant contains the palette of block mappings,
      * the entry at index `i` is the block name of the block with
      * the id `i`.
@@ -75,16 +64,6 @@ export default class Block {
      * @since 1.4.5
      */
     public static readonly Palette: typeof Palette = Palette;
-
-    /**
-     * This static constant contains the number of blocks in the game.
-     * This is used for block ID validation.
-     *
-     * @deprecated Use {@link Palette.length} instead.
-     *
-     * @since 1.4.2
-     */
-    public static readonly BlockCount = Palette.length;
 
     /**
      * This method is used to create a block from a block id.
