@@ -1,4 +1,5 @@
 import BufferReader from "../util/buffer.js";
+import StructureParser, { ParserSignature } from "./structure.parser.js";
 
 import Block from "./block.js";
 import Layer from "./layer.js";
@@ -34,7 +35,7 @@ export default class Structure {
 
     /**
      * The number of layers in a structure.
-     * 
+     *
      * @since 1.4.3
      */
     public static readonly LAYER_COUNT = 2;
@@ -85,7 +86,7 @@ export default class Structure {
 
     /**
      * Prints the location of matching blocks to the console.
-     * 
+     *
      * @deprecated
      *
      * @since 1.4.2
@@ -107,16 +108,16 @@ export default class Structure {
      * blocks to empty. While "cleared structure" and "cleared world" sound
      * similar, they are not quite the same. When a {@link GameWorld} is
      * cleared, the foreground layer remains with a border of gray basic blocks.
-     * 
+     *
      * This method clears all blocks in all layers. If you want to clear
      * a world like the behaviour in PixelWalker, it is recommended to
      * use the following pseudo code:
-     * 
+     *
      * ```typescript
      * structure.clear();
      * structure.foreground.set_border(Block.fromMapping('gray_basic_block'));
      * ```
-     * 
+     *
      * @since 1.4.2
      */
     public clear() {
@@ -129,11 +130,11 @@ export default class Structure {
      * Copies a subset of the structure into a new structure.
      * If this structure is managed by a {@link GameWorld}, the
      * new structure will not be synced by the world.
-     * 
+     *
      * The dimensions of the new structure are given by the axis
      * difference. You can copy beyond the world boundaries,
      * which will fill the missing blocks with empty blocks.
-     * 
+     *
      * @since 1.4.3
      */
     public copy(x1: number, y1: number, x2: number, y2: number): Structure {
@@ -150,12 +151,24 @@ export default class Structure {
         }
 
         const world = new Structure(x2 - x1 + 1, y2 - y1 + 1);
-        
+
         for (let i = 0; i < Structure.LAYER_COUNT; i++) {
             (world as any)[i] = this[i].copy(x1, y1, x2, y2);
         }
 
         return world;
+    }
+
+    /**
+     * Iterates over all layers in the structure. Returns a tuple
+     * of index and {@link Layer} reference.
+     *
+     * @since 1.4.5
+     */
+    public *layers() {
+        for (let i = 0; i < Structure.LAYER_COUNT; i++) {
+            yield [i, this[i]] as const;
+        }
     }
 
     //
@@ -169,7 +182,7 @@ export default class Structure {
      *
      * @since 1.4.2
      */
-    public deserialize(source: WithImplicitCoercion<ArrayBuffer> | Buffer) {
+    public deserialize(source: WithImplicitCoercion<ArrayBuffer> | Buffer): this {
         const buffer = BufferReader.from(source);
 
         for (let i = 0; i < Structure.LAYER_COUNT; i++) {
@@ -179,6 +192,8 @@ export default class Structure {
         if (buffer.length) {
             throw new Error(`buffer length is not zero, outdated or corrupt world serialization: ${buffer.length}`);
         }
+
+        return this;
     }
 
     //
@@ -188,8 +203,24 @@ export default class Structure {
     //
 
     /**
+     * Create a new structure from a parser implementation.
+     *
+     * @since 1.4.5
+     */
+    public static parser<P extends ParserSignature>(parser: P): StructureParser<P> {
+        return new StructureParser(parser);
+    }
+
+    /**
      * Read the structure from a parser implementation and
      * return a Structure instance. *The default parser is JSON.*
+     *
+     * @deprecated
+     *
+     * ```ts
+     * // use this instead
+     * Structure.parser(JSON).fromString(value);
+     * ```
      *
      * @example
      *
@@ -206,6 +237,13 @@ export default class Structure {
      * Read the structure from a JSON parser implementation and
      * return a Structure instance.
      *
+     * @deprecated
+     *
+     * ```ts
+     * // use this instead
+     * Structure.parser(JSON).fromString(value);
+     * ```
+     *
      * @example
      *
      * ```ts
@@ -221,6 +259,13 @@ export default class Structure {
      * Read the structure from a custom parser implementation and
      * return a Structure instance.
      *
+     * @deprecated
+     *
+     * ```ts
+     * // use this instead
+     * Structure.parser(YAML).fromString(value);
+     * ```
+     *
      * @example
      *
      * ```ts
@@ -232,15 +277,22 @@ export default class Structure {
      *
      * @since 1.4.2
      */
-    public static fromString(value: string, parser: { parse(v: string): any }): Structure;
+    public static fromString(value: string, parser: ParserSignature): Structure;
 
-    public static fromString(value: string, parser: { parse(v: string): any } = JSON): Structure {
-        throw new Error("Not implemented");
+    public static fromString(value: string, parser: ParserSignature = JSON): Structure {
+        return this.parser(parser).fromString(value);
     }
 
     /**
      * Write the structure into a writeable stream and return an
      * JSON string representation of the structure.
+     *
+     * @deprecated
+     *
+     * ```ts
+     * // use this instead
+     * Structure.parser(JSON).toString(value);
+     * ```
      *
      * @example
      *
@@ -258,6 +310,13 @@ export default class Structure {
      * Write the structure into a writeable stream and return a custom
      * object encoding string.
      *
+     * @deprecated
+     *
+     * ```ts
+     * // use this instead
+     * Structure.parser(YAML).toString(value);
+     * ```
+     *
      * @example
      *
      * ```ts
@@ -270,9 +329,9 @@ export default class Structure {
      *
      * @since 1.4.2
      */
-    public toString(parser: { stringify(v: any): string }): string;
+    public toString(parser: ParserSignature): string;
 
-    public toString(parser: { stringify(v: any): string }): string {
-        throw new Error("Not implemented");
+    public toString(parser: ParserSignature): string {
+        return Structure.parser(parser).toString(this);
     }
 }

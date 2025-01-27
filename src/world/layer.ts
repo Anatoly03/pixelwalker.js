@@ -78,10 +78,8 @@ export default class Layer {
      * @since 1.4.2
      */
     public clear() {
-        for (let x = 0; x < this.width; x++) {
-            for (let y = 0; y < this.height; y++) {
-                this[x][y] = Block.fromId(0);
-            }
+        for (const [x, y, _] of this.blocks()) {
+            this[x][y] = Block.fromId(0);
         }
     }
 
@@ -111,13 +109,26 @@ export default class Layer {
 
         const layer = new Layer(x2 - x1 + 1, y2 - y1 + 1);
 
-        for (let x = x1; x <= x2; x++)
-            for (let y = y1; y <= y2; y++) {
-                if (x < 0 || y < 0 || x >= this.width || y >= this.height) continue;
-                layer[x - x1][y - y1] = this[x][y].copy();
-            }
+        for (const [x, y, block] of this.blocks()) {
+            if (x < 0 || y < 0 || x >= this.width || y >= this.height) continue;
+            layer[x - x1][y - y1] = block.copy();
+        }
 
         return layer;
+    }
+
+    /**
+     * Iterates over all blocks in the structure. Returns a triple
+     * of their position and {@link Block} reference.
+     *
+     * @since 1.4.5
+     */
+    public *blocks() {
+        for (let x = 0; x < this.width; x++) {
+            for (let y = 0; y < this.height; y++) {
+                yield [x, y, this[x][y]] as const;
+            }
+        }
     }
 
     /**
@@ -142,13 +153,11 @@ export default class Layer {
 
         let positions: LayerPosition[] = [];
 
-        for (let x = 0; x < this.width; x++) {
-            for (let y = 0; y < this.height; y++) {
-                if (this[x][y].id !== from.id) continue;
-                // TODO if block data is stored, allow strict checking
+        for (const [x, y, block] of this.blocks()) {
+            if (block.id !== from.id) continue;
+            // TODO if block data is stored, allow strict checking
 
-                positions.push({ x, y });
-            }
+            positions.push({ x, y });
         }
 
         return positions;
@@ -205,10 +214,8 @@ export default class Layer {
      * @since 1.4.2
      */
     public deserialize(buffer: BufferReader) {
-        for (let x = 0; x < this.width; x++) {
-            for (let y = 0; y < this.height; y++) {
-                this[x][y] = Block.deserialize(buffer, { endian: "little", readTypeByte: false });
-            }
+        for (const [x, y, _] of this.blocks()) {
+            this[x][y] = Block.deserialize(buffer, { endian: "little", readTypeByte: false });
         }
     }
 }
