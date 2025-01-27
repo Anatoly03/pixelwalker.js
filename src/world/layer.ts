@@ -60,6 +60,20 @@ export default class Layer {
     //
 
     /**
+     * Iterates over all blocks in the structure. Returns a triple
+     * of their position and {@link Block} reference.
+     *
+     * @since 1.4.5
+     */
+    public *blocks() {
+        for (let x = 0; x < this.width; x++) {
+            for (let y = 0; y < this.height; y++) {
+                yield [x, y, this[x][y]] as const;
+            }
+        }
+    }
+
+    /**
      * This method is used to clear the layer. This sets all blocks
      * to empty. While "cleared layer" and "cleared world" sound similar,
      * they are not quite the same. When a {@link GameWorld} is cleared,
@@ -118,17 +132,22 @@ export default class Layer {
     }
 
     /**
-     * Iterates over all blocks in the structure. Returns a triple
-     * of their position and {@link Block} reference.
-     *
+     * Compare two structures for deep equality: Block and block
+     * data must equal.
+     * 
+     * @param other Another structure, against which deep
+     * quality is compared.
+     * 
      * @since 1.4.5
      */
-    public *blocks() {
-        for (let x = 0; x < this.width; x++) {
-            for (let y = 0; y < this.height; y++) {
-                yield [x, y, this[x][y]] as const;
-            }
+    public deepEquals(other: Layer): boolean {
+        if (this.width !== other.width || this.height !== other.height) return false;
+
+        for (const [x, y, block] of this.blocks()) {
+            if (!block.equals(other[x][y])) return false;
         }
+
+        return true;
     }
 
     /**

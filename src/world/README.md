@@ -24,6 +24,6 @@ Every layer is on the other hand an array of blocks, which can be separated by s
 The assertion, that there are `width * height` blocks, does **not** hold, see below.
 A block starts with its' relative id indexing the `palette`, followed by either:
 
-- It's block data following the colon `:`
-  - Block data is separated by the comma `,` and it holds, that block data is decoded in such a way that splitting by comma is secure, save the bracket fragments.
+- It's block data following the colon `[`
+  - Block data is separated by the comma `,` and it holds, that block data is decoded in such a way that splitting by comma is secure, save the bracket fragments. The scan of block data ends with the character `]`
 - or a repetition marker `*`, showing how many blocks follow `1*3` is the same as `1 1 1`

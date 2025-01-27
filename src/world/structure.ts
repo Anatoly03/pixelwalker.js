@@ -1,5 +1,5 @@
 import BufferReader from "../util/buffer.js";
-import StructureParser, { ParserSignature } from "./structure.parser.js";
+import StructureParser, { ParserSignature } from "./parser/index.js";
 
 import Block from "./block.js";
 import Layer from "./layer.js";
@@ -157,6 +157,23 @@ export default class Structure {
         }
 
         return world;
+    }
+
+    /**
+     * Compare two structures for deep equality: Block and block
+     * data must equal.
+     *
+     * @param other Another structure, against which deep
+     * quality is compared.
+     *
+     * @since 1.4.5
+     */
+    public deepEquals(other: Structure): boolean {
+        for (const [index, layer] of this.layers()) {
+            if (!layer.deepEquals(other[index])) return false;
+        }
+
+        return true;
     }
 
     /**
