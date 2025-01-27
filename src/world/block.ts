@@ -83,8 +83,9 @@ export default class Block {
     /**
      * // TODO document
      */
-    protected constructor(id: number) {
+    private constructor(id: number) {
         this.id = id;
+        this.data.length = BlockData[BlockMapReverse[this.id] as keyof typeof BlockData]?.length ?? 0;
     }
 
     //
@@ -456,6 +457,15 @@ export default class Block {
      * @since 1.4.3
      */
     public serialize(options: { endian: "big"; writeId: false; writeTypeByte: true }): Buffer;
+
+    /**
+     * **You are using custom serialization options. These are not used
+     * in the game networking, the world block placed message data or the
+     * world data in init.**
+     *
+     * @since 1.4.3
+     */
+    public serialize(options: { endian: "little" | "big"; writeId: boolean; writeTypeByte: boolean }): Buffer;
 
     public serialize(options?: { endian: "little" | "big"; writeId: boolean; writeTypeByte: boolean }): Buffer {
         options ||= {
