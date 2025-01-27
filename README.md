@@ -3,10 +3,6 @@
 
 [NPM](https://www.npmjs.com/package/pixelwalker.js) | [GitHub](https://github.com/Anatoly03/pixelwalker.js) | [Protocol](https://github.com/PixelWalkerGame/Protocol)
 
-> **THIS MODULE IS BEING REWRITTEN**
-> 
-> It is currently not usable.
-
 ```sh
 npm i --save pixelwalker.js
 ```

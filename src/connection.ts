@@ -113,15 +113,11 @@ export default class GameConnection {
             this.send("ping");
         });
 
-        // Check if running in Node environment, if so, attach process-
-        // related events.
-        if (CONFIG._IS_NODEJS_PROCESS(process)) {
-            // If running in Node environment, close the socket when
-            // the process is interrupted.
-            process.on("SIGINT", (signals) => {
-                this.close();
-            });
-        }
+        // If running in Node environment, close the socket when
+        // the process is interrupted.
+        globalThis?.process.on("SIGINT", (signals) => {
+            this.close();
+        });
     }
 
     /**
