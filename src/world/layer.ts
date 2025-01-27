@@ -1,4 +1,4 @@
-import { BlockMapReverse } from "../build/block-mappings.js";
+import { Palette } from "../build/block-mappings.js";
 import LayerPosition from "../types/layer-position.js";
 import BufferReader from "../util/buffer.js";
 
@@ -158,7 +158,7 @@ export default class Layer {
      *
      * @since 1.4.3
      */
-    public listAll(from: (typeof BlockMapReverse)[keyof typeof BlockMapReverse]): LayerPosition[];
+    public listAll(from: (typeof Palette)[number]): LayerPosition[];
 
     public listAll(from: string | Block): LayerPosition[] {
         switch (typeof from) {
@@ -190,7 +190,7 @@ export default class Layer {
      *
      * @since 1.4.3
      */
-    public replaceAll(from: (typeof BlockMapReverse)[keyof typeof BlockMapReverse], to: Block): LayerPosition[];
+    public replaceAll(from: (typeof Palette)[number], to: Block): LayerPosition[];
 
     public replaceAll(from: string, to: Block): LayerPosition[] {
         const positions = this.listAll(from);
@@ -234,7 +234,12 @@ export default class Layer {
      */
     public deserialize(buffer: BufferReader) {
         for (const [x, y, _] of this.blocks()) {
-            this[x][y] = Block.deserialize(buffer, { endian: "little", readTypeByte: false });
+            try {
+                this[x][y] = Block.deserialize(buffer, { endian: "little", readTypeByte: false });
+            } catch (e) {
+                console.error(`error deserializing at ${x}, ${y}`);
+                throw e;
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-import { BlockMap, BlockMapReverse } from "../build/block-mappings.js";
+import { Mappings, Palette } from "../build/block-mappings.js";
 import BufferReader from "../util/buffer.js";
 import { BlockData } from "./block-args.js";
 
@@ -42,17 +42,30 @@ export default class Block {
      * block IDs. This is used to map persistant block names to game
      * blocks.
      *
+     * @deprecated Use {@link Palette} instead.
+     *
      * @since 1.4.2
      */
-    public static readonly Map: typeof BlockMap = BlockMap;
+    public static readonly Map: typeof Mappings = Mappings;
+
+    /**
+     * This static constant contains the palette of block mappings,
+     * the entry at index `i` is the block name of the block with
+     * the id `i`.
+     *
+     * @since 1.4.5
+     */
+    public static readonly Palette: typeof Palette = Palette;
 
     /**
      * This static constant contains the number of blocks in the game.
      * This is used for block ID validation.
      *
+     * @deprecated Use {@link Palette.length} instead.
+     *
      * @since 1.4.2
      */
-    public static readonly BlockCount = Object.keys(BlockMap).length;
+    public static readonly BlockCount = Palette.length;
 
     /**
      * This method is used to create a block from a block id.
@@ -62,8 +75,7 @@ export default class Block {
      * @since 1.4.2
      */
     public static fromId(id: number): Block {
-        if (id < 0 || this.BlockCount <= id) throw new Error(`block id ${id} is out of range: expected 0-${this.BlockCount - 1}`);
-
+        if (id < 0 || this.Palette.length <= id) throw new Error(`block id ${id} is out of range: expected 0-${this.Palette.length - 1}`);
         return new Block(id);
     }
 
@@ -74,9 +86,9 @@ export default class Block {
      *
      * @since 1.4.2
      */
-    public static fromMapping(mapping: (typeof BlockMapReverse)[keyof typeof BlockMapReverse]): Block {
-        const id = BlockMap[mapping];
-        if (id === undefined) throw new Error(`block mapping ${mapping} is not found in the block map`);
+    public static fromMapping(mapping: (typeof Palette)[number]): Block {
+        const id = Palette.indexOf(mapping);
+        if (id < 0) throw new Error(`block mapping ${mapping} is not found in the global block palette`);
         return new Block(id);
     }
 
@@ -85,7 +97,7 @@ export default class Block {
      */
     private constructor(id: number) {
         this.id = id;
-        this.data.length = BlockData[BlockMapReverse[this.id] as keyof typeof BlockData]?.length ?? 0;
+        this.data.length = BlockData[Palette[this.id] as keyof typeof BlockData]?.length ?? 0;
     }
 
     //
@@ -205,10 +217,10 @@ export default class Block {
      *
      * @since 1.4.2
      */
-    public get mapping(): (typeof BlockMapReverse)[keyof typeof BlockMapReverse] {
+    public get mapping(): (typeof Palette)[number] {
         // TODO lazy save the block mapping.
 
-        return BlockMapReverse[this.id];
+        return Palette[this.id];
     }
 
     //
@@ -286,16 +298,21 @@ export default class Block {
      *
      * @since 1.4.4
      */
-    public static deserialize(buffer: BufferReader, options: { endian: "little"; readTypeByte: false }): Block;
+    public static deserialize(buffer: BufferReader, options: { endian: "little"; readTypeByte: false; palette?: string[] }): Block;
 
-    public static deserialize(buffer: BufferReader, options?: { endian: "little" | "big"; readTypeByte: boolean }): Block {
-        options ||= {
-            endian: "little",
-            readTypeByte: false,
-        };
+    public static deserialize(buffer: BufferReader, options: { endian?: "little" | "big"; readTypeByte?: boolean; palette?: string[] } = {}): Block {
+        options.endian ??= "little";
+        options.readTypeByte ??= false;
+        options.palette ??= Palette;
+        
+        const blockLocalId = buffer.readUInt32LE();
+        const blockMapping = options.palette[blockLocalId];
 
-        const blockId = buffer.readUInt32LE();
-        const block = new Block(blockId);
+        if (blockMapping === undefined) {
+            throw new Error(`block mapping ${blockMapping} (derived from block id ${blockLocalId} in the ${Palette.length == options.palette.length ? "global" : "custom provided"} block palette) is not found`);
+        }
+
+        const block = Block.fromMapping(blockMapping);
 
         block.deserialize(buffer, options);
 
@@ -409,15 +426,13 @@ export default class Block {
      *
      * @since 1.4.4
      */
-    public deserialize(buffer: BufferReader | WithImplicitCoercion<ArrayBuffer>, options?: { endian: "little" | "big"; readTypeByte: boolean }): void;
+    public deserialize(buffer: BufferReader | WithImplicitCoercion<ArrayBuffer>, options?: { endian?: "little" | "big"; readTypeByte?: boolean }): void;
 
     // TODO describe behaviour with options set
 
-    public deserialize(buffer: BufferReader | WithImplicitCoercion<ArrayBuffer>, options?: { endian: "little" | "big"; readTypeByte: boolean }) {
-        options ||= {
-            endian: "little",
-            readTypeByte: false,
-        };
+    public deserialize(buffer: BufferReader | WithImplicitCoercion<ArrayBuffer>, options: { endian?: "little" | "big"; readTypeByte?: boolean } = {}) {
+        options.endian ??= "little";
+        options.readTypeByte ??= false;
 
         // If the buffer is not a BufferReader, convert it to one.
         // We allow implicit coercion to make the method more flexible
@@ -465,14 +480,13 @@ export default class Block {
      *
      * @since 1.4.3
      */
-    public serialize(options: { endian: "little" | "big"; writeId: boolean; writeTypeByte: boolean }): Buffer;
+    public serialize(options: { endian: "little" | "big"; writeId: boolean; writeTypeByte: boolean; palette?: string[] }): Buffer;
 
-    public serialize(options?: { endian: "little" | "big"; writeId: boolean; writeTypeByte: boolean }): Buffer {
-        options ||= {
-            endian: "little",
-            writeId: true,
-            writeTypeByte: false,
-        };
+    public serialize(options: { endian?: "little" | "big"; writeId?: boolean; writeTypeByte?: boolean; palette?: string[] } = {}): Buffer {
+        options.endian ??= "little";
+        options.writeId ??= false;
+        options.writeTypeByte ??= false;
+        options.palette ??= Palette;
 
         // TODO writeTypeByte currently unused because it's always true (it's in buffer util)
         if (!options.writeTypeByte) {
@@ -483,7 +497,16 @@ export default class Block {
 
         if (options.writeId) {
             const idBuffer = Buffer.alloc(4);
-            idBuffer.writeUInt32LE(this.id);
+            const id = options.palette.indexOf(this.mapping);
+
+            // If the id is not mapped on the palette, we deal
+            // with a custom palette that did not define a mapping
+            // for this block.
+            if (id < 0) {
+                throw new Error(`block mapping ${this.mapping} is not found in the ${Palette.length == options.palette.length ? "global" : "custom provided"} block palette`);
+            }
+
+            idBuffer.writeUInt32LE(id);
             buffer.push(idBuffer);
         }
 

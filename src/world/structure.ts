@@ -203,7 +203,12 @@ export default class Structure {
         const buffer = BufferReader.from(source);
 
         for (let i = 0; i < Structure.LAYER_COUNT; i++) {
-            this[i].deserialize(buffer);
+            try {
+                this[i].deserialize(buffer);
+            } catch (e) {
+                console.error(`error deserializing at ${i == 0 ? "background" : "foreground"} layer`);
+                throw e;
+            }
         }
 
         if (buffer.length) {
