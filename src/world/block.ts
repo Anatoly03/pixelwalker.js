@@ -466,6 +466,8 @@ export default class Block {
      * `readTypeByte = true`, for deserialization from packets, use
      * `endian = "little"` and `readTypeByte = false`, or omit options
      * entirely.
+     * 
+     * @deprecated set the options
      *
      * @since 1.4.4
      */
@@ -520,6 +522,8 @@ export default class Block {
      * **You are using custom serialization options. These are NOT used
      * in the game networking, the world block placed message data or the
      * world data in init.**
+     * 
+     * @deprecated set the options
      *
      * @since 1.4.3
      */
