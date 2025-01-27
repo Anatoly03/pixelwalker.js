@@ -169,7 +169,7 @@ export default class BufferReader {
         const lengthByteCount = this.length7BitInt(stringByteLen);
 
         const prefix = BufferReader.alloc(1 + lengthByteCount);
-        prefix.writeUInt8(ComponentTypeHeader.String);
+        prefix.writeUInt8(ComponentTypeHeader.ByteArray);
         prefix.write7BitInt(lengthByteCount);
 
         return Buffer.concat([prefix.toBuffer(), buffer]);

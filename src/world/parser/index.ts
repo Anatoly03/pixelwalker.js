@@ -1,15 +1,20 @@
 import Structure from "../structure.js";
-import * as v2 from  './v2.js'
+import * as v2 from "./v2.js";
 
 /**
  * The signature of a stringifier object. This is used to
  * generalize JSON and YAML stringifiers.
+ *
+ * @since 1.4.5
  */
 export type ParserSignature = {
     parse(v: string): any;
     stringify(v: any): string;
 };
 
+/**
+ * @since 1.4.5
+ */
 export type StructureData = {
     generator: string;
     meta: Record<string, any>;
@@ -17,7 +22,7 @@ export type StructureData = {
     height: number;
     palette: string[];
     data: string;
-}
+};
 
 /**
  * Represents a structure in the world.
@@ -35,14 +40,18 @@ export default class StructureParser<Parser extends ParserSignature = JSON> {
 
     /**
      * Sets the file version of the parser
+     *
+     * @since 1.4.5
      */
     public static readonly FILE_VERSION = 2;
 
     /**
      * List of supported parser.
+     *
+     * @since 1.4.5
      */
     private static PARSERS = {
-        'pixelwalker.js/v2': v2,
+        "pixelwalker.js/v2": v2,
     } as const;
 
     //
@@ -83,17 +92,17 @@ export default class StructureParser<Parser extends ParserSignature = JSON> {
      * Generate a decoded {@link String} from a {@link Structure}
      *
      * @param input The textual input encoding the structure. This
-     * can be in a custom format, depending on the {@link Parser} 
+     * can be in a custom format, depending on the {@link Parser}
      * generic.
      */
     public toString(input: Structure, options: { generator?: keyof typeof StructureParser.PARSERS } = {}): string {
-        options.generator ??= `pixelwalker.js/v${StructureParser.FILE_VERSION}`;
+        const generatorName = options.generator || `pixelwalker.js/v${StructureParser.FILE_VERSION}`;
 
-        if (!(options.generator in StructureParser.PARSERS)) {
+        if (!(generatorName in StructureParser.PARSERS)) {
             throw new Error("Unsupported generator: " + options.generator);
         }
-        
-        const generator = StructureParser.PARSERS[options.generator as keyof typeof StructureParser.PARSERS];
+
+        const generator = StructureParser.PARSERS[generatorName];
         const file = generator.fromStructure(input);
         return this.parser.stringify(file);
     }
@@ -102,19 +111,18 @@ export default class StructureParser<Parser extends ParserSignature = JSON> {
      * Generate a {@link Structure} from a decoded {@link String}.
      *
      * @param input The textual input encoding the structure. This
-     * can be in a custom format, depending on the {@link Parser} 
+     * can be in a custom format, depending on the {@link Parser}
      * generic:
      */
-    public fromString(input: string): Structure {
+    public fromString(input: string, options: { generator?: keyof typeof StructureParser.PARSERS } = {}): Structure {
         const object: StructureData = this.parser.parse(input);
+        const generatorName = options.generator || (object.generator as keyof typeof StructureParser.PARSERS) || `pixelwalker.js/v${StructureParser.FILE_VERSION}`;
 
-        if (typeof object.generator !== "string") {
-            throw new Error("Generator not specified in the file.");
-        } else if (!(object.generator in StructureParser.PARSERS)) {
+        if (!(generatorName in StructureParser.PARSERS)) {
             throw new Error("Unsupported generator: " + object.generator);
         }
 
-        const generator = StructureParser.PARSERS[object.generator as keyof typeof StructureParser.PARSERS];
+        const generator = StructureParser.PARSERS[generatorName];
         // generator.validate(object);
         // generator.migrate(object);
         return generator.toStructure(object);

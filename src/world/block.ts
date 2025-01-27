@@ -1,9 +1,28 @@
 import { Mappings, Palette } from "../build/block-mappings.js";
-import BufferReader from "../util/buffer.js";
+import BufferReader, { ComponentTypeHeader } from "../util/buffer.js";
 import { BlockData } from "./block-args.js";
 
 import { create } from "@bufbuild/protobuf";
 import { WorldBlockPlacedPacket, WorldBlockPlacedPacketSchema } from "../protocol/world_pb.js";
+
+/**
+ * @since 1.4.5
+ */
+export type BlockDeserializationOptions = {
+    endian?: "little" | "big";
+    readTypeByte?: boolean;
+    palette?: string[];
+};
+
+/**
+ * @since 1.4.5
+ */
+export type BlockSerializationOptions = {
+    endian?: "little" | "big";
+    writeId?: boolean;
+    writeTypeByte?: boolean;
+    palette?: string[];
+};
 
 /**
  * @since 1.4.2
@@ -248,13 +267,23 @@ export default class Block {
      * their block data is equal.
      *
      * @since 1.4.3
+     * 
+     * @since 1.4.5 fixed a bug where buffer comparison always failed
      */
     public equals(other: Block): boolean {
         if (this.id !== other.id) return false;
         if (this.data.length !== other.data.length) return false;
 
+        const blockData = BlockData[this.mapping as keyof typeof BlockData] ?? [];
+
         for (let i = 0; i < this.data.length; i++) {
-            if (this.data[i] !== other.data[i]) return false;
+            switch (blockData[i]) {
+                case ComponentTypeHeader.ByteArray:
+                    if (Buffer.compare(this.data[i] as Buffer, other.data[i] as Buffer)) return false;
+                    continue;
+                default:
+                    if (this.data[i] !== other.data[i]) return false;
+            }
         }
 
         return true;
@@ -300,11 +329,20 @@ export default class Block {
      */
     public static deserialize(buffer: BufferReader, options: { endian: "little"; readTypeByte: false; palette?: string[] }): Block;
 
-    public static deserialize(buffer: BufferReader, options: { endian?: "little" | "big"; readTypeByte?: boolean; palette?: string[] } = {}): Block {
+    /**
+     * **You are using custom deserialization options. These are NOT used
+     * in the game networking, the world block placed message data or the
+     * world data in init.**
+     *
+     * @since 1.4.5
+     */
+    public static deserialize(buffer: BufferReader, options?: BlockDeserializationOptions): Block;
+
+    public static deserialize(buffer: BufferReader, options: BlockDeserializationOptions = {}): Block {
         options.endian ??= "little";
         options.readTypeByte ??= false;
         options.palette ??= Palette;
-        
+
         const blockLocalId = buffer.readUInt32LE();
         const blockMapping = options.palette[blockLocalId];
 
@@ -314,7 +352,12 @@ export default class Block {
 
         const block = Block.fromMapping(blockMapping);
 
-        block.deserialize(buffer, options);
+        try {
+            block.deserialize(buffer, options);
+        } catch (e) {
+            console.error(`error deserializing block ${blockMapping} (${Palette.length == options.palette.length ? "" : "local palette "}id = ${blockLocalId})`);
+            throw e;
+        }
 
         return block;
     }
@@ -411,9 +454,9 @@ export default class Block {
     public deserialize(buffer: BufferReader | WithImplicitCoercion<ArrayBuffer>, options: { endian: "big"; readTypeByte: true }): void;
 
     /**
-     * This signature provides a custom signature to deserialize the
-     * block with custom options. **If you read this, you are likely
-     * using the method wrong.**
+     * **You are using custom deserialization options. These are NOT used
+     * in the game networking, the world block placed message data or the
+     * world data in init.**
      *
      * Deserializes a block from a {@link BufferReader} and converts
      * itself into the block of that type. This particular method will
@@ -426,11 +469,11 @@ export default class Block {
      *
      * @since 1.4.4
      */
-    public deserialize(buffer: BufferReader | WithImplicitCoercion<ArrayBuffer>, options?: { endian?: "little" | "big"; readTypeByte?: boolean }): void;
+    public deserialize(buffer: BufferReader | WithImplicitCoercion<ArrayBuffer>, options?: BlockDeserializationOptions): void;
 
     // TODO describe behaviour with options set
 
-    public deserialize(buffer: BufferReader | WithImplicitCoercion<ArrayBuffer>, options: { endian?: "little" | "big"; readTypeByte?: boolean } = {}) {
+    public deserialize(buffer: BufferReader | WithImplicitCoercion<ArrayBuffer>, options: BlockDeserializationOptions = {}) {
         options.endian ??= "little";
         options.readTypeByte ??= false;
 
@@ -474,15 +517,15 @@ export default class Block {
     public serialize(options: { endian: "big"; writeId: false; writeTypeByte: true }): Buffer;
 
     /**
-     * **You are using custom serialization options. These are not used
+     * **You are using custom serialization options. These are NOT used
      * in the game networking, the world block placed message data or the
      * world data in init.**
      *
      * @since 1.4.3
      */
-    public serialize(options: { endian: "little" | "big"; writeId: boolean; writeTypeByte: boolean; palette?: string[] }): Buffer;
+    public serialize(options: BlockSerializationOptions): Buffer;
 
-    public serialize(options: { endian?: "little" | "big"; writeId?: boolean; writeTypeByte?: boolean; palette?: string[] } = {}): Buffer {
+    public serialize(options: BlockSerializationOptions = {}): Buffer {
         options.endian ??= "little";
         options.writeId ??= false;
         options.writeTypeByte ??= false;
@@ -490,7 +533,7 @@ export default class Block {
 
         // TODO writeTypeByte currently unused because it's always true (it's in buffer util)
         if (!options.writeTypeByte) {
-            console.warn("writeTypeByte was set to false: your program uses unsupported serialization options");
+            console.warn("writeTypeByte was set to `false`: your program uses unsupported serialization options: you need to set it to `true` for forwards compatibility");
         }
 
         const buffer: Buffer[] = [];

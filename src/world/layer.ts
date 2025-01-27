@@ -2,7 +2,7 @@ import { Palette } from "../build/block-mappings.js";
 import LayerPosition from "../types/layer-position.js";
 import BufferReader from "../util/buffer.js";
 
-import Block from "./block.js";
+import Block, { BlockDeserializationOptions } from "./block.js";
 import GameWorld from "./world.js";
 
 /**
@@ -144,7 +144,12 @@ export default class Layer {
         if (this.width !== other.width || this.height !== other.height) return false;
 
         for (const [x, y, block] of this.blocks()) {
-            if (!block.equals(other[x][y])) return false;
+            if (!block.equals(other[x][y])) {
+                console.debug(`inequality spooted at ${x}, ${y}`);
+                console.debug(block);
+                console.debug(other[x][y]);
+                return false;
+            }
         }
 
         return true;
@@ -232,10 +237,10 @@ export default class Layer {
      *
      * @since 1.4.2
      */
-    public deserialize(buffer: BufferReader) {
+    public deserialize(buffer: BufferReader, options: BlockDeserializationOptions = { endian: "little", readTypeByte: false }) {
         for (const [x, y, _] of this.blocks()) {
             try {
-                this[x][y] = Block.deserialize(buffer, { endian: "little", readTypeByte: false });
+                this[x][y] = Block.deserialize(buffer, options);
             } catch (e) {
                 console.error(`error deserializing at ${x}, ${y}`);
                 throw e;

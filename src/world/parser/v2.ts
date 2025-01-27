@@ -35,7 +35,7 @@ export function fromStructure(input: Structure): StructureData {
 
             // Deserialize the block to a buffer with a custom
             // palette.
-            const tmp = block.serialize({ endian: 'big', writeId: true, writeTypeByte: true, palette });
+            const tmp = block.serialize({ endian: "big", writeId: true, writeTypeByte: true, palette });
             buffer.push(tmp);
         }
     }
@@ -86,11 +86,10 @@ export function fromStructure(input: Structure): StructureData {
  * @since 1.4.5
  */
 export function toStructure(input: StructureData): Structure {
-    const { data, width, height } = input;
+    const { data, width, height, palette } = input;
     const structure = new Structure(width, height);
 
-    structure.deserialize(Buffer.from(data, "base64"));
-    // options: { endian: "big", readTypeByte: true, palette }
+    structure.deserialize(Buffer.from(data, "base64"), { endian: "big", readTypeByte: true, palette });
 
     return structure;
 }

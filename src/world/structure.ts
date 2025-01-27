@@ -1,7 +1,7 @@
 import BufferReader from "../util/buffer.js";
 import StructureParser, { ParserSignature } from "./parser/index.js";
 
-import Block from "./block.js";
+import Block, { BlockDeserializationOptions } from "./block.js";
 import Layer from "./layer.js";
 import GameWorld from "./world.js";
 
@@ -199,12 +199,12 @@ export default class Structure {
      *
      * @since 1.4.2
      */
-    public deserialize(source: WithImplicitCoercion<ArrayBuffer> | Buffer): this {
+    public deserialize(source: WithImplicitCoercion<ArrayBuffer> | Buffer, options: BlockDeserializationOptions = { endian: "little", readTypeByte: false }): this {
         const buffer = BufferReader.from(source);
 
         for (let i = 0; i < Structure.LAYER_COUNT; i++) {
             try {
-                this[i].deserialize(buffer);
+                this[i].deserialize(buffer, options);
             } catch (e) {
                 console.error(`error deserializing at ${i == 0 ? "background" : "foreground"} layer`);
                 throw e;
