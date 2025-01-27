@@ -83,6 +83,9 @@ export default class GameConnection {
      */
     public constructor(private joinKey: string) {
         this.addListeners();
+
+        if (globalThis.process)
+            this.addNodeJSListeners();
     }
 
     //
@@ -112,10 +115,19 @@ export default class GameConnection {
         this.listen("ping", () => {
             this.send("ping");
         });
+    }
 
+    /**
+     * Adds NodeJS listeners to the process. This is done to allow
+     * sigint to close the socket connection, and close depending
+     * promises.
+     * 
+     * @since 1.4.5
+     */
+    private addNodeJSListeners() {
         // If running in Node environment, close the socket when
         // the process is interrupted.
-        globalThis?.process.on("SIGINT", (signals) => {
+        globalThis.process?.on("SIGINT", (signals) => {
             this.close();
         });
     }
