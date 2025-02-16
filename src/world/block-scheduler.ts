@@ -8,6 +8,7 @@ import Block from "./block.js";
  *
  */
 export type BlockSchedulerEvent = {
+    ticketId: number;
     block: Block;
     position: WorldPosition;
     resolve: () => void;
@@ -27,7 +28,7 @@ export type BlockSchedulerEvent = {
  * The loop is timed for the ratelimit and will keep trying to
  * send blocks in queue until the queue is empty. If the queue
  * is empty, the loop will stop.
- * 
+ *
  * The scheduler is also used to combine multiple tickets into
  * one packet. This is used to optimize the client performance.
  *
@@ -37,10 +38,18 @@ export default class BlockScheduler {
     /**
      * The queue of to-does. This is a list of entries that
      * need to be put upon the world.
-     * 
+     *
      * @since 1.4.6
      */
     private events: BlockSchedulerEvent[] = [];
+
+    /**
+     * The counter is used to generate unique ticket ids for
+     * the scheduled entries.
+     *
+     * @since 1.4.8
+     */
+    private counter = 100;
 
     /**
      * The state of the scheduler. If the scheduler is ticking,
@@ -70,8 +79,17 @@ export default class BlockScheduler {
     private readonly LOOP_FREQUENCY = 25;
 
     /**
+     * The time to wait before retrying a failed packet. This is
+     * used to prevent the server from being overloaded with the
+     * same request multiple times.
+     *
+     * @since 1.4.8
+     */
+    private readonly RETRY_TIME = 2000;
+
+    /**
      * // TODO document
-     * 
+     *
      * @since 1.4.6
      */
     public constructor(private game: GameClient) {
@@ -104,6 +122,7 @@ export default class BlockScheduler {
          * The event object that is pushed to the scheduler.
          */
         const event: BlockSchedulerEvent = {
+            ticketId: this.counter++,
             block,
             position,
             resolve,
@@ -130,18 +149,6 @@ export default class BlockScheduler {
         const block = Block.fromId(event.blockId);
         block.deserialize(event.extraFields, { endian: "big", readTypeByte: true });
 
-        // this.events = this.events.filter((entry) => {
-        //     if (!block.equals(entry.block)) return true;
-        //     if (event.layer !== entry.position.layer) return true;
-        //     if (!event.positions.some(({ x, y }) => entry.position.x === x && entry.position.y === y)) return true;
-
-        //     // We have a match: Block & Coordinates.
-        //     entry.success = true;
-        //     entry.resolve();
-
-        //     return false;
-        // });
-
         for (const entry of this.events) {
             if (!block.equals(entry.block)) continue;
             if (event.layer !== entry.position.layer) continue;
@@ -151,6 +158,9 @@ export default class BlockScheduler {
             entry.success = true;
             entry.resolve();
         }
+
+        // Remove all successful events.
+        this.events = this.events.filter((e) => !e.success);
     }
 
     /**
@@ -177,17 +187,32 @@ export default class BlockScheduler {
         // TODO implement retries
         const event = this.events.shift();
 
+        // Check if there are no more events in the queue.
         if (event === undefined) {
             this.ticking = false;
             return;
         }
 
+        // Append at the end.
+        this.events.push(event);
+
+        // Check if the event is currently behind a ratelimit.
+        if (event.lastSent + this.RETRY_TIME > performance.now()) {
+            setTimeout(this.tick.bind(this), 0);
+            return;
+        }
+
+        // Update the last sent time of the event.
+        event.lastSent = performance.now();
+
         // Start tracking the positions of the blocks, start with
         // the position of our current block.
-        const positions: { x: number; y: number; }[] = [{
-            x: event.position.x,
-            y: event.position.y,
-        }];
+        const positions: { x: number; y: number }[] = [
+            {
+                x: event.position.x,
+                y: event.position.y,
+            },
+        ];
 
         // Iterate over the next blocks in the queue and check if
         // they are the same block, if so, add them to the positions
@@ -197,26 +222,21 @@ export default class BlockScheduler {
 
             if (!event.block.equals(next.block)) continue;
             if (event.position.layer !== next.position.layer) continue;
+            if (next.lastSent + this.RETRY_TIME > event.lastSent) continue;
 
             positions.push({
                 x: next.position.x,
                 y: next.position.y,
             });
 
-            this.events.splice(i, 1);
-            i--;
             b++;
         }
-
-        // Update the last sent time of the event.
-        // TODO implement ratelimit
-        event.lastSent = performance.now();
 
         // Send the block to the server.
         this.game.connection.send("worldBlockPlacedPacket", {
             blockId: event.block.id,
             isFillOperation: false,
-            positions: positions.map(p => create(PointIntegerSchema, p)),
+            positions: positions.map((p) => create(PointIntegerSchema, p)),
             layer: event.position.layer,
             extraFields: event.block.serialize({ endian: "big", writeId: false, writeTypeByte: true }),
         });
