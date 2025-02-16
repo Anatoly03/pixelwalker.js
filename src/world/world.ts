@@ -1,5 +1,7 @@
 import EventEmitter from "events";
 
+import { Palette } from "../build/block-mappings.js";
+
 import GameClient from "../game.js";
 import Block from "./block.js";
 import Structure from "./structure.js";
@@ -15,6 +17,13 @@ type Events = {
     Clear: [];
     Reload: [];
     Block: [Block, WorldPosition[]];
+};
+
+/**
+ * @since 1.4.8
+ */
+type StructurePasteOptions = {
+    omit: (typeof Palette)[number][];
 };
 
 /**
@@ -235,11 +244,15 @@ export default class GameWorld {
      * Pastes a structure at given position. The structure is pasted
      * using the scheduler and will return a process that resolves once
      * all blocks are placed.
-     * 
+     *
      * @since 1.4.6
      */
-    public pasteStructure(structure: Structure, ox: number, oy: number): Promise<any> {
+    public pasteStructure(structure: Structure, ox: number, oy: number, options?: StructurePasteOptions): Promise<any> {
         const promises = [];
+
+        options ??= {
+            omit: [],
+        };
 
         for (const [layer, l] of structure.layers()) {
             for (const [tx, ty, block] of l.blocks()) {
@@ -251,6 +264,9 @@ export default class GameWorld {
 
                 // Check already placed.
                 if (this.structure[layer][x][y].equals(block)) continue;
+
+                // Check Settings: Omit
+                if (options.omit.includes(block.mapping)) continue;
 
                 promises.push(this.scheduler.push(block, { x, y, layer }));
             }
