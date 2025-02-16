@@ -30,6 +30,8 @@ export default class Structure<Meta extends Record<string, any> = {}> {
     /**
      * The meta properties of the structure, an endpoint for custom
      * attributes.
+     * 
+     * @since 1.4.7
      */
     public meta: Meta = {} as Meta;
 
