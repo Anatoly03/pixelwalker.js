@@ -1,7 +1,7 @@
 import BufferReader from "../util/buffer.js";
 import StructureParser, { ParserSignature } from "./parser/index.js";
 
-import Block, { BlockDeserializationOptions } from "./block.js";
+import { BlockDeserializationOptions } from "./block.js";
 import Layer from "./layer.js";
 import GameWorld from "./world.js";
 

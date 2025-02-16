@@ -1,4 +1,4 @@
-import { Mappings, Palette } from "../build/block-mappings.js";
+import { Palette } from "../build/block-mappings.js";
 import BufferReader, { ComponentTypeHeader } from "../util/buffer.js";
 import { BlockData } from "./block-args.js";
 
