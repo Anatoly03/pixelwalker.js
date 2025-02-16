@@ -124,7 +124,7 @@ export default class Layer {
         const layer = new Layer(x2 - x1 + 1, y2 - y1 + 1);
 
         for (const [x, y, block] of this.blocks()) {
-            if (x < 0 || y < 0 || x >= this.width || y >= this.height) continue;
+            if (x < x1 || y < y1 || x >= layer.width || y >= layer.height) continue;
             layer[x - x1][y - y1] = block.copy();
         }
 
