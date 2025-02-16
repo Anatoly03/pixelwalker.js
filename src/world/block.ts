@@ -234,8 +234,20 @@ export default class Block {
      * @since 1.4.3
      */
     public copy() {
-        // TODO copy data
-        return new Block(this.id);
+        const block = new Block(this.id);
+        const blockData = BlockData[this.mapping as keyof typeof BlockData] ?? [];
+
+        for (let i = 0; i < this.data.length; i++) {
+            switch (blockData[i]) {
+                case ComponentTypeHeader.ByteArray:
+                    block.data[i] = Buffer.alloc((this.data[i] as Buffer).length);
+                    (this.data[i] as Buffer).copy(block.data[i] as Buffer);
+                default:
+                    block.data[i] = this.data[i];
+            }
+        }
+
+        return block;
     }
 
     /**
