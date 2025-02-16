@@ -175,7 +175,7 @@ export default class GameClient {
 
             this.commands.forEach((command) => {
                 if (command.name !== cmd) return;
-                if (command.permission && command.permission(player)) return;
+                if (command.permission && !command.permission(player)) return;
 
                 command.callback(player, ...args);
             });
