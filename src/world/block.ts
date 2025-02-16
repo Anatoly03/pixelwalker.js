@@ -554,7 +554,7 @@ export default class Block {
         let idx = 0;
 
         for (const dataType of blockData) {
-            const entry = BufferReader.Dynamic(dataType, this.data[idx++]);
+            const entry = BufferReader.Dynamic(dataType, this.data[idx++], options);
             buffer.push(entry);
         }
 

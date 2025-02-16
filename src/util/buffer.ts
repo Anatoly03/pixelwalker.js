@@ -1,3 +1,5 @@
+import { BlockSerializationOptions } from "../world/block.js";
+
 /**
  * Data during the communication in the process is dynamic
  * typed. Every entry is followed by a byte identifying the
@@ -64,12 +66,16 @@ export default class BufferReader {
      * @param {string} value
      * @returns {Buffer}
      */
-    public static String(value: string = ""): Buffer {
+    public static String(value: string = "", options: BlockSerializationOptions = {}): Buffer {
         const stringByteLen = Buffer.byteLength(value);
         const lengthByteCount = this.length7BitInt(stringByteLen);
 
         const buffer = BufferReader.alloc(1 + lengthByteCount + stringByteLen);
-        buffer.writeUInt8(ComponentTypeHeader.String);
+        
+        if (options.writeTypeByte) {
+            buffer.writeUInt8(ComponentTypeHeader.String);
+        }
+
         buffer.write7BitInt(stringByteLen);
         buffer.write(value);
 
@@ -80,9 +86,13 @@ export default class BufferReader {
      * @param {number} value
      * @returns {Buffer}
      */
-    public static Byte(value: number = 0): Buffer {
+    public static Byte(value: number = 0, options: BlockSerializationOptions = {}): Buffer {
         const buffer = BufferReader.alloc(2);
-        buffer.writeUInt8(ComponentTypeHeader.Byte);
+        
+        if (options.writeTypeByte) {
+            buffer.writeUInt8(ComponentTypeHeader.Byte);
+        }
+
         buffer.writeUInt8(value);
         return buffer.toBuffer();
     }
@@ -91,10 +101,19 @@ export default class BufferReader {
      * @param {number} value
      * @returns {Buffer}
      */
-    public static Int16(value: number = 0): Buffer {
+    public static Int16(value: number = 0, options: BlockSerializationOptions = {}): Buffer {
         const buffer = BufferReader.alloc(3);
-        buffer.writeUInt8(ComponentTypeHeader.Int16);
-        buffer.writeUInt16LE(value);
+        
+        if (options.writeTypeByte) {
+            buffer.writeUInt8(ComponentTypeHeader.Int16);
+        }
+
+        if (options.endian === 'little') {
+            buffer.writeUInt16LE(value);
+        } else {
+            buffer.writeUInt16BE(value);
+        }
+
         return buffer.toBuffer();
     }
 
@@ -102,10 +121,19 @@ export default class BufferReader {
      * @param {number} value
      * @returns {Buffer}
      */
-    public static Int32(value: number = 0): Buffer {
+    public static Int32(value: number = 0, options: BlockSerializationOptions = {}): Buffer {
         const buffer = BufferReader.alloc(5);
-        buffer.writeUInt8(ComponentTypeHeader.Int32);
-        buffer.writeInt32LE(value);
+        
+        if (options.writeTypeByte) {
+            buffer.writeUInt8(ComponentTypeHeader.Int32);
+        }
+
+        if (options.endian === 'little') {
+            buffer.writeInt32LE(value);
+        } else {
+            buffer.writeInt32BE(value);
+        }
+
         return buffer.toBuffer();
     }
 
@@ -113,10 +141,19 @@ export default class BufferReader {
      * @param {bigint} value
      * @returns {Buffer}
      */
-    public static Int64(value: bigint = BigInt(0).valueOf()): Buffer {
+    public static Int64(value: bigint = BigInt(0).valueOf(), options: BlockSerializationOptions = {}): Buffer {
         const buffer = BufferReader.alloc(9);
-        buffer.writeUInt8(ComponentTypeHeader.Int64);
-        buffer.writeBigInt64LE(value);
+        
+        if (options.writeTypeByte) {
+            buffer.writeUInt8(ComponentTypeHeader.Int64);
+        }
+
+        if (options.endian === 'little') {
+            buffer.writeBigInt64LE(value);
+        } else {
+            buffer.writeBigInt64BE(value);
+        }
+
         return buffer.toBuffer();
     }
 
@@ -124,9 +161,13 @@ export default class BufferReader {
      * @param {number} value
      * @returns {Buffer}
      */
-    public static Float(value: number = 0): Buffer {
+    public static Float(value: number = 0, options: BlockSerializationOptions = {}): Buffer {
         const buffer = BufferReader.alloc(5);
-        buffer.writeUInt8(ComponentTypeHeader.Float);
+        
+        if (options.writeTypeByte) {
+            buffer.writeUInt8(ComponentTypeHeader.Float);
+        }
+
         buffer.writeFloatBE(value);
         return buffer.toBuffer();
     }
@@ -135,9 +176,13 @@ export default class BufferReader {
      * @param {number} value
      * @returns {Buffer}
      */
-    public static Double(value: number = 0): Buffer {
+    public static Double(value: number = 0, options: BlockSerializationOptions = {}): Buffer {
         const buffer = BufferReader.alloc(9);
-        buffer.writeUInt8(ComponentTypeHeader.Double);
+        
+        if (options.writeTypeByte) {
+            buffer.writeUInt8(ComponentTypeHeader.Double);
+        }
+
         buffer.writeDoubleBE(value);
         return buffer.toBuffer();
     }
@@ -146,9 +191,13 @@ export default class BufferReader {
      * @param {boolean} value
      * @returns {Buffer}
      */
-    public static Boolean(value: boolean = false): Buffer {
+    public static Boolean(value: boolean = false, options: BlockSerializationOptions = {}): Buffer {
         const buffer = BufferReader.alloc(2);
-        buffer.writeUInt8(ComponentTypeHeader.Boolean);
+        
+        if (options.writeTypeByte) {
+            buffer.writeUInt8(ComponentTypeHeader.Boolean);
+        }
+
         buffer.writeUInt8(value ? 1 : 0);
         return buffer.toBuffer();
     }
@@ -157,7 +206,7 @@ export default class BufferReader {
      * @param {Uint8Array} buffer
      * @returns {Buffer}
      */
-    public static ByteArray(buffer: Buffer = Buffer.from([0])): Buffer {
+    public static ByteArray(buffer: Buffer = Buffer.from([0]), options: BlockSerializationOptions = {}): Buffer {
         // const bufferByteLen = Buffer.byteLength(buffer);
 
         // const bufLength = Buffer.alloc(length7BitInt(bufferByteLen));
@@ -169,7 +218,11 @@ export default class BufferReader {
         const lengthByteCount = this.length7BitInt(stringByteLen);
 
         const prefix = BufferReader.alloc(1 + lengthByteCount);
-        prefix.writeUInt8(ComponentTypeHeader.ByteArray);
+        
+        if (options.writeTypeByte) {
+            prefix.writeUInt8(ComponentTypeHeader.ByteArray);
+        }
+
         prefix.write7BitInt(lengthByteCount);
 
         return Buffer.concat([prefix.toBuffer(), buffer]);
@@ -198,26 +251,26 @@ export default class BufferReader {
      * @param tt
      * @param value
      */
-    public static Dynamic(tt: ComponentTypeHeader, value: boolean | number | bigint | string | Buffer): Buffer {
+    public static Dynamic(tt: ComponentTypeHeader, value: boolean | number | bigint | string | Buffer, options: BlockSerializationOptions = {}): Buffer {
         switch (tt) {
             case ComponentTypeHeader.String:
-                return this.String(value as string);
+                return this.String(value as string, options);
             case ComponentTypeHeader.Byte:
-                return this.Byte(value as number);
+                return this.Byte(value as number, options);
             case ComponentTypeHeader.Int16:
-                return this.Int16(value as number);
+                return this.Int16(value as number, options);
             case ComponentTypeHeader.Int32:
-                return this.Int32(value as number);
+                return this.Int32(value as number, options);
             case ComponentTypeHeader.Int64:
-                return this.Int64(value as bigint);
+                return this.Int64(value as bigint, options);
             case ComponentTypeHeader.Float:
-                return this.Float(value as number);
+                return this.Float(value as number, options);
             case ComponentTypeHeader.Double:
-                return this.Double(value as number);
+                return this.Double(value as number, options);
             case ComponentTypeHeader.Boolean:
-                return this.Boolean(value as boolean);
+                return this.Boolean(value as boolean, options);
             case ComponentTypeHeader.ByteArray:
-                return this.ByteArray(value as Buffer);
+                return this.ByteArray(value as Buffer, options);
         }
     }
 
