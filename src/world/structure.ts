@@ -10,7 +10,7 @@ import GameWorld from "./world.js";
  *
  * @since 1.4.2
  */
-export default class Structure {
+export default class Structure<Meta extends Record<string, any> = {}> {
     readonly [layer: number]: Layer;
 
     /**
@@ -26,6 +26,12 @@ export default class Structure {
      * @since 1.4.2
      */
     public readonly height: number;
+
+    /**
+     * The meta properties of the structure, an endpoint for custom
+     * attributes.
+     */
+    public meta: Meta = {} as Meta;
 
     //
     //

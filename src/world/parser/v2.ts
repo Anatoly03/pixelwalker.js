@@ -53,7 +53,7 @@ export function fromStructure(input: Structure): StructureData {
         /**
          * This is reserved.
          */
-        meta: {},
+        meta: input.meta,
 
         /**
          * The width of the structure.
@@ -86,9 +86,10 @@ export function fromStructure(input: Structure): StructureData {
  * @since 1.4.5
  */
 export function toStructure(input: StructureData): Structure {
-    const { data, width, height, palette } = input;
+    const { data, width, height, palette, meta } = input;
     const structure = new Structure(width, height);
 
+    structure.meta = meta;
     structure.deserialize(Buffer.from(data, "base64"), { endian: "big", readTypeByte: true, palette });
 
     return structure;

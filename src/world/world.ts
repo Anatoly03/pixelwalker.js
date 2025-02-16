@@ -6,6 +6,7 @@ import Structure from "./structure.js";
 import BufferReader from "../util/buffer.js";
 import WorldPosition from "../types/world-position.js";
 import BlockScheduler from "./block-scheduler.js";
+import WorldMeta from "../types/world-meta.js";
 
 /**
  * // TODO document, expand events
@@ -46,7 +47,7 @@ export default class GameWorld {
     /**
      * // TODO document
      */
-    public structure!: Structure;
+    public structure!: Structure<WorldMeta>;
 
     /**
      * The block scheduling instance. This is used to organize blocks
