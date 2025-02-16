@@ -2,6 +2,7 @@ import "dotenv/config";
 import  * as fs from "node:fs";
 import { APIClient, Structure } from "pixelwalker.js";
 
+const parser = Structure.parser(JSON);
 const client = await APIClient.withCredentials(process.env.USERNAME!, process.env.PASSWORD!);
 const game = await client!.createGame(process.env.WORLD_ID!);
 
@@ -78,7 +79,7 @@ game.registerCommand({
     },
     callback(player, name) {
         if (!name) {
-            game.sendChat(`${player.properties.username}: Usage: /load <name>`);
+            game.sendChat(`${player.properties.username}: Usage: /save <name>`);
             return;
         }
 
@@ -87,7 +88,7 @@ game.registerCommand({
             return;
         }
 
-        fs.writeFileSync(name, structure.toString());
+        fs.writeFileSync(name, parser.toString(structure));
     }
 });
 
@@ -104,10 +105,12 @@ game.registerCommand({
 
         try {
             const file = fs.readFileSync(name).toString('utf-8');
-            structure = Structure.parser(JSON).fromString(file);
+            structure = parser.fromString(file);
         }  catch(_) {
             game.sendChat(`${player.properties.username}: File not found.`);
         }
+
+        game.sendChat(`${player.properties.username}: Loaded.`);
     }
 });
 
