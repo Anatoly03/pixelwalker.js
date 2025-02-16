@@ -14,6 +14,17 @@ type Events = {
 };
 
 /**
+ * Arguments for a command, this also includes the permission,
+ * and metadata for the command.
+ */
+type NewCommandArgs = {
+    name: string;
+    // description?: string;
+    callback: (player: GamePlayer, ...args: string[]) => void;
+    permission?: (player: GamePlayer) => boolean;
+};
+
+/**
  * The Game Client is responsible for communication with the
  * {@link https://game.pixelwalker.net/ PixelWalker Game Server}.
  * The Game server has acustom implementation and is mostly
@@ -67,18 +78,18 @@ export default class GameClient {
     /**
      * Array of commands that are registered. The commands are
      * emit when a player sends a command-prefixed chat.
-     * 
+     *
      * @since 1.4.6
      */
-    private commands: { command: string; callback: (player: GamePlayer, ...args: string[]) => void }[] = [];
+    private commands: NewCommandArgs[] = [];
 
     /**
      * The prefix that is used to identify a user-to-bot command
      * in the chat.
-     * 
+     *
      * @since 1.4.6
      */
-    public COMMAND_PREFIXES = ['!', '.'];
+    public COMMAND_PREFIXES = ["!", "."];
 
     //
     //
@@ -96,17 +107,17 @@ export default class GameClient {
      * and end of a string. The center part `(\\"|\\.|.)*?` matches for
      * string escapes non-greedy. The word component `\S+` matches for
      * a word (any combination of non-whitespace characters.)
-     * 
+     *
      * @example
-     * 
+     *
      * Here is an example of a command and the resulting matches.
-     * 
+     *
      * ```
      * !test "Hello, \"World!\"" 256 wonderful-evening! --help
      *  ^^^^ ^^^^^^^^^^^^^^^^^^^ ^^^ ^^^^^^^^^^^^^^^^^^ ^^^^^^
      * ```
      */
-    private static CommandLineParser = /"(\\"|\\.|.)*?"|'(\\'|\\.|.)*?'|\S+/mg;
+    private static CommandLineParser = /"(\\"|\\.|.)*?"|'(\\'|\\.|.)*?'|\S+/gm;
 
     /**
      * // TODO document
@@ -151,8 +162,9 @@ export default class GameClient {
             this.receiver.emit("Init");
         });
 
+        // Listen chat messages for commands.
         this.connection.listen("playerChatPacket", (data) => {
-            const prefix = this.COMMAND_PREFIXES.find(i => data.message.startsWith(i));
+            const prefix = this.COMMAND_PREFIXES.find((i) => data.message.startsWith(i));
             if (!prefix) return;
 
             const [cmd, ...args] = data.message.substring(prefix.length).match(GameClient.CommandLineParser) ?? [];
@@ -162,9 +174,34 @@ export default class GameClient {
             if (!player) return;
 
             this.commands.forEach((command) => {
-                if (command.command !== cmd) return;
+                if (command.name !== cmd) return;
+                if (command.permission && command.permission(player)) return;
+
                 command.callback(player, ...args);
             });
+        });
+
+        // Register the help command. This lists all available
+        // commands for a player, or, command description if a
+        // command is specified.
+        this.registerCommand({
+            name: "help",
+            callback: (player, cmd) => {
+                if (cmd) {
+                    // TODO implement for `cmd` argument
+                    // TODO implement private messages
+                    this.sendChat(`/pm ${player.properties.username} /help <cmd> not implemented in pixelwalker.js@1.4.6`);
+                    return;
+                }
+
+                const commands = this.commands
+                    .filter((c) => !c.permission || c.permission(player))
+                    .map((i) => i.name)
+                    .join(", ");
+
+                // TODO implement private messages
+                this.sendChat(`/pm ${player.properties.username} ${commands}`);
+            },
         });
     }
 
@@ -264,8 +301,8 @@ export default class GameClient {
      *
      * @since 1.4.6
      */
-    public registerCommand(command: string, args: { callback: (player: GamePlayer, ...args: string[]) => {} }): this {
-        this.commands.push({ command, ...args });
+    public registerCommand(args: NewCommandArgs): this {
+        this.commands.push(args);
         return this;
     }
 }
