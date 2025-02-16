@@ -18,3 +18,5 @@ npm run start
 ```
 
 Connect the bot, and check out `!help` for a list of commands.
+
+The `!copy` command accepts either the argument `all`, or two coordinates, for example `0 0 200 200`, denoting dimensions of the structure fragment to copy. 

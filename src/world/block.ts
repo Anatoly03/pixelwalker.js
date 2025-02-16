@@ -234,6 +234,7 @@ export default class Block {
      * @since 1.4.3
      */
     public copy() {
+        // TODO copy data
         return new Block(this.id);
     }
 
@@ -258,6 +259,7 @@ export default class Block {
         for (let i = 0; i < this.data.length; i++) {
             switch (blockData[i]) {
                 case ComponentTypeHeader.ByteArray:
+                    if (!other.data[i]) return false; // other is undefined
                     if (Buffer.compare(this.data[i] as Buffer, other.data[i] as Buffer)) return false;
                     continue;
                 default:

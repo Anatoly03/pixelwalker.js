@@ -5,8 +5,7 @@ import Block from "./block.js";
 import Structure from "./structure.js";
 import BufferReader from "../util/buffer.js";
 import WorldPosition from "../types/world-position.js";
-import { create } from "@bufbuild/protobuf";
-import { PointIntegerSchema } from "../protocol/world_pb.js";
+import BlockScheduler from "./block-scheduler.js";
 
 /**
  * // TODO document, expand events
@@ -50,9 +49,16 @@ export default class GameWorld {
     public structure!: Structure;
 
     /**
+     * The block scheduling instance. This is used to organize blocks
+     * into packets, and manage ratelimit, failed packets, and retries.
+     */
+    private scheduler: BlockScheduler;
+
+    /**
      * // TODO document
      */
     public constructor(private game: GameClient) {
+        this.scheduler = new BlockScheduler(game);
         this.addListeners();
     }
 
@@ -207,16 +213,49 @@ export default class GameWorld {
      *
      * @since 1.4.3
      */
-    public async placeBlock(block: Block, ...positions: WorldPosition[]) {
-        const packet = block.toPacket();
+    public placeBlock(block: Block, ...positions: WorldPosition[]): Promise<any> {
+        // const packet = block.toPacket();
 
-        for (let i = 0; i < Structure.LAYER_COUNT; i++) {
-            packet.layer = i;
-            packet.positions = positions.filter((pos) => pos.layer === i).map((pos) => create(PointIntegerSchema, pos));
-            if (packet.positions.length === 0) continue;
-            this.game.connection.send("worldBlockPlacedPacket", packet);
-        }
+        // for (let i = 0; i < Structure.LAYER_COUNT; i++) {
+        //     packet.layer = i;
+        //     packet.positions = positions.filter((pos) => pos.layer === i).map((pos) => create(PointIntegerSchema, pos));
+        //     if (packet.positions.length === 0) continue;
+        //     this.game.connection.send("worldBlockPlacedPacket", packet);
+        // }
 
         // TODO return promise, schedule blocks and await
+
+        const promises = positions.map((p) => this.scheduler.push(block, p));
+        this.scheduler.process();
+        return Promise.all(promises);
+    }
+
+    /**
+     * Pastes a structure at given position. The structure is pasted
+     * using the scheduler and will return a process that resolves once
+     * all blocks are placed.
+     * 
+     * @since 1.4.6
+     */
+    public pasteStructure(structure: Structure, ox: number, oy: number): Promise<any> {
+        const promises = [];
+
+        for (const [layer, l] of structure.layers()) {
+            for (const [tx, ty, block] of l.blocks()) {
+                const x = ox + tx;
+                const y = oy + ty;
+
+                // Check out bounds.
+                if (x < 0 || y < 0 || x >= this.structure.width || y >= this.structure.height) continue;
+
+                // Check already placed.
+                if (this.structure[layer][x][y].equals(block)) continue;
+
+                promises.push(this.scheduler.push(block, { x, y, layer }));
+            }
+        }
+
+        this.scheduler.process();
+        return Promise.all(promises);
     }
 }

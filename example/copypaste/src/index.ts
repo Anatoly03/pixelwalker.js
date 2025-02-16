@@ -18,15 +18,33 @@ game.registerCommand({
         return player.properties.accountId === ownerId;
     },
     callback(player, x1, y1, x2, y2) {
-        const [tlx, tly, brx, bry] = [x1, y1, x2, y2].map(Number);
+        switch (x1) {
+            case 'all':
+                const { width, height } = game.world.structure;
 
-        if ([tlx, tly, brx, bry].some(isNaN)) {
-            game.sendChat(`${player.properties.username}: Invalid coordinates.`);
-            return;
+                structure = game.world.structure.copy(0, 0, width - 1, height - 1);
+                break;
+            default:
+                const [tlx, tly, brx, bry] = [x1, y1, x2, y2].map(Number);
+        
+                if ([tlx, tly, brx, bry].some(isNaN)) {
+                    game.sendChat(`${player.properties.username}: Invalid coordinates.`);
+                    return;
+                }
+        
+                structure = game.world.structure.copy(tlx, tly, brx, bry);
         }
 
-        structure = game.world.structure.copy(tlx, tly, brx, bry);
-        game.sendChat(`${player.properties.username}: Copied!`);
+        let nonEmpty = 0;
+
+        for (const [_, l] of structure.layers()) {
+            for (const [x, y, block] of l.blocks()) {
+                if (block.id == 0) continue;
+                nonEmpty++;
+            }
+        }
+
+        game.sendChat(`${player.properties.username}: Copied! (Not Empty = ${nonEmpty})`);
     }
 });
 
@@ -35,7 +53,7 @@ game.registerCommand({
     permission(player) {
         return player.properties.accountId === ownerId;
     },
-    callback(player, x, y) {
+    async callback(player, x, y) {
         const [tlx, tly] = [x, y].map(Number);
 
         if ([tlx, tly].some(isNaN)) {
@@ -43,7 +61,13 @@ game.registerCommand({
             return;
         }
 
-        // TODO paste structure
+        if (!structure) {
+            game.sendChat(`${player.properties.username}: No structure to paste.`);
+            return;
+        }
+
+        await game.world.pasteStructure(structure, tlx, tly);
+        game.sendChat(`${player.properties.username}: Pasted!`);
     }
 });
 

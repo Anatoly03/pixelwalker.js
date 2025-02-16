@@ -134,7 +134,11 @@ export default class Structure {
         const world = new Structure(x2 - x1 + 1, y2 - y1 + 1);
 
         for (let i = 0; i < Structure.LAYER_COUNT; i++) {
-            (world as any)[i] = this[i].copy(x1, y1, x2, y2);
+            for (let x = x1; x <= x2; x++) {
+                for (let y = y1; y <= y2; y++) {
+                    world[i][x - x1][y - y1] = this[i][x][y].copy();
+                }
+            }
         }
 
         return world;
