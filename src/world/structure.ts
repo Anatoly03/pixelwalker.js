@@ -1,9 +1,10 @@
 import BufferReader from "../util/buffer.js";
 import StructureParser, { ParserSignature } from "./parser/index.js";
 
-import { BlockDeserializationOptions } from "./block.js";
+import Block, { BlockDeserializationOptions } from "./block.js";
 import Layer from "./layer.js";
 import GameWorld from "./world.js";
+import WorldPosition from "../types/world-position.js";
 
 /**
  * Represents a structure in the world.
@@ -179,6 +180,26 @@ export default class Structure<Meta extends Record<string, any> = {}> {
         for (let i = 0; i < Structure.LAYER_COUNT; i++) {
             yield [i, this[i]] as const;
         }
+    }
+
+    /**
+     * Lists all occurences of a block in the structure which match
+     * the callback function.
+     * 
+     * @since 1.4.8
+     */
+    public locate(callback: (b: Block) => boolean): WorldPosition[] {
+        const positions: WorldPosition[] = [];
+
+        for (const [layer, l] of this.layers()) {
+            for (const [x, y, block] of l.blocks()) {
+                if (callback(block)) {
+                    positions.push({ x, y, layer });
+                }
+            }
+        }
+
+        return positions;
     }
 
     //
