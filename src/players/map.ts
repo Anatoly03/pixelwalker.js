@@ -1,8 +1,22 @@
+import EventEmitter from "events";
+
 import { Protocol } from "../index.js";
 import { create } from "@bufbuild/protobuf";
 
 import GameClient from "../game.js";
 import GamePlayer from "../types/game-player.js";
+
+/**
+ * // TODO document, expand events
+ *
+ * @since 1.4.8
+ */
+type Events = {
+    Add: [GamePlayer];
+    OldAdd: [GamePlayer];
+    NewAdd: [GamePlayer];
+    Leave: [GamePlayer];
+};
 
 /**
  *
@@ -15,6 +29,13 @@ export default class PlayerMap {
      * The internal data structure to manage players.
      */
     protected players: Map<number, GamePlayer> = new Map();
+
+    /**
+     * The event emitter is used to emit events when the
+     * socket receives a message. The events are then
+     * distributed to the listeners.
+     */
+    private receiver = new EventEmitter<Events>();
 
     /**
      * The self player is the player that is controlled by the client.
@@ -74,19 +95,52 @@ export default class PlayerMap {
             };
 
             this.players.set(player.properties.playerId, player);
+
+            // We use the fact here, that the player is incremently
+            // assigned, starting with one.
+            const isNewAdd = this.selfPlayer!.properties.playerId < player.properties.playerId;
+
+            // Broadcast the event to the listeners
+            this.receiver.emit(isNewAdd ? "NewAdd" : "OldAdd", player);
+            this.receiver.emit("Add", player);
         });
 
         // Listen for player leave packets to collect garbage players
         // from the map. The JS object will not be removed while there
         // are external references to the object.
-        connection.listen('playerLeftPacket', pkt => {
+        connection.listen("playerLeftPacket", (pkt) => {
             const player = this[pkt.playerId]!;
 
-            if (player.state?.hasGoldCrown)
-                this.crownPlayer = undefined;
+            // Broadcast the event to the listeners
+            this.receiver.emit("Leave", player);
+
+            // Remove the player from the crowned players, if the player
+            // has the crown.
+            if (player.state?.hasGoldCrown) this.crownPlayer = undefined;
 
             this.players.delete(pkt.playerId);
-        })
+        });
+    }
+
+    /**
+     * Adds the listener function to the end of the listeners array for the
+     * event named `eventName`. No checks are made to see if the listener has
+     * already been added. Multiple calls passing the same combination of
+     * `eventNameand` listener will result in the listener being added, and
+     * called, multiple times.
+     *
+     * | Event Name         | Description |
+     * |--------------------|-------------|
+     * | `OldAdd`           | The player joined the world before the bot connected.
+     * | `NewAdd`           | The player joined the world after the bot connected.
+     * | `Add`              | The player joined the world, either prior before the bot connected, or afterwards.
+     * | `Leave`            | The player left the world.
+     *
+     * @since 1.4.8
+     */
+    public listen<Event extends keyof Events>(eventName: Event, callback: (...e: Events[Event]) => void): this {
+        this.receiver.on(eventName, callback as any);
+        return this;
     }
 
     //
@@ -98,11 +152,11 @@ export default class PlayerMap {
     /**
      * Returns an array representation snapshot of the map. This array
      * will not be updated or synced with the game.
-     * 
+     *
      * **Side Effects**: Since players share a mutual reference to the
      * synced map object, the array couldbe updated while processing.
      * To avoid this, clone player data which you need.
-     * 
+     *
      * @since 1.4.1
      */
     public toArray() {
