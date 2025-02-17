@@ -21,7 +21,13 @@ type Events = {
     Trophy: [GamePlayer];
     CoinGold: [GamePlayer];
     CoinBlue: [GamePlayer];
+    Team: [GamePlayer, typeof Teams[number], typeof Teams[number]];
 };
+
+/**
+ * @since 1.4.8
+ */
+const Teams = ["none", "red", "green", "blue", "cyan", "magenta", "yellow"] as const;
 
 /**
  *
@@ -129,6 +135,8 @@ export default class PlayerMap {
 
         // Listen for player touch block packets: Crown, Trophy, Keys,
         // and other block interactions.
+        //
+        // @since 1.4.8
         connection.listen("playerTouchBlockPacket", (pkt) => {
             const player = this[pkt.playerId!];
             if (!player) return;
@@ -171,13 +179,21 @@ export default class PlayerMap {
                 case 'key_yellow':
                     // TODO
                     break;
+                case 'team_effect_none':
                 case 'team_effect_red':
                 case 'team_effect_green':
                 case 'team_effect_blue':
                 case 'team_effect_cyan':
                 case 'team_effect_magenta':
                 case 'team_effect_yellow':
-                    // TODO
+                    const teamName = mapping.substring('team_effect_'.length);
+                    const oldTeamName = Teams[player.state!.teamId];
+                    const teamId = Teams.indexOf(teamName as any);
+                    const newTeamName = Teams[teamId];
+
+                    player.state!.teamId = teamId;
+
+                    this.receiver.emit('Team', player, newTeamName, oldTeamName);
                     break;
                 case 'tool_checkpoint':
                     // TODO problem: no checkpoint value in networking
@@ -207,6 +223,9 @@ export default class PlayerMap {
      * | `Leave`            | The player left the world.
      * | `CoinGold`         | The player touched a gold coin.
      * | `CoinBlue`         | The player touched a blue coin.
+     * | `Crown`            | The player touched the gold crown. The second argument is the previous crown holder.
+     * | `Trophy`           | The player touched the silver crown.
+     * | `Team`             | The player changed their team. The second argumentis the new team name. The third argument is the old team name.
      *
      * @since 1.4.8
      */
