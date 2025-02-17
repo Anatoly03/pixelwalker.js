@@ -1,6 +1,6 @@
 import EventEmitter from "events";
 
-import { Protocol } from "../index.js";
+import { Block, Protocol } from "../index.js";
 import { create } from "@bufbuild/protobuf";
 
 import GameClient from "../game.js";
@@ -16,6 +16,11 @@ type Events = {
     OldAdd: [GamePlayer];
     NewAdd: [GamePlayer];
     Leave: [GamePlayer];
+
+    Crown: [GamePlayer, GamePlayer | undefined];
+    Trophy: [GamePlayer];
+    CoinGold: [GamePlayer];
+    CoinBlue: [GamePlayer];
 };
 
 /**
@@ -109,7 +114,8 @@ export default class PlayerMap {
         // from the map. The JS object will not be removed while there
         // are external references to the object.
         connection.listen("playerLeftPacket", (pkt) => {
-            const player = this[pkt.playerId]!;
+            const player = this[pkt.playerId];
+            if (!player) return;
 
             // Broadcast the event to the listeners
             this.receiver.emit("Leave", player);
@@ -119,6 +125,70 @@ export default class PlayerMap {
             if (player.state?.hasGoldCrown) this.crownPlayer = undefined;
 
             this.players.delete(pkt.playerId);
+        });
+
+        // Listen for player touch block packets: Crown, Trophy, Keys,
+        // and other block interactions.
+        connection.listen("playerTouchBlockPacket", (pkt) => {
+            const player = this[pkt.playerId!];
+            if (!player) return;
+
+            // The block mapping is used to determine the block type.
+            const mapping = Block.fromId(pkt.blockId).mapping;
+
+            // The block coordinates.
+            // const { x, y } = pkt.position!;
+
+            switch (mapping) {
+                default:
+                    console.debug('Unknown block touch event:', mapping);
+                case 'crown_gold':
+                    const oldCrownPlayer = this.crownPlayer;
+                    this.crownPlayer = player;
+
+                    oldCrownPlayer!.state!.hasGoldCrown = false;
+                    player.state!.hasGoldCrown = true;
+
+                    this.receiver.emit('Crown', player, oldCrownPlayer);
+                    break;
+                case 'crown_silver':
+                    player.state!.hasSilverCrown = true;
+
+                    this.receiver.emit('Trophy', player);
+                    break;
+                case 'coin_gold':
+                    // TODO for coins: test count, and decide emit order.
+                    this.receiver.emit('CoinGold', player);
+                    break;
+                case 'coin_blue':
+                    this.receiver.emit('CoinBlue', player);
+                    break;
+                case 'key_red':
+                case 'key_green':
+                case 'key_blue':
+                case 'key_cyan':
+                case 'key_magenta':
+                case 'key_yellow':
+                    // TODO
+                    break;
+                case 'team_effect_red':
+                case 'team_effect_green':
+                case 'team_effect_blue':
+                case 'team_effect_cyan':
+                case 'team_effect_magenta':
+                case 'team_effect_yellow':
+                    // TODO
+                    break;
+                case 'tool_checkpoint':
+                    // TODO problem: no checkpoint value in networking
+                    break;
+                case 'tool_god_mode_activator':
+                    player.properties.rights!.canGod = true;
+                    break;
+                case 'tool_activate_minimap':
+                    player.properties.rights!.canToggleMinimap = true;
+                    break;
+            }
         });
     }
 
@@ -135,6 +205,8 @@ export default class PlayerMap {
      * | `NewAdd`           | The player joined the world after the bot connected.
      * | `Add`              | The player joined the world, either prior before the bot connected, or afterwards.
      * | `Leave`            | The player left the world.
+     * | `CoinGold`         | The player touched a gold coin.
+     * | `CoinBlue`         | The player touched a blue coin.
      *
      * @since 1.4.8
      */
