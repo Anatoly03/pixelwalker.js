@@ -21,13 +21,20 @@ type Events = {
     Trophy: [GamePlayer];
     CoinGold: [GamePlayer];
     CoinBlue: [GamePlayer];
-    Team: [GamePlayer, typeof Teams[number], typeof Teams[number]];
+
+    Team: [GamePlayer, (typeof Teams)[number], (typeof Teams)[number]];
+    TouchKey: [GamePlayer, (typeof Keys)[number]];
 };
 
 /**
  * @since 1.4.8
  */
 const Teams = ["none", "red", "green", "blue", "cyan", "magenta", "yellow"] as const;
+
+/**
+ * @since 1.4.8
+ */
+const Keys = ["red", "green", "blue", "cyan", "magenta", "yellow"] as const;
 
 /**
  *
@@ -52,7 +59,7 @@ export default class PlayerMap {
      * The self player is the player that is controlled by the client.
      * It is added to the map when the player is initialized.
      */
-    public selfPlayer: GamePlayer | undefined;
+    public self: GamePlayer | undefined;
 
     /**
      * The crown player is the player that currently holds the crown.
@@ -76,6 +83,64 @@ export default class PlayerMap {
 
     //
     //
+    // GETTERS
+    //
+    //
+
+    /**
+     * Get the amount of players in the array.
+     *
+     * @since 1.4.8
+     */
+    public get length(): number {
+        return this.toArray().length;
+    }
+
+    /**
+     * Get the id of the self player (the connected instance)
+     *
+     * @since 1.4.8
+     */
+    public get selfId(): number {
+        return this.self!.properties.playerId;
+    }
+
+    /**
+     * Get the id of the self player (the connected instance)
+     *
+     * @since 1.4.8
+     */
+    public get selfAccountId(): string {
+        return this.self!.properties.accountId;
+    }
+
+    /**
+     * Get the amount of players that have the trophy/ silver crown.
+     *
+     * @deprecated write your own method instead
+     * @since 1.4.8
+     */
+    // TODO determine which getters we need
+    public get totalWins(): number {
+        return this.reduce((acc, p) => acc + +p.state!.hasSilverCrown, 0);
+    }
+
+    /**
+     * Get the amount of players who are not in god or mod mode. This
+     * is useful to determine the amount of players that are playing,
+     * and not spectating.
+     *
+     *
+     * @deprecated this method needs a better name
+     * @since 1.4.8
+     */
+    // TODO rename
+    public get totalNotFlying(): number {
+        return this.reduce((acc, p) => acc + +p.state!.hasSilverCrown, 0);
+    }
+
+    //
+    //
     // EVENTS
     //
     //
@@ -93,7 +158,7 @@ export default class PlayerMap {
             };
 
             this.players.set(pkt.playerProperties!.playerId, selfPlayer);
-            this.selfPlayer = selfPlayer;
+            this.self = selfPlayer;
         });
 
         // Listen for player joined packets to add other players to
@@ -109,7 +174,7 @@ export default class PlayerMap {
 
             // We use the fact here, that the player is incremently
             // assigned, starting with one.
-            const isNewAdd = this.selfPlayer!.properties.playerId < player.properties.playerId;
+            const isNewAdd = this.self!.properties.playerId < player.properties.playerId;
 
             // Broadcast the event to the listeners
             this.receiver.emit(isNewAdd ? "NewAdd" : "OldAdd", player);
@@ -149,59 +214,63 @@ export default class PlayerMap {
 
             switch (mapping) {
                 default:
-                    console.debug('Unknown block touch event:', mapping);
-                case 'crown_gold':
+                    console.debug("Unknown block touch event:", mapping);
+                case "crown_gold":
                     const oldCrownPlayer = this.crownPlayer;
                     this.crownPlayer = player;
 
-                    oldCrownPlayer!.state!.hasGoldCrown = false;
                     player.state!.hasGoldCrown = true;
 
-                    this.receiver.emit('Crown', player, oldCrownPlayer);
+                    if (oldCrownPlayer) {
+                        oldCrownPlayer.state!.hasGoldCrown = false;
+                    }
+
+                    this.receiver.emit("Crown", player, oldCrownPlayer);
                     break;
-                case 'crown_silver':
+                case "crown_silver":
                     player.state!.hasSilverCrown = true;
 
-                    this.receiver.emit('Trophy', player);
+                    this.receiver.emit("Trophy", player);
                     break;
-                case 'coin_gold':
+                case "coin_gold":
                     // TODO for coins: test count, and decide emit order.
-                    this.receiver.emit('CoinGold', player);
+                    this.receiver.emit("CoinGold", player);
                     break;
-                case 'coin_blue':
-                    this.receiver.emit('CoinBlue', player);
+                case "coin_blue":
+                    this.receiver.emit("CoinBlue", player);
                     break;
-                case 'key_red':
-                case 'key_green':
-                case 'key_blue':
-                case 'key_cyan':
-                case 'key_magenta':
-                case 'key_yellow':
-                    // TODO
+                case "key_red":
+                case "key_green":
+                case "key_blue":
+                case "key_cyan":
+                case "key_magenta":
+                case "key_yellow":
+                    const keyName = mapping.substring("key_".length);
+                    this.receiver.emit("TouchKey", player, keyName as any);
                     break;
-                case 'team_effect_none':
-                case 'team_effect_red':
-                case 'team_effect_green':
-                case 'team_effect_blue':
-                case 'team_effect_cyan':
-                case 'team_effect_magenta':
-                case 'team_effect_yellow':
-                    const teamName = mapping.substring('team_effect_'.length);
+                case "team_effect_none":
+                case "team_effect_red":
+                case "team_effect_green":
+                case "team_effect_blue":
+                case "team_effect_cyan":
+                case "team_effect_magenta":
+                case "team_effect_yellow":
+                    const teamName = mapping.substring("team_effect_".length);
                     const oldTeamName = Teams[player.state!.teamId];
                     const teamId = Teams.indexOf(teamName as any);
                     const newTeamName = Teams[teamId];
 
                     player.state!.teamId = teamId;
 
-                    this.receiver.emit('Team', player, newTeamName, oldTeamName);
+                    this.receiver.emit("Team", player, newTeamName, oldTeamName);
                     break;
-                case 'tool_checkpoint':
-                    // TODO problem: no checkpoint value in networking
+                case "tool_checkpoint":
+                    // TODO problem: no checkpoint value in networking, add custom attribute
                     break;
-                case 'tool_god_mode_activator':
+                case "tool_god_mode_activator":
                     player.properties.rights!.canGod = true;
                     break;
-                case 'tool_activate_minimap':
+                case "tool_activate_minimap":
                     player.properties.rights!.canToggleMinimap = true;
                     break;
             }
@@ -241,6 +310,134 @@ export default class PlayerMap {
     //
 
     /**
+     * Maps all players to a regular array with a callback function.
+     *
+     * @since 1.4.8
+     */
+    public map<Z>(callback: (p: GamePlayer) => Z): Z[] {
+        return this.toArray().map(callback);
+    }
+
+    /**
+     * Iterate with callback over each player.
+     *
+     * @since 1.4.8
+     */
+    public forEach(callback: (p: GamePlayer) => void): this {
+        for (const [_, p] of this.players.entries()) {
+            callback(p);
+        }
+
+        return this;
+    }
+
+    /**
+     * Run over all players and make sure all players satisfy a
+     * conditional lambda.
+     *
+     * @since 1.4.8
+     */
+    public every(callback: (p: GamePlayer) => boolean): boolean {
+        for (const p of this.players.values()) {
+            if (!callback(p)) return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Filter by keeping only players that satisfy the predicate.
+     *
+     * @example
+     *
+     * ```typescript
+     * const playersExcludingSelf = client.players
+     *     // .filter((p) => p.properties.playerId !== client.players.selfId);
+     *     .filter((p) => p !== client.players.self);
+     * ```
+     *
+     * @since 1.4.8
+     */
+    public filter(predicate: (value: GamePlayer, index: number) => boolean): GamePlayer[] {
+        return this.toArray().filter(predicate);
+    }
+
+    /**
+     * Find the first player that matches the predicate.
+     *
+     * @since 1.4.8
+     */
+    public find(callback: (p: GamePlayer) => boolean): GamePlayer | undefined {
+        for (const p of this.players.values()) {
+            if (callback(p)) return p;
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Accumulates a result over all player entries and returns.
+     *
+     * @since 1.4.8
+     */
+    public reduce<Z>(callback: (previousValue: Z, currentValue: GamePlayer, currentIndex: number) => Z, initialValue: Z): Z {
+        return this.toArray().reduce<Z>(callback, initialValue);
+    }
+
+    /**
+     * Accumulates a result over all player entries and returns,
+     * starting from the right.
+     *
+     * @since 1.4.8
+     */
+    public reduceRight<Z>(callback: (previousValue: Z, currentValue: GamePlayer, currentIndex: number) => Z, initialValue: Z): Z {
+        return this.toArray().reduceRight<Z>(callback, initialValue);
+    }
+
+    /**
+     * Determines whether the specified callback function returns
+     * true for any element of an array.
+     *
+     * @since 1.4.8
+     */
+    public some(callback: (p: GamePlayer) => boolean): boolean {
+        for (const p of this.players.values()) {
+            if (callback(p)) return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get a random player from selected array.
+     *
+     * @since 1.4.8
+     */
+    public random(): GamePlayer | undefined {
+        const list = this.toArray();
+        if (list.length == 0) return undefined;
+        return list[Math.floor(list.length * Math.random())];
+    }
+
+    /**
+     * @returns An iterator object that contains the values for each
+     * index in the array.
+     *
+     * @since 1.4.8
+     */
+    [Symbol.iterator]() {
+        let idx = 0,
+            data = this.toArray();
+
+        return {
+            next: () => ({
+                value: data[idx++],
+                done: idx >= data.length,
+            }),
+        };
+    }
+
+    /**
      * Returns an array representation snapshot of the map. This array
      * will not be updated or synced with the game.
      *
@@ -252,5 +449,33 @@ export default class PlayerMap {
      */
     public toArray() {
         return [...this.players.values()];
+    }
+
+    /**
+     * Returns an array representation snapshot of the map, every player
+     * in a random order. This array will not be updated or synced with
+     * the game.
+     *
+     * **Side Effects**: Since players share a mutual reference to the
+     * synced map object, the array couldbe updated while processing.
+     * To avoid this, clone player data which you need.
+     *
+     * @since 1.4.8
+     */
+    public toShuffledArray() {
+        const array = this.toArray();
+        let currentIndex = array.length;
+
+        // While there remain elements to shuffle...
+        while (currentIndex != 0) {
+            // Pick a remaining element...
+            let randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+
+            // And swap it with the current element.
+            [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+        }
+
+        return array;
     }
 }
