@@ -27,6 +27,7 @@
     "typedoc": "^0.25.13"
   },
   "files": [
-    "dist/*"
+    "dist/*",
+    "io.js"
   ]
 }
