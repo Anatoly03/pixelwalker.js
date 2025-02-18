@@ -16,6 +16,7 @@ export enum ComponentTypeHeader {
     Double = 6,
     Boolean = 7,
     ByteArray = 8,
+    UInt32 = 9,
 }
 
 /**
@@ -126,6 +127,26 @@ export default class BufferReader {
         
         if (options.writeTypeByte) {
             buffer.writeUInt8(ComponentTypeHeader.Int32);
+        }
+
+        if (options.endian === 'little') {
+            buffer.writeInt32LE(value);
+        } else {
+            buffer.writeInt32BE(value);
+        }
+
+        return buffer.toBuffer();
+    }
+
+    /**
+     * @param {number} value
+     * @returns {Buffer}
+     */
+    public static UInt32(value: number = 0, options: BlockSerializationOptions = {}): Buffer {
+        const buffer = BufferReader.alloc(5);
+        
+        if (options.writeTypeByte) {
+            buffer.writeUInt8(ComponentTypeHeader.UInt32);
         }
 
         if (options.endian === 'little') {
@@ -261,6 +282,8 @@ export default class BufferReader {
                 return this.Int16(value as number, options);
             case ComponentTypeHeader.Int32:
                 return this.Int32(value as number, options);
+            case ComponentTypeHeader.UInt32:
+                return this.UInt32(value as number, options);
             case ComponentTypeHeader.Int64:
                 return this.Int64(value as bigint, options);
             case ComponentTypeHeader.Float:
@@ -639,6 +662,8 @@ export default class BufferReader {
             case ComponentTypeHeader.Int16:
                 return little ? this.readInt16LE() : this.readInt16BE();
             case ComponentTypeHeader.Int32:
+                return little ? this.readInt32LE() : this.readInt32BE();
+            case ComponentTypeHeader.UInt32:
                 return little ? this.readInt32LE() : this.readInt32BE();
             case ComponentTypeHeader.Int64:
                 return little ? this.readBigInt64LE() : this.readBigInt64BE();
