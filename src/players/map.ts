@@ -19,11 +19,23 @@ type Events = {
 
     Crown: [GamePlayer, GamePlayer | undefined];
     Trophy: [GamePlayer];
+
     CoinGold: [GamePlayer];
     CoinBlue: [GamePlayer];
+    Death: [GamePlayer];
 
     Team: [GamePlayer, (typeof Teams)[number], (typeof Teams)[number]];
     TouchKey: [GamePlayer, (typeof Keys)[number]];
+
+    Fly: [GamePlayer, boolean];
+    FlyOn: [GamePlayer];
+    FlyOff: [GamePlayer];
+    God: [GamePlayer, boolean];
+    GodOn: [GamePlayer];
+    GodOff: [GamePlayer];
+    Mod: [GamePlayer, boolean];
+    ModOn: [GamePlayer];
+    ModOff: [GamePlayer];
 };
 
 /**
@@ -215,6 +227,9 @@ export default class PlayerMap {
             switch (mapping) {
                 default:
                     console.debug("Unknown block touch event:", mapping);
+                case 'secret_appear':
+                case 'secret_disappear':
+                    break;
                 case "crown_gold":
                     const oldCrownPlayer = this.crownPlayer;
                     this.crownPlayer = player;
@@ -234,10 +249,10 @@ export default class PlayerMap {
                     break;
                 case "coin_gold":
                     // TODO for coins: test count, and decide emit order.
-                    this.receiver.emit("CoinGold", player);
+                    // this.receiver.emit("CoinGold", player);
                     break;
                 case "coin_blue":
-                    this.receiver.emit("CoinBlue", player);
+                    // this.receiver.emit("CoinBlue", player);
                     break;
                 case "key_red":
                 case "key_green":
@@ -275,6 +290,74 @@ export default class PlayerMap {
                     break;
             }
         });
+
+        // Listen for player counters.
+        connection.listen('playerCountersUpdatePacket', pkt => {
+            const player = this[pkt.playerId!];
+            if (!player) return;
+
+            const oldCoins = player.state!.coinsGold;
+            const oldBlueCoins = player.state!.coinsBlue;
+            const oldDeaths =  player.state!.deaths;
+
+            const newCoins = player.state!.coinsGold = pkt.coins!;
+            const newBlueCoins = player.state!.coinsBlue = pkt.blueCoins!;
+            const newDeaths = player.state!.deaths = pkt.deaths!;
+
+            if (newCoins > oldCoins) {
+                this.receiver.emit("CoinGold", player);
+            }
+
+            if (newBlueCoins > oldBlueCoins) {
+                this.receiver.emit("CoinBlue", player);
+            }
+
+            if (newDeaths > oldDeaths) {
+                this.receiver.emit("Death", player);
+            }
+        })
+
+        // Listen for the player god mode.
+        connection.listen("playerGodModePacket", (pkt) => {
+            const player = this[pkt.playerId!];
+            if (!player) return;
+
+            player.state!.godmode = pkt.enabled;
+
+            this.receiver.emit(pkt.enabled ? "GodOn" : "GodOff", player);
+            this.receiver.emit("God", player, pkt.enabled);
+
+            if (pkt.enabled && !player.state?.modmode) {
+                // Mod mode is off, and god mode is now true -> Fly On
+                this.receiver.emit("FlyOn", player);
+                this.receiver.emit("Fly", player, true);
+            } else if (!pkt.enabled && !player.state?.modmode) {
+                // Mod is off, and god mode isnow false -> Fly Off
+                this.receiver.emit("FlyOff", player);
+                this.receiver.emit("Fly", player, false);
+            }
+        });
+
+        // Listen for the player god mode.
+        connection.listen("playerModModePacket", (pkt) => {
+            const player = this[pkt.playerId!];
+            if (!player) return;
+
+            player.state!.godmode = pkt.enabled;
+
+            this.receiver.emit(pkt.enabled ? "ModOn" : "ModOff", player);
+            this.receiver.emit("Mod", player, pkt.enabled);
+
+            if (pkt.enabled && !player.state?.godmode) {
+                // God mode is off, and mod mode is now true -> Fly On
+                this.receiver.emit("FlyOn", player);
+                this.receiver.emit("Fly", player, true);
+            } else if (!pkt.enabled && !player.state?.godmode) {
+                // God is off, and mod mode is now false -> Fly Off
+                this.receiver.emit("FlyOff", player);
+                this.receiver.emit("Fly", player, false);
+            }
+        });
     }
 
     /**
@@ -295,6 +378,7 @@ export default class PlayerMap {
      * | `Crown`            | The player touched the gold crown. The second argument is the previous crown holder.
      * | `Trophy`           | The player touched the silver crown.
      * | `Team`             | The player changed their team. The second argumentis the new team name. The third argument is the old team name.
+     * | `God`, `Mod`       | The player toggled god mode or mod mode. Alternatively, use event `Fly` if you don't care about the mode type. Comes with event variations `On` and `Off`
      *
      * @since 1.4.8
      */
