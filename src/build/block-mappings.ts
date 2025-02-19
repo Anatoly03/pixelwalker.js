@@ -10,20 +10,29 @@
 import fs from "node:fs";
 import CONFIG from "../config.js";
 
-const response = await fetch(CONFIG.GAME_SERVER_HTTP + "/mappings");
+const response = await fetch(CONFIG.GAME_SERVER_HTTP + "/listblocks");
 
 /**
- * An object of block mappings to block id.
+ * A block entry.
  */
-export const Mappings: { [keys: string]: number } = await response.json();
+export type BlockEntry = {
+    Id: number;
+    PaletteId: string;
+    Layer: number;
+    MinimapColor?: number;
+    LegacyMorph?: number[];
+    LegacyId?: number;
+};
+
+/**
+ * An array of block entries.
+ */
+export const BlockList: BlockEntry[] = await response.json();
 
 /**
  * An array of block mappings.
  */
-export const Palette: string[] = Object
-    .entries(Mappings)
-    .sort(([, a], [, b]) => a - b)
-    .reduce((arr, [key]) => [...arr, key], [] as string[]);
+export const Palette: string[] = BlockList.sort((a, b) => a.Id - b.Id).map(({ PaletteId }) => PaletteId);
 
 /**
  * This is the build script and will be executed upon program start.
@@ -38,7 +47,14 @@ if (import.meta.dirname) {
         `
 // This is auto generated in the project.
 
-export declare const Mappings: ${JSON.stringify(Mappings, undefined, 4)};
+export type BlockEntry = {
+    Id: number;
+    PaletteId: string;
+    Layer: number;
+    LegacyId: number;
+};
+
+export declare const Mappings: ${JSON.stringify(BlockList, undefined, 4)};
 
 export declare const Palette: [
 ${entries}

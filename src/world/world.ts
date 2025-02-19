@@ -74,6 +74,30 @@ export default class GameWorld {
 
     //
     //
+    // GETTERS
+    //
+    //
+
+    /**
+     * The width of the world.
+     *
+     * @since 1.4.9
+     */
+    public get width() {
+        return this.structure.width;
+    }
+
+    /**
+     * The height of the world.
+     *
+     * @since 1.4.9
+     */
+    public get height() {
+        return this.structure.height;
+    }
+
+    //
+    //
     // EVENTS
     //
     //

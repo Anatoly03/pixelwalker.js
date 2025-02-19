@@ -119,6 +119,23 @@ export default class BlockScheduler {
         });
 
         /**
+         * Check that the layer matches the blocks' layer, with the
+         * exception of empty, which can be placed anywhere.
+         */
+        if (!block.canPlace(position.layer)) {
+            reject(`tried to place \`${block.mapping}\` onto layer ${position.layer}`);
+            return promise;
+        }
+
+        /**
+         * Check for position to be in bounds.
+         */
+        if (position.x < 0 || position.y < 0 || position.x >= this.game.world.width || position.y >= this.game.world.height) {
+            reject(`tried to place \`${block.mapping}\` out of bounds at (${position.x}, ${position.y})`);
+            return promise;
+        }
+
+        /**
          * The event object that is pushed to the scheduler.
          */
         const event: BlockSchedulerEvent = {

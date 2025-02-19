@@ -1,4 +1,4 @@
-import { Palette } from "../build/block-mappings.js";
+import { Palette, BlockList } from "../build/block-mappings.js";
 import BufferReader, { ComponentTypeHeader } from "../util/buffer.js";
 import { BlockData } from "./block-args.js";
 
@@ -38,7 +38,7 @@ export default class Block {
     public readonly id: number;
 
     /**
-     *
+     * // TODO document
      */
     public readonly data: (boolean | number | bigint | string | Buffer)[] = [];
 
@@ -221,11 +221,42 @@ export default class Block {
         return Palette[this.id];
     }
 
+    /**
+     * Returns the blocks' minimap color.
+     *
+     * @since 1.4.9
+     */
+    public get minimapColor(): number | undefined {
+        switch (this.mapping) {
+            case 'custom_solid_bg':
+            case 'custom_checker_bg':
+                return this.data[0] as number;
+        }
+
+        const entry = BlockList.find((b) => b.Id === this.id)!;
+        return entry.MinimapColor;
+    }
+
     //
     //
     // METHODS
     //
     //
+
+    /**
+     * Returns true if the block can be placed in the given layer.
+     * 
+     * @since 1.4.9
+     */
+    public canPlace(layer: number): boolean {
+        switch (this.id) {
+            case 0:
+                return true;
+            default:
+                const entry = BlockList.find((b) => b.Id === this.id)!;
+                return entry.Layer === layer;
+        }
+    }
 
     /**
      * Returns a value copy of the block. This is used to
