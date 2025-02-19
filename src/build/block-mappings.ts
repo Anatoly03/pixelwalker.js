@@ -27,12 +27,12 @@ export type BlockEntry = {
 /**
  * An array of block entries.
  */
-export const BlockList: BlockEntry[] = await response.json();
+export const BlockItems: BlockEntry[] = await response.json();
 
 /**
  * An array of block mappings.
  */
-export const Palette: string[] = BlockList.sort((a, b) => a.Id - b.Id).map(({ PaletteId }) => PaletteId);
+export const Palette: string[] = BlockItems.sort((a, b) => a.Id - b.Id).map(({ PaletteId }) => PaletteId);
 
 /**
  * This is the build script and will be executed upon program start.
@@ -54,7 +54,7 @@ export type BlockEntry = {
     LegacyId: number;
 };
 
-export declare const Mappings: ${JSON.stringify(BlockList, undefined, 4)};
+export declare const Mappings: ${JSON.stringify(BlockItems, undefined, 4)};
 
 export declare const Palette: [
 ${entries}

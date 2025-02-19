@@ -1,4 +1,4 @@
-import { Palette, BlockList } from "../build/block-mappings.js";
+import { Palette, BlockItems } from "../build/block-mappings.js";
 import BufferReader, { ComponentTypeHeader } from "../util/buffer.js";
 import { BlockData } from "./block-args.js";
 
@@ -233,7 +233,7 @@ export default class Block {
                 return this.data[0] as number;
         }
 
-        const entry = BlockList.find((b) => b.Id === this.id)!;
+        const entry = BlockItems.find((b) => b.Id === this.id)!;
         return entry.MinimapColor;
     }
 
@@ -253,7 +253,7 @@ export default class Block {
             case 0:
                 return true;
             default:
-                const entry = BlockList.find((b) => b.Id === this.id)!;
+                const entry = BlockItems.find((b) => b.Id === this.id)!;
                 return entry.Layer === layer;
         }
     }
