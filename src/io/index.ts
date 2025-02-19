@@ -1,1 +1,1 @@
-export { default as PlayerSync } from "./players.js";
+export { default as PlayerSync } from "./player-sync.js";
