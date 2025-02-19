@@ -10,7 +10,7 @@ let structure: Structure | null = null;
 let ownerId = '';
 
 game.listen('Init', () => {
-    ownerId = game.players.selfPlayer!.properties.accountId!;
+    ownerId = game.players.selfAccountId;
 })
 
 game.registerCommand({
