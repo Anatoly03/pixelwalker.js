@@ -28,6 +28,6 @@
   },
   "files": [
     "dist/*",
-    "io.js"
+    "high.js"
   ]
 }
