@@ -210,6 +210,89 @@ export default class PlayerMap {
             this.players.delete(pkt.playerId);
         });
 
+        // ignored: PlayerChatPacket
+
+        // Listen for player rights packets to update the player rights.
+        connection.listen("playerUpdateRightsPacket", (pkt) => {
+            const player = this[pkt.playerId!];
+            if (!player) return;
+
+            // const oldRights = player.properties.rights;
+            player.properties.rights = pkt.rights;
+
+            // TODO handle rights change
+        });
+
+        // Listen for player movement packets to update the player
+        // movement state.
+        connection.listen("playerMovedPacket", (pkt) => {
+            const player = this[pkt.playerId!];
+            if (!player) return;
+
+            // const oldMovement = player.movement;
+            player.movement = pkt;
+
+            // TODO handle movement change
+        });
+
+        // Listen for player face packets to update the player face,
+        // and clear visual effects.
+        connection.listen("playerFacePacket", (pkt) => {
+            const player = this[pkt.playerId!];
+            if (!player) return;
+
+            // const oldFace = player.properties.face;
+            player.properties.face = pkt.faceId;
+
+            // TODO handle face change
+        });
+
+        // Listen for the player god mode.
+        connection.listen("playerGodModePacket", (pkt) => {
+            const player = this[pkt.playerId!];
+            if (!player) return;
+
+            player.state!.godmode = pkt.enabled;
+
+            this.receiver.emit(pkt.enabled ? "GodOn" : "GodOff", player);
+            this.receiver.emit("God", player, pkt.enabled);
+
+            if (pkt.enabled && !player.state?.modmode) {
+                // Mod mode is off, and god mode is now true -> Fly On
+                this.receiver.emit("FlyOn", player);
+                this.receiver.emit("Fly", player, true);
+            } else if (!pkt.enabled && !player.state?.modmode) {
+                // Mod is off, and god mode isnow false -> Fly Off
+                this.receiver.emit("FlyOff", player);
+                this.receiver.emit("Fly", player, false);
+            }
+        });
+
+        // Listen for the player god mode.
+        connection.listen("playerModModePacket", (pkt) => {
+            const player = this[pkt.playerId!];
+            if (!player) return;
+
+            player.state!.godmode = pkt.enabled;
+
+            this.receiver.emit(pkt.enabled ? "ModOn" : "ModOff", player);
+            this.receiver.emit("Mod", player, pkt.enabled);
+
+            if (pkt.enabled && !player.state?.godmode) {
+                // God mode is off, and mod mode is now true -> Fly On
+                this.receiver.emit("FlyOn", player);
+                this.receiver.emit("Fly", player, true);
+            } else if (!pkt.enabled && !player.state?.godmode) {
+                // God is off, and mod mode is now false -> Fly Off
+                this.receiver.emit("FlyOff", player);
+                this.receiver.emit("Fly", player, false);
+            }
+        });
+
+        // TODO PlayerRespawnPacket
+
+        // TODO PlayerResetPacket
+
         // Listen for player touch block packets: Crown, Trophy, Keys,
         // and other block interactions.
         //
@@ -227,8 +310,8 @@ export default class PlayerMap {
             switch (mapping) {
                 default:
                     console.debug("Unknown block touch event:", mapping);
-                case 'secret_appear':
-                case 'secret_disappear':
+                case "secret_appear":
+                case "secret_disappear":
                     break;
                 case "crown_gold":
                     const oldCrownPlayer = this.crownPlayer;
@@ -291,18 +374,26 @@ export default class PlayerMap {
             }
         });
 
+        // TODO PlayerAddEffectPacket
+
+        // TODO PlayerRemoveEffectPacket
+
+        // TODO PlayerResetEffectsPacket
+
+        // TODO PlayerTeamUpdatePacket
+
         // Listen for player counters.
-        connection.listen('playerCountersUpdatePacket', pkt => {
+        connection.listen("playerCountersUpdatePacket", (pkt) => {
             const player = this[pkt.playerId!];
             if (!player) return;
 
             const oldCoins = player.state!.coinsGold;
             const oldBlueCoins = player.state!.coinsBlue;
-            const oldDeaths =  player.state!.deaths;
+            const oldDeaths = player.state!.deaths;
 
-            const newCoins = player.state!.coinsGold = pkt.coins!;
-            const newBlueCoins = player.state!.coinsBlue = pkt.blueCoins!;
-            const newDeaths = player.state!.deaths = pkt.deaths!;
+            const newCoins = (player.state!.coinsGold = pkt.coins!);
+            const newBlueCoins = (player.state!.coinsBlue = pkt.blueCoins!);
+            const newDeaths = (player.state!.deaths = pkt.deaths!);
 
             if (newCoins > oldCoins) {
                 this.receiver.emit("CoinGold", player);
@@ -315,49 +406,23 @@ export default class PlayerMap {
             if (newDeaths > oldDeaths) {
                 this.receiver.emit("Death", player);
             }
-        })
-
-        // Listen for the player god mode.
-        connection.listen("playerGodModePacket", (pkt) => {
-            const player = this[pkt.playerId!];
-            if (!player) return;
-
-            player.state!.godmode = pkt.enabled;
-
-            this.receiver.emit(pkt.enabled ? "GodOn" : "GodOff", player);
-            this.receiver.emit("God", player, pkt.enabled);
-
-            if (pkt.enabled && !player.state?.modmode) {
-                // Mod mode is off, and god mode is now true -> Fly On
-                this.receiver.emit("FlyOn", player);
-                this.receiver.emit("Fly", player, true);
-            } else if (!pkt.enabled && !player.state?.modmode) {
-                // Mod is off, and god mode isnow false -> Fly Off
-                this.receiver.emit("FlyOff", player);
-                this.receiver.emit("Fly", player, false);
-            }
         });
 
-        // Listen for the player god mode.
-        connection.listen("playerModModePacket", (pkt) => {
-            const player = this[pkt.playerId!];
-            if (!player) return;
+        // TODO PlayerLocalSwitchChangedPacket
 
-            player.state!.godmode = pkt.enabled;
+        // TODO PlayerLocalSwitchResetPacket
 
-            this.receiver.emit(pkt.enabled ? "ModOn" : "ModOff", player);
-            this.receiver.emit("Mod", player, pkt.enabled);
+        // ignored: PlayerDirectMessagePacket
 
-            if (pkt.enabled && !player.state?.godmode) {
-                // God mode is off, and mod mode is now true -> Fly On
-                this.receiver.emit("FlyOn", player);
-                this.receiver.emit("Fly", player, true);
-            } else if (!pkt.enabled && !player.state?.godmode) {
-                // God is off, and mod mode is now false -> Fly Off
-                this.receiver.emit("FlyOff", player);
-                this.receiver.emit("Fly", player, false);
-            }
-        });
+        // TODO PlayerTouchPlayerPacket
+
+        // TODO PlayerTeleportedPacket
+
+        // TODO WorldReloadedPacket
+
+        // TODO GlobalSwitchChangedPacket
+
+        // TODO GlobalSwitchResetPacket
     }
 
     /**
