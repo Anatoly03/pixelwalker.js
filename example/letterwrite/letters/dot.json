@@ -1,0 +1,14 @@
+{
+    "generator": "pixelwalker.js/v2",
+    "meta": {
+        "letter": ".",
+        "baseline": 3
+    },
+    "width": 1,
+    "height": 1,
+    "palette": [
+        "empty",
+        "dojo_wallpaper_white_bg"
+    ],
+    "data": "AQAAAAAAAAA="
+}

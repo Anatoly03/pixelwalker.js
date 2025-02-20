@@ -1,0 +1,15 @@
+{
+    "generator": "pixelwalker.js/v2",
+    "meta": {
+        "letter": "l",
+        "baseline": 0
+    },
+    "width": 1,
+    "height": 5,
+    "palette": [
+        "empty",
+        "carnival_stripes_red_white_bg",
+        "neon_magenta_bg"
+    ],
+    "data": "AQAAAAIAAAABAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+}

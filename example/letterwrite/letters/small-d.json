@@ -1,0 +1,16 @@
+{
+    "generator": "pixelwalker.js/v2",
+    "meta": {
+        "letter": "d",
+        "baseline": 0
+    },
+    "width": 2,
+    "height": 5,
+    "palette": [
+        "empty",
+        "neon_magenta_bg",
+        "dojo_wallpaper_white_bg",
+        "carnival_stripes_red_white_bg"
+    ],
+    "data": "AQAAAAEAAAACAAAAAwAAAAIAAAADAAAAAwAAAAMAAAADAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+}

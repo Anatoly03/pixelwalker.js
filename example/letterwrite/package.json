@@ -1,0 +1,13 @@
+{
+  "name": "copypaste",
+  "license": "ISC",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "npx tsx src/index.ts"
+  },
+  "dependencies": {
+    "dotenv": "latest",
+    "pixelwalker.js": "file:../.."
+  }
+}
