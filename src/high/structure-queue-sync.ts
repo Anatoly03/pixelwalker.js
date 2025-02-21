@@ -25,6 +25,13 @@ type StructureQueueSyncSettings = {
 };
 
 /**
+ * The synced StructureQueue is a structure queue which is
+ * periodically pulled from the file system. This is useful
+ * for dynamic structures which are modified during runtime.
+ * 
+ * The queue is a list of structures which allows methods to
+ * grab the next structure, or a random one.
+ * 
  * @since 1.4.9
  */
 export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
@@ -142,7 +149,7 @@ export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
     /**
      * Adds the input structure at the end of the queue.
      */
-    public async push(structure: Structure<Meta>): Promise<void> {
+    public async pushQueue(structure: Structure<Meta>): Promise<void> {
         this.queue.push(structure);
     }
 
