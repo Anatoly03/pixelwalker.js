@@ -6,6 +6,19 @@ import { create } from "@bufbuild/protobuf";
 import GameClient from "../game.js";
 import GamePlayer from "../types/game-player.js";
 
+type MoveKeyPresses = {
+    keyLeftHold: boolean;
+    keyLeftRelease: boolean;
+    keyRightHold: boolean;
+    keyRightRelease: boolean;
+    keyUpHold: boolean;
+    keyUpRelease: boolean;
+    keyDownHold: boolean;
+    keyDownRelease: boolean;
+    keyJumpHold: boolean;
+    keyJumpRelease: boolean;
+}
+
 /**
  * // TODO document, expand events
  *
@@ -28,6 +41,8 @@ type Events = {
 
     Team: [GamePlayer, (typeof Teams)[number], (typeof Teams)[number]];
     TouchKey: [GamePlayer, (typeof Keys)[number]];
+
+    Move: [GamePlayer, MoveKeyPresses];
 
     Fly: [GamePlayer, boolean];
     FlyOn: [GamePlayer];
@@ -231,10 +246,38 @@ export default class PlayerMap {
             const player = this[pkt.playerId!];
             if (!player) return;
 
-            // const oldMovement = player.movement;
+            const oldMovement = player.movement;
             player.movement = pkt;
 
-            // TODO handle movement change
+            const keyLeftHold = pkt.horizontal < 0 && (oldMovement?.horizontal ?? 0) >= 0;
+            const keyLeftRelease = pkt.horizontal >= 0 && (oldMovement?.horizontal ?? 0) < 0;
+
+            const keyRightHold = pkt.horizontal > 0 && (oldMovement?.horizontal ?? 0) <= 0;
+            const keyRightRelease = pkt.horizontal <= 0 && (oldMovement?.horizontal ?? 0) > 0;
+
+            const keyUpHold = pkt.vertical < 0 && (oldMovement?.vertical ?? 0) >= 0;
+            const keyUpRelease = pkt.vertical >= 0 && (oldMovement?.vertical ?? 0) < 0;
+
+            const keyDownHold = pkt.vertical > 0 && (oldMovement?.vertical ?? 0) <= 0;
+            const keyDownRelease = pkt.vertical <= 0 && (oldMovement?.vertical ?? 0) > 0;
+
+            const keyJumpHold = pkt.spaceJustDown;
+            const keyJumpRelease = (oldMovement?.spaceDown && !pkt.spaceDown) ?? false;
+
+            const keyPresses: MoveKeyPresses = {
+                keyLeftHold,
+                keyLeftRelease,
+                keyRightHold,
+                keyRightRelease,
+                keyUpHold,
+                keyUpRelease,
+                keyDownHold,
+                keyDownRelease,
+                keyJumpHold,
+                keyJumpRelease,
+            };
+
+            this.receiver.emit('Move', player, keyPresses);
         });
 
         // Listen for player face packets to update the player face,
