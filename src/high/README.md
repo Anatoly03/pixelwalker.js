@@ -12,5 +12,7 @@ import {
 } from 'pixelwalker.js/high'
 ```
 
+The **StructureQueueSync** is a good utility for bots like Shift, The Line and Bombot, where you have individual "maps" or "structure tiles" and you expect these to be synced with storage at runtime and have access to features like queueing.
+
 <!-- TODO examples -->
 <!-- TODO readme -->
