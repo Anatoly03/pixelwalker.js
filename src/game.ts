@@ -144,6 +144,24 @@ export default class GameClient {
         return this.connection.connected;
     }
 
+    /**
+     * The width of the world.
+     *
+     * @since 1.4.9
+     */
+    public get width() {
+        return this.world.width;
+    }
+
+    /**
+     * The height of the world.
+     *
+     * @since 1.4.9
+     */
+    public get height() {
+        return this.world.height;
+    }
+
     //
     //
     // EVENTS
