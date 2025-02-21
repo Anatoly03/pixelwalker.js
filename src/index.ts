@@ -20,3 +20,4 @@ export type { WorldMeta } from "./types/world-meta.js";
 export type { WorldPosition } from "./types/world-position.js";
 
 export * as Protocol from "./protocol/world_pb.js";
+export * as PasteAnimation from "./world/paste-animation.js";

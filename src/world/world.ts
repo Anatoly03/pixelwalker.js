@@ -10,6 +10,9 @@ import WorldPosition from "../types/world-position.js";
 import BlockScheduler from "./block-scheduler.js";
 import WorldMeta from "../types/world-meta.js";
 
+import { ALL_AT_ONCE } from "./paste-animation.js";
+import wait from "../util/wait.js";
+
 /**
  * // TODO document, expand events
  */
@@ -24,6 +27,9 @@ type Events = {
  */
 type StructurePasteOptions = {
     omit: (typeof Palette)[number][];
+
+    pasteAnimation: (structure: Structure<{}>) => Generator<WorldPosition[], void, unknown>;
+    pasteAnimationCooldown: number;
 };
 
 /**
@@ -271,32 +277,52 @@ export default class GameWorld {
      *
      * @since 1.4.6
      */
-    public pasteStructure(structure: Structure, ox: number, oy: number, options?: StructurePasteOptions): Promise<any> {
-        const promises = [];
-
-        options ??= {
+    public async pasteStructure(structure: Structure, ox: number, oy: number, options: Partial<StructurePasteOptions> = {}) {
+        const allPromises = [];
+        
+        const settings = {
             omit: [],
+            pasteAnimation: ALL_AT_ONCE,
+            pasteAnimationCooldown: 0,
+            ...options,
         };
 
-        for (const [layer, l] of structure.layers()) {
-            for (const [tx, ty, block] of l.blocks()) {
-                const x = ox + tx;
-                const y = oy + ty;
+        for (const positions of settings.pasteAnimation(structure)) {
+            const promises = positions
+                .filter(({ x, y, layer }) => {
+                    const block = structure[layer][x][y];
 
-                // Check out bounds.
-                if (x < 0 || y < 0 || x >= this.structure.width || y >= this.structure.height) continue;
+                    const px = ox + x;
+                    const py = oy + y;
 
-                // Check already placed.
-                if (this.structure[layer][x][y].equals(block)) continue;
+                    let place = true;
 
-                // Check Settings: Omit
-                if (options.omit.includes(block.mapping)) continue;
+                    // Check out bounds.
+                    place &&= px > 0 && py > 0 && px < this.structure.width && py < this.structure.height;
 
-                promises.push(this.scheduler.push(block, { x, y, layer }));
-            }
+                    // Check already placed.
+                    place &&= !this.structure[layer][px][py].equals(block);
+
+                    // Check Settings: Omit
+                    place && !settings.omit.includes(block.mapping);
+
+                    return place;
+                })
+                .map(({ x, y, layer }) => {
+                    const block = structure[layer][x][y];
+
+                    const px = ox + x;
+                    const py = oy + y;
+
+                    return this.scheduler.push(block, { x: px, y: py, layer });
+                });
+
+            this.scheduler.process();
+            allPromises.push(...promises);
+
+            await wait(settings.pasteAnimationCooldown);
         }
 
-        this.scheduler.process();
-        return Promise.all(promises);
+        return Promise.all(allPromises);
     }
 }
