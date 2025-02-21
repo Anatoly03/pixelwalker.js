@@ -20,6 +20,8 @@ type Events = {
     Crown: [GamePlayer, GamePlayer | undefined];
     Trophy: [GamePlayer];
 
+    Reset: [GamePlayer];
+
     CoinGold: [GamePlayer];
     CoinBlue: [GamePlayer];
     Death: [GamePlayer];
@@ -292,6 +294,28 @@ export default class PlayerMap {
         // TODO PlayerRespawnPacket
 
         // TODO PlayerResetPacket
+        connection.listen("playerResetPacket", (pkt) => {
+            const player = this[pkt.playerId!];
+            if (!player) return;
+
+            // TODO implement
+            // player.state!.coinsGold = 0;
+            // player.state!.coinsBlue = 0;
+            // player.state!.deaths = 0;
+            // player.state!.hasGoldCrown = false;
+            // player.state!.hasSilverCrown = false;
+            // player.state!.godmode = false;
+            // player.state!.modmode = false;
+            // player.state!.teamId = 0;
+
+            // TODO
+            if (pkt.position && player.movement) {
+                player.movement.position!.x = pkt.position.x;
+                player.movement.position!.y = pkt.position.y;
+            }
+
+            this.receiver.emit("Reset", player);
+        });
 
         // Listen for player touch block packets: Crown, Trophy, Keys,
         // and other block interactions.
