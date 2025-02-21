@@ -2,6 +2,21 @@ import WorldPosition from "../types/world-position.js";
 import Structure from "./structure.js";
 
 /**
+ * Use a random structure paste animation, of the available pixelwalker implementations.
+ */
+export function RANDOM(structure: Structure) {
+    const Animations = [
+        ALL_AT_ONCE,
+        TOPLEFT_TO_BOTTOMRIGHT_HORIZONTAL,
+        TOPLEFT_TO_BOTTOMRIGHT_VERTICAL,
+        SPIRAL_CLOCKWISE,
+    ];
+
+    const f = Animations[(Math.random() * Animations.length) | 0];
+    return f(structure);
+}
+
+/**
  * Paste the structure all at once, we do not care about
  * order of paste or timeouts.
  */
