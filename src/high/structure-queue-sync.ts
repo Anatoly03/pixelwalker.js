@@ -30,10 +30,39 @@ type StructureQueueSyncSettings = {
  * The synced StructureQueue is a structure queue which is
  * periodically pulled from the file system. This is useful
  * for dynamic structures which are modified during runtime.
- * 
+ *
  * The queue is a list of structures which allows methods to
  * grab the next structure, or a random one.
- * 
+ *
+ * @example
+ *
+ * ```typescript
+ * import YAML from "yaml";
+ * import { StructureQueueSync } from "pixelwalker.js/high";
+ * import { game } from ".";
+ *
+ * export const topLeftX = 38;
+ * export const topLeftY = 44;
+ *
+ * export type StructureMeta = {
+ *     name: string;
+ *     creator: string;
+ * };
+ *
+ * export const structures = await StructureQueueSync.create<StructureMeta>({
+ *     parser: YAML,
+ *     sourcePath: "./maps",
+ * });
+ *
+ * export async function build() {
+ *     const s = await structures.next();
+ *     await game.world.pasteStructure(s, topLeftX, topLeftY);
+ * }
+ *
+ * export default structures;
+ *
+ * ```
+ *
  * @since 1.4.9
  */
 export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
@@ -106,7 +135,7 @@ export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
      */
     public static async create<Meta extends Record<string, any> = {}>(options: Partial<StructureQueueSyncSettings> = {}): Promise<StructureQueueSync<Meta>> {
         const structure = new StructureQueueSync<Meta>(options);
-        
+
         if (options.sourcePath) {
             await structure.load(options.sourcePath);
         }
@@ -172,12 +201,10 @@ export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
      */
     private async reload() {
         // If source path is not defined, skip.
-        if (!this.options.sourcePath)
-            return;
+        if (!this.options.sourcePath) return;
 
         // If last reload is less then sync time, skip.
-        if (performance.now() - this.lastReload < this.options.resyncTime)
-            return;
+        if (performance.now() - this.lastReload < this.options.resyncTime) return;
 
         this.lastReload = performance.now();
 
@@ -212,8 +239,7 @@ export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
      */
     private load(path: string): Promise<any> {
         // If the tile is already registered, skip.
-        if (this.tiles[path])
-            return Promise.resolve(true);
+        if (this.tiles[path]) return Promise.resolve(true);
 
         // If we're in a directory, load all files.
         if (fs.lstatSync(path).isDirectory()) {
