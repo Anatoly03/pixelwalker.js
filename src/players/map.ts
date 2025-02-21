@@ -29,6 +29,8 @@ type Events = {
     OldAdd: [GamePlayer];
     NewAdd: [GamePlayer];
     Leave: [GamePlayer];
+    
+    Face: [GamePlayer, number];
 
     Crown: [GamePlayer, GamePlayer | undefined];
     Trophy: [GamePlayer];
@@ -277,6 +279,7 @@ export default class PlayerMap {
                 keyJumpRelease,
             };
 
+            // Broadcast
             this.receiver.emit('Move', player, keyPresses);
         });
 
@@ -289,7 +292,8 @@ export default class PlayerMap {
             // const oldFace = player.properties.face;
             player.properties.face = pkt.faceId;
 
-            // TODO handle face change
+            // Broadcast
+            this.receiver.emit("Face", player, pkt.faceId);
         });
 
         // Listen for the player god mode.
