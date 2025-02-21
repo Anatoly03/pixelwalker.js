@@ -22,6 +22,8 @@ type StructureQueueSyncSettings = {
         parse(v: string): any;
         stringify(v: any): string;
     };
+    sourcePath: string | null;
+    resyncTime: number;
 };
 
 /**
@@ -36,18 +38,11 @@ type StructureQueueSyncSettings = {
  */
 export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
     /**
-     * The link to the document which stores the data.
-     */
-    // private path: string;
-
-    /**
      * Entry of all tiles and their relative path.
      *
-     * @param string The relative path to the structure.
-     * @param number The timestamp of the structure read.
-     * @param Structure The structure instance.
+     * @param path The relative path to the structure.
      */
-    private tiles: { [keys: string]: StructureEntry<Meta> } = {};
+    private tiles: { [path: string]: StructureEntry<Meta> } = {};
 
     /**
      * The structure queue.
@@ -72,9 +67,11 @@ export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
      */
     private parser: StructureParser<any>;
 
-    private constructor(path: string, options: Partial<StructureQueueSyncSettings> = {}) {
+    private constructor(options: Partial<StructureQueueSyncSettings> = {}) {
         this.options = {
             parser: JSON,
+            sourcePath: null,
+            resyncTime: 2500,
             ...options,
         };
 
@@ -107,9 +104,12 @@ export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
      *
      * @since 1.4.9
      */
-    public static async create<Meta extends Record<string, any> = {}>(path: string, options: Partial<StructureQueueSyncSettings> = {}): Promise<StructureQueueSync<Meta>> {
-        const structure = new StructureQueueSync<Meta>(path, options);
-        await structure.load(path);
+    public static async create<Meta extends Record<string, any> = {}>(options: Partial<StructureQueueSyncSettings> = {}): Promise<StructureQueueSync<Meta>> {
+        const structure = new StructureQueueSync<Meta>(options);
+        
+        if (options.sourcePath) {
+            await structure.load(options.sourcePath);
+        }
 
         structure.lastReload = performance.now();
 
@@ -128,9 +128,7 @@ export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
      * @since 1.4.9
      */
     public async all(): Promise<readonly Structure<Meta>[]> {
-        if (performance.now() - this.lastReload > 2500) {
-            this.reload();
-        }
+        await this.reload();
 
         return Object.entries(this.tiles).map(([_path, { structure }]) => structure);
     }
@@ -160,6 +158,8 @@ export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
      * @since 1.4.9
      */
     public async random(): Promise<Structure<Meta>> {
+        await this.reload();
+
         const structures = await this.all();
         const idx = (Math.random() * structures.length) | 0;
         return structures[idx];
@@ -171,7 +171,18 @@ export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
      * // TODO optimize
      */
     private async reload() {
+        // If source path is not defined, skip.
+        if (!this.options.sourcePath)
+            return;
+
+        // If last reload is less then sync time, skip.
+        if (performance.now() - this.lastReload < this.options.resyncTime)
+            return;
+
         this.lastReload = performance.now();
+
+        // Load new structures.
+        this.load(this.options.sourcePath);
 
         // Structures which were deleted, which no longer
         // exist in the file system have to be removed.
@@ -200,6 +211,11 @@ export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
      * // TODO optimize
      */
     private load(path: string): Promise<any> {
+        // If the tile is already registered, skip.
+        if (this.tiles[path])
+            return Promise.resolve(true);
+
+        // If we're in a directory, load all files.
         if (fs.lstatSync(path).isDirectory()) {
             const paths = fs.readdirSync(path).map((p) => `${path}/${p}`);
 
@@ -210,6 +226,7 @@ export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
             );
         }
 
+        // Otherwise, load and parse the file.
         return new Promise((resolve, reject) => {
             const stat = fs.statSync(path);
 
