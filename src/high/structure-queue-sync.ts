@@ -163,6 +163,15 @@ export default class StructureQueueSync<Meta extends Record<string, any> = {}> {
     }
 
     /**
+     * Finds the first matching structure.
+     *
+     * @since 1.4.9
+     */
+    public find(callback: (structure: Structure<Meta>) => boolean): Promise<Structure<Meta> | undefined> {
+        return this.all().then((structures) => structures.find(callback));
+    }
+
+    /**
      * Gets the next queued structured, or selects randomly.
      * Asserts, that the structure list _or_ the queue is not
      * empty.

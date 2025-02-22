@@ -15,8 +15,8 @@ type MoveKeyPresses = {
     keyUpRelease: boolean;
     keyDownHold: boolean;
     keyDownRelease: boolean;
-    keyJumpHold: boolean;
-    keyJumpRelease: boolean;
+    keySpaceHold: boolean;
+    keySpaceRelease: boolean;
 }
 
 /**
@@ -263,8 +263,8 @@ export default class PlayerMap {
             const keyDownHold = pkt.vertical > 0 && (oldMovement?.vertical ?? 0) <= 0;
             const keyDownRelease = pkt.vertical <= 0 && (oldMovement?.vertical ?? 0) > 0;
 
-            const keyJumpHold = pkt.spaceJustDown;
-            const keyJumpRelease = (oldMovement?.spaceDown && !pkt.spaceDown) ?? false;
+            const keySpaceHold = pkt.spaceJustDown;
+            const keySpaceRelease = (oldMovement?.spaceDown && !pkt.spaceDown) ?? false;
 
             const keyPresses: MoveKeyPresses = {
                 keyLeftHold,
@@ -275,8 +275,8 @@ export default class PlayerMap {
                 keyUpRelease,
                 keyDownHold,
                 keyDownRelease,
-                keyJumpHold,
-                keyJumpRelease,
+                keySpaceHold,
+                keySpaceRelease,
             };
 
             // Broadcast
