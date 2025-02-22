@@ -281,6 +281,16 @@ export default abstract class PlayerQueue {
         return this.internalOnGameStart();
     }
 
+    /**
+     * Stops the round.
+     *
+     * @since 1.4.9
+     */
+    public async stop() {
+        if (!this.running) return;
+        return this.internalOnGameEnd('force');
+    }
+
     // public awaitEnd(): Promise<void> {
     //     // TODO implement: this returns a promise that will resolve when the game ends.
     //     return Promise.resolve();
