@@ -30,6 +30,11 @@ type StructurePasteOptions = {
 
     pasteAnimation: (structure: Structure<{}>) => Generator<WorldPosition[], void, unknown>;
     pasteAnimationCooldown: number;
+
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
 };
 
 /**
@@ -284,6 +289,10 @@ export default class GameWorld {
             omit: [],
             pasteAnimation: ALL_AT_ONCE,
             pasteAnimationCooldown: 0,
+            minX: 0,
+            minY: 0,
+            maxX: this.game.width - 1,
+            maxY: this.game.height - 1,
             ...options,
         };
 
@@ -298,7 +307,7 @@ export default class GameWorld {
                     let place = true;
 
                     // Check out bounds.
-                    place &&= px > 0 && py > 0 && px < this.structure.width && py < this.structure.height;
+                    place &&= px >= settings.minX && py >= settings.minY && px <= settings.maxX && py <= settings.maxY;
 
                     // Check already placed.
                     place &&= !this.structure[layer][px][py].equals(block);
