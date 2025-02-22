@@ -1,4 +1,5 @@
 import { GameClient, GamePlayer } from "..";
+import { wait } from "../util";
 
 type DisqualifyReason = "leave" | "death" | "flying" | "reset";
 
@@ -127,6 +128,12 @@ export default abstract class PlayerQueue {
                 this.internalOnGameEnd("timeout");
             }, this.ROUND_TIME);
         }
+
+        // Start the loop.
+        while (this.running) {
+            await this.onLoop();
+            await wait(0);
+        }
     }
 
     /**
@@ -150,6 +157,13 @@ export default abstract class PlayerQueue {
                 this.onPrematurelyEnded();
                 break;
         }
+
+        // Call the onRoundEnded method.
+        await this.onRoundEnded();
+
+        // Reset the players.
+        this.players = [];
+        this.movedPlayers = [];
     }
 
     /**
@@ -203,6 +217,16 @@ export default abstract class PlayerQueue {
     protected abstract onAfterSignUp(): Promise<void>;
 
     /**
+     * @description Fired iteratively in the main process. In here,
+     * you can manage the game loop. For the example of The Line,
+     * here you would place tiles, in the example of Bombot, here
+     * you would manage the bombers' survival time.
+     *
+     * @since 1.4.9
+     */
+    protected async onLoop(): Promise<void> {}
+
+    /**
      * @description Fired when a player was eliminated.
      *
      * @since 1.4.9
@@ -233,18 +257,32 @@ export default abstract class PlayerQueue {
      */
     protected async onRoundTimeout(): Promise<void> {}
 
+    /**
+     * @description Fired when a round has ended to clean up
+     * the round.
+     *
+     * @since 1.4.9
+     */
+    protected async onRoundEnded(): Promise<void> {}
+
     //
     //
     // METHODS
     //
     //
 
-    public start() {
+    /**
+     * Starts the round.
+     *
+     * @since 1.4.9
+     */
+    public async start() {
+        if (this.running) return;
         return this.internalOnGameStart();
     }
 
-    public awaitEnd(): Promise<void> {
-        // TODO implement: this returns a promise that will resolve when the game ends.
-        return Promise.resolve();
-    }
+    // public awaitEnd(): Promise<void> {
+    //     // TODO implement: this returns a promise that will resolve when the game ends.
+    //     return Promise.resolve();
+    // }
 }
