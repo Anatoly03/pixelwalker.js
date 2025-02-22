@@ -13,7 +13,7 @@ export default abstract class GameRound {
      * If the round if in running state or not.
      */
     public running: boolean = false;
-    
+
     /**
      * If the round if in running state or not.
      */
@@ -24,6 +24,13 @@ export default abstract class GameRound {
      * current one ends?
      */
     protected readonly loopRounds: boolean = false;
+
+    /**
+     * How many players are needed to start a round? Default
+     * is 1 not to keep the bot busy, but some require even
+     * more.
+     */
+    protected readonly minPlayers: number = 1;
 
     /**
      * The data of the players.
@@ -102,12 +109,20 @@ export default abstract class GameRound {
             this.internalOnDisqualify(player, "reset");
         });
 
+        this.game.players.listen('NewAdd', (player) => {
+            if (!this.running) return;
+            this.onPlayerJoinedDuringRound(player);
+        })
+
         this.game.connection.listen("playerMovedPacket", (pkt) => {
             const player = this.game.players[pkt.playerId!];
             if (!player) return;
-            if (this.movedPlayers.includes(player)) return;
 
-            this.movedPlayers.push(player);
+            // If the player is not in the moved players list, add them.
+            // This is to track AFK.
+            if (!this.movedPlayers.includes(player)) {
+                this.movedPlayers.push(player);
+            }
         });
     }
 
@@ -122,28 +137,30 @@ export default abstract class GameRound {
      */
     private async internalOnGameStart(): Promise<void> {
         do {
-            while (!this.canStart)
-                await wait(0);
+            while (!this.canStart) await wait(0);
 
             this.running = true;
 
             // Get the players.
             const players = await this.onSignUp();
-            if (!players) throw new Error("TODO: could not sign up");
-    
+            if (!players) {
+                // TODO throw new Error("Not enough for signup.");
+                continue;
+            }
+
             this.players = players;
             this.movedPlayers = [];
-    
+
             // Call the onAfterSignUp method.
             await this.onAfterSignUp();
-    
+
             // Start the timer.
             if (this.ROUND_TIME) {
                 this.internalTimeout = setTimeout(() => {
                     this.internalOnGameEnd("timeout");
                 }, this.ROUND_TIME);
             }
-    
+
             // Start the loop.
             while (this.running) {
                 await this.onLoop();
@@ -226,7 +243,9 @@ export default abstract class GameRound {
      * @since 1.4.9
      */
     protected async onSignUp(): Promise<GamePlayer[] | undefined> {
-        return this.game.players.filter((player) => !player.state || (!player.state.godmode && !player.state.modmode));
+        const players = this.game.players.filter((player) => !player.state || (!player.state.godmode && !player.state.modmode));
+        if (players.length < this.minPlayers) return undefined;
+        return players;
     }
 
     /**
@@ -286,6 +305,15 @@ export default abstract class GameRound {
      */
     protected async onRoundEnded(): Promise<void> {}
 
+    /**
+     * @description Fired when a player joined the world during
+     * the round. This can be used to send a welcome message or
+     * similar.
+     *
+     * @since 1.4.9
+     */
+    protected async onPlayerJoinedDuringRound(newPlayer: GamePlayer): Promise<void> {}
+
     //
     //
     // METHODS
@@ -309,7 +337,7 @@ export default abstract class GameRound {
      */
     public async stop() {
         if (!this.running) return;
-        return this.internalOnGameEnd('force');
+        return this.internalOnGameEnd("force");
     }
 
     // public awaitEnd(): Promise<void> {
