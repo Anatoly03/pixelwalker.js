@@ -8,11 +8,22 @@ type DisqualifyReason = "leave" | "death" | "flying" | "reset";
  *
  * @since 1.4.9
  */
-export default abstract class PlayerQueue {
+export default abstract class GameRound {
     /**
      * If the round if in running state or not.
      */
     public running: boolean = false;
+    
+    /**
+     * If the round if in running state or not.
+     */
+    public canStart: boolean = true;
+
+    /**
+     * Should you auto start the next round after the
+     * current one ends?
+     */
+    protected readonly loopRounds: boolean = false;
 
     /**
      * The data of the players.
@@ -110,36 +121,43 @@ export default abstract class PlayerQueue {
      * // TODO document
      */
     private async internalOnGameStart(): Promise<void> {
-        this.running = true;
+        do {
+            while (!this.canStart)
+                await wait(0);
 
-        // Get the players.
-        const players = await this.onSignUp();
-        if (!players) throw new Error("TODO: could not sign up");
+            this.running = true;
 
-        this.players = players;
-        this.movedPlayers = [];
-
-        // Call the onAfterSignUp method.
-        await this.onAfterSignUp();
-
-        // Start the timer.
-        if (this.ROUND_TIME) {
-            this.internalTimeout = setTimeout(() => {
-                this.internalOnGameEnd("timeout");
-            }, this.ROUND_TIME);
-        }
-
-        // Start the loop.
-        while (this.running) {
-            await this.onLoop();
-            await wait(0);
-        }
+            // Get the players.
+            const players = await this.onSignUp();
+            if (!players) throw new Error("TODO: could not sign up");
+    
+            this.players = players;
+            this.movedPlayers = [];
+    
+            // Call the onAfterSignUp method.
+            await this.onAfterSignUp();
+    
+            // Start the timer.
+            if (this.ROUND_TIME) {
+                this.internalTimeout = setTimeout(() => {
+                    this.internalOnGameEnd("timeout");
+                }, this.ROUND_TIME);
+            }
+    
+            // Start the loop.
+            while (this.running) {
+                await this.onLoop();
+                await wait(0);
+            }
+        } while (this.loopRounds);
     }
 
     /**
      * // TODO document
      */
     private async internalOnGameEnd(reason: "timeout" | "force" | "win"): Promise<void> {
+        // Lock the start loop.
+        this.canStart = false;
         this.running = false;
 
         // End the timer.
@@ -164,6 +182,9 @@ export default abstract class PlayerQueue {
         // Reset the players.
         this.players = [];
         this.movedPlayers = [];
+
+        // Release the lock.
+        this.canStart = true;
     }
 
     /**

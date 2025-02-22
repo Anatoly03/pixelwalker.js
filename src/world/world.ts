@@ -31,6 +31,7 @@ type StructurePasteOptions = {
     pasteAnimation: (structure: Structure<{}>) => Generator<WorldPosition[], void, unknown>;
     pasteAnimationCooldown: number;
 
+    layer: number[];
     minX: number;
     minY: number;
     maxX: number;
@@ -285,10 +286,11 @@ export default class GameWorld {
     public async pasteStructure(structure: Structure, ox: number, oy: number, options: Partial<StructurePasteOptions> = {}) {
         const allPromises = [];
         
-        const settings = {
+        const settings: StructurePasteOptions = {
             omit: [],
             pasteAnimation: ALL_AT_ONCE,
             pasteAnimationCooldown: 0,
+            layer: [... new Array(Structure.LAYER_COUNT).keys()],
             minX: 0,
             minY: 0,
             maxX: this.game.width - 1,
@@ -308,6 +310,9 @@ export default class GameWorld {
 
                     // Check out bounds.
                     place &&= px >= settings.minX && py >= settings.minY && px <= settings.maxX && py <= settings.maxY;
+                    
+                    // Check out layer is in settings.
+                    place &&= settings.layer.includes(layer);
 
                     // Check already placed.
                     place &&= !this.structure[layer][px][py].equals(block);
