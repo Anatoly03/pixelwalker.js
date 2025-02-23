@@ -318,7 +318,7 @@ export default class GameWorld {
                     place &&= !this.structure[layer][px][py].equals(block);
 
                     // Check Settings: Omit
-                    place && !settings.omit.includes(block.mapping);
+                    place &&= !settings.omit.includes(block.mapping);
 
                     return place;
                 })
