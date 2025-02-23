@@ -109,10 +109,10 @@ export default abstract class GameRound {
             this.internalOnDisqualify(player, "reset");
         });
 
-        this.game.players.listen('NewAdd', (player) => {
+        this.game.players.listen("NewAdd", (player) => {
             if (!this.running) return;
             this.onPlayerJoinedDuringRound(player);
-        })
+        });
 
         this.game.connection.listen("playerMovedPacket", (pkt) => {
             const player = this.game.players[pkt.playerId!];

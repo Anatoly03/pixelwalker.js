@@ -127,7 +127,7 @@ export default class GameConnection {
     private addNodeJSListeners() {
         // If running in Node environment, close the socket when
         // the process is interrupted.
-        globalThis.process?.on("SIGINT", (signals) => {
+        globalThis.process!.on("SIGINT", (signals) => {
             this.close();
         });
     }
