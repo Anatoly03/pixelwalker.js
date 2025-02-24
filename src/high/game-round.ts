@@ -145,6 +145,7 @@ export default abstract class GameRound {
             const players = await this.onSignUp();
             if (!players) {
                 // TODO throw new Error("Not enough for signup.");
+                await wait(0);
                 continue;
             }
 
