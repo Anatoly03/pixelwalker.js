@@ -369,7 +369,9 @@ export default class APIClient {
 
         // Get the join key from the server. This key can be
         // used to connect to the game server.
-        const { token } = await this.pocketbase.send<{ token: string }>(`/api/joinkey/${roomType}/${worldId}`, {});
+        const { token } = await this.pocketbase.send<{ token: string }>(`/api/joinkey/${roomType}/${worldId}`, {
+            requestKey: null,
+        });
 
         return token;
     }
