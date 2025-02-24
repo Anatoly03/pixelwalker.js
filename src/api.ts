@@ -74,7 +74,7 @@ export default class APIClient {
      */
     public static withToken(token: string): APIClient | undefined {
         const client = new this();
-        client.pocketbase.authStore.save(token, { verified: true });
+        client.pocketbase.authStore.save(token);
 
         // Return undefined if the token is invalid.
         if (!client.pocketbase.authStore.isValid) return;

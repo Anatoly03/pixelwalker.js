@@ -19,7 +19,7 @@
     "@bufbuild/buf": "^1.47.2",
     "@bufbuild/protobuf": "^2.2.2",
     "@types/node": "^20.12.7",
-    "pocketbase": "^0.21.5",
+    "pocketbase": "^0.25.1",
     "ws": "^8.18.0"
   },
   "devDependencies": {
