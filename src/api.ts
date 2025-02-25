@@ -18,6 +18,22 @@ import GameConnection from "./connection.js";
  * the "lobby" from which you can access the open game rooms
  * or join a world.
  * 
+ * @example
+ * 
+ * ```typescript
+ * import "dotenv/config";
+ * import { APIClient } from "pixelwalker.js";
+ * 
+ * const client = await APIClient.withCredentials(process.env.USERNAME!, process.env.PASSWORD!);
+ * const game = await client!.createGame(process.env.WORLD_ID!);
+ * 
+ * game.listen('Init', () => {
+ *     game.sendChat('Hello, World!');
+ * })
+ * 
+ * game.bind();
+ * ```
+ * 
  * @since 1.4.0
  */
 export default class APIClient {
