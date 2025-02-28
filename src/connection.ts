@@ -310,7 +310,10 @@ export default class GameConnection {
      * @since 1.4.1
      */
     public close() {
-        this.socket?.close();
+        if (this.socket === undefined)
+            return;
+
+        this.socket.close();
         this.socket = undefined;
     }
 }
