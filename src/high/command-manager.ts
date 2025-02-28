@@ -97,14 +97,16 @@ export default class CommandManager {
         });
 
         // Listen chat messages for commands.
-        this.game.connection.listen("playerChatPacket", (data) => {
+        this.game.connection.listen('playerDirectMessagePacket', (data) => {
             const prefix = "//";
             if (!data.message.startsWith("//")) return;
 
             const [cmd, ...args] = data.message.substring(prefix.length).match(CommandManager.ArgParser) ?? ['help'];
             if (!cmd) return;
 
-            const player = this.game.players[data.playerId];
+            console.log(cmd, args);
+
+            const player = this.game.players[data.fromPlayerId];
             if (!player) return;
 
             this.commands.forEach((command) => {
