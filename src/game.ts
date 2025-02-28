@@ -4,24 +4,15 @@ import GameConnection from "./connection.js";
 import PlayerMap from "./players/map.js";
 import GameWorld from "./world/world.js";
 import JoinData from "./types/join-data.js";
-import GamePlayer from "./types/game-player.js";
+
+// TODO deprecated, remove
+import CommandManager from "./high/command-manager.js";
 
 /**
  *
  */
 type Events = {
     Init: [];
-};
-
-/**
- * Arguments for a command, this also includes the permission,
- * and metadata for the command.
- */
-type NewCommandArgs = {
-    name: string;
-    // description?: string;
-    callback: (player: GamePlayer, ...args: string[]) => void;
-    permission?: (player: GamePlayer) => boolean;
 };
 
 /**
@@ -76,48 +67,10 @@ export default class GameClient {
     public world: GameWorld;
 
     /**
-     * Array of commands that are registered. The commands are
-     * emit when a player sends a command-prefixed chat.
-     *
-     * @since 1.4.6
+     * @deprecated remove with {@link GameConnection#registerCommand}
      */
-    private commands: NewCommandArgs[] = [];
-
-    /**
-     * The prefix that is used to identify a user-to-bot command
-     * in the chat.
-     *
-     * @since 1.4.6
-     */
-    public COMMAND_PREFIXES = ["!", "."];
-
-    //
-    //
-    // STATIC
-    //
-    //
-
-    /**
-     * This static variable is used for command argument parsing. You
-     * can test it at a website like [Regex101](https://regex101.com/)
-     *
-     * The regular expression consists of three components: a double
-     * quoted string, a single quoted string and a word. The string
-     * components consists of a bracket structure to match for beginning
-     * and end of a string. The center part `(\\"|\\.|.)*?` matches for
-     * string escapes non-greedy. The word component `\S+` matches for
-     * a word (any combination of non-whitespace characters.)
-     *
-     * @example
-     *
-     * Here is an example of a command and the resulting matches.
-     *
-     * ```
-     * !test "Hello, \"World!\"" 256 wonderful-evening! --help
-     *  ^^^^ ^^^^^^^^^^^^^^^^^^^ ^^^ ^^^^^^^^^^^^^^^^^^ ^^^^^^
-     * ```
-     */
-    private static CommandLineParser = /"(\\"|\\.|.)*?"|'(\\'|\\.|.)*?'|\S+/gm;
+    // TODO remove
+    private cmdHandler: CommandManager
 
     /**
      * // TODO document
@@ -126,6 +79,7 @@ export default class GameClient {
         this.connection = new GameConnection(joinKey);
         this.world = new GameWorld(this);
         this.players.addListeners(this);
+        this.cmdHandler = new CommandManager(this);
         this.addListeners();
     }
 
@@ -178,48 +132,6 @@ export default class GameClient {
         // Upon player init received, send init.
         this.connection.listen("playerInitPacket", () => {
             this.receiver.emit("Init");
-        });
-
-        // Listen chat messages for commands.
-        this.connection.listen("playerChatPacket", (data) => {
-            const prefix = this.COMMAND_PREFIXES.find((i) => data.message.startsWith(i));
-            if (!prefix) return;
-
-            const [cmd, ...args] = data.message.substring(prefix.length).match(GameClient.CommandLineParser) ?? [];
-            if (!cmd) return;
-
-            const player = this.players[data.playerId];
-            if (!player) return;
-
-            this.commands.forEach((command) => {
-                if (command.name !== cmd) return;
-                if (command.permission && !command.permission(player)) return;
-
-                command.callback(player, ...args);
-            });
-        });
-
-        // Register the help command. This lists all available
-        // commands for a player, or, command description if a
-        // command is specified.
-        this.registerCommand({
-            name: "help",
-            callback: (player, cmd) => {
-                if (cmd) {
-                    // TODO implement for `cmd` argument
-                    // TODO implement private messages
-                    this.sendChat(`/pm ${player.properties.username} /help <cmd> not implemented in pixelwalker.js@1.4.6`);
-                    return;
-                }
-
-                const commands = this.commands
-                    .filter((c) => !c.permission || c.permission(player))
-                    .map((i) => i.name)
-                    .join(", ");
-
-                // TODO implement private messages
-                this.sendChat(`/pm ${player.properties.username} ${commands}`);
-            },
         });
     }
 
@@ -317,10 +229,23 @@ export default class GameClient {
      * sent to the server. The server will then process the
      * command and return a response.
      *
-     * @since 1.4.6
+     * @deprecated use the following snippet to transition to
+     * custom commands instead
+     * 
+     * ```typescript
+     * import { APIClient } from "pixelwalker.js";
+     * import { CommandManager } from 'pixelwalker.js/high';
+     * 
+     * const client = await APIClient.withCredentials(process.env.USERNAME!, process.env.PASSWORD!);
+     * export const game = await client!.createGame(process.env.WORLD_ID!);
+     * 
+     * export const commands = new CommandManager(game);
+     * 
+     * // Use command.register
+     * ```
      */
-    public registerCommand(args: NewCommandArgs): this {
-        this.commands.push(args);
+    public registerCommand(args: any): this {
+        this.cmdHandler.register(args);
         return this;
     }
 }
