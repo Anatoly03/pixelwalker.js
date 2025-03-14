@@ -178,6 +178,15 @@ export default class PlayerSync<PlayerType extends PlayerBase> {
     }
 
     /**
+     * Find the player object by the associated callback.
+     *
+     * @since 1.4.12
+     */
+    public findAccount(callback: (value: PlayerType) => boolean): PlayerType | undefined {
+        return this.getAll().find(callback);
+    }
+
+    /**
      * Adds a new player object, if the associated account id
      * is not already stored. Returns true if the player was
      * added, false if the player was already stored.
