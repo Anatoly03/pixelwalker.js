@@ -202,6 +202,42 @@ export default class Structure<Meta extends Record<string, any> = {}> {
         return positions;
     }
 
+    /**
+     * Lists all spawnable coordinates of the structure: Coordinates,
+     * which a player can be teleported on without falling through.
+     * 
+     * @since 1.4.14
+     */
+    public spawnable(): WorldPosition[] {
+        const positions: WorldPosition[] = [];
+
+        for (const [x, y, block] of this.foreground.blocks()) {
+            if (!block.properties) continue;
+            if (block.properties.collisionType !== "none") continue;
+
+            // TODO gravity, determine floor block.
+
+            // Find the facing floor block (ground)
+            if (y >= this.height - 2) continue;
+            const floor = this.foreground[x][y + 1];
+
+            if (!floor.properties) continue;
+
+            // Check if the block is a solid floor.
+            switch (floor.properties.collisionType) {
+                case 'none':
+                case 'oneway': // TODO
+                case 'half': // TODO
+                    continue;
+            }
+    
+            // Push to valid positions.
+            positions.push({ x, y, layer: 0, });
+        }
+
+        return positions;
+    }
+
     //
     //
     // GAME SERIALIZATION

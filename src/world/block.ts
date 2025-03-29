@@ -1,5 +1,6 @@
 import { Palette, BlockItems, BlockEntry } from "../build/block-data.js";
 import BufferReader, { ComponentTypeHeader } from "../util/buffer.js";
+import Properties from './block/properties.js';
 
 import { create } from "@bufbuild/protobuf";
 import { WorldBlockPlacedPacket, WorldBlockPlacedPacketSchema } from "../protocol/world_pb.js";
@@ -242,6 +243,15 @@ export default class Block {
         }
 
         return this.entry.MinimapColor;
+    }
+
+    /**
+     * Returns the blocks' physical/ client properties.
+     *
+     * @since 1.4.14
+     */
+    public get properties() {
+        return Properties[this.id];
     }
 
     //
