@@ -201,7 +201,6 @@ export default class BlockScheduler {
      * @since 1.4.6
      */
     private async tick() {
-        // TODO implement retries
         const event = this.events.shift();
 
         // Check if there are no more events in the queue.

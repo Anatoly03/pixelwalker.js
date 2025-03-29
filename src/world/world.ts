@@ -1,6 +1,6 @@
 import EventEmitter from "events";
 
-import { Palette } from "../build/block-mappings.js";
+import { Palette } from "../build/block-data.js";
 
 import GameClient from "../game.js";
 import Block from "./block.js";

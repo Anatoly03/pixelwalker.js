@@ -1,6 +1,5 @@
-import { Palette, BlockItems } from "../build/block-mappings.js";
+import { Palette, BlockItems, BlockEntry } from "../build/block-data.js";
 import BufferReader, { ComponentTypeHeader } from "../util/buffer.js";
-import { BlockData } from "./block-args.js";
 
 import { create } from "@bufbuild/protobuf";
 import { WorldBlockPlacedPacket, WorldBlockPlacedPacketSchema } from "../protocol/world_pb.js";
@@ -36,6 +35,14 @@ export default class Block {
      * @since 1.4.2
      */
     public readonly id: number;
+
+    /**
+     * Reference to the block entry, this is used to get the block
+     * properties and meta.
+     * 
+     * @since 1.4.14
+     */
+    private readonly entry: BlockEntry;
 
     /**
      * // TODO document
@@ -95,7 +102,8 @@ export default class Block {
      */
     private constructor(id: number) {
         this.id = id;
-        this.data.length = BlockData[Palette[this.id] as keyof typeof BlockData]?.length ?? 0;
+        this.entry = BlockItems[this.id];
+        this.data.length = this.entry.BlockDataArgs?.length ?? 0;
     }
 
     //
@@ -233,8 +241,7 @@ export default class Block {
                 return this.data[0] as number;
         }
 
-        const entry = BlockItems.find((b) => b.Id === this.id)!;
-        return entry.MinimapColor;
+        return this.entry.MinimapColor;
     }
 
     //
@@ -253,8 +260,7 @@ export default class Block {
             case 0:
                 return true;
             default:
-                const entry = BlockItems.find((b) => b.Id === this.id)!;
-                return entry.Layer === layer;
+                return this.entry.Layer === layer;
         }
     }
 
@@ -266,7 +272,7 @@ export default class Block {
      */
     public copy() {
         const block = new Block(this.id);
-        const blockData = BlockData[this.mapping as keyof typeof BlockData] ?? [];
+        const blockData = this.entry.BlockDataArgs ?? [];
 
         for (let i = 0; i < this.data.length; i++) {
             switch (blockData[i]) {
@@ -297,7 +303,7 @@ export default class Block {
         if (this.id !== other.id) return false;
         if (this.data.length !== other.data.length) return false;
 
-        const blockData = BlockData[this.mapping as keyof typeof BlockData] ?? [];
+        const blockData = this.entry.BlockDataArgs ?? [];
 
         for (let i = 0; i < this.data.length; i++) {
             switch (blockData[i]) {
@@ -513,7 +519,7 @@ export default class Block {
         // TODO refactor to better pattern
         // Inspiration: https://github.com/Anatoly03/pixelwalker.js/blob/9bb3c7e39a45006086a2abae8c515599bd3db835/src/world/block.ts#L201
 
-        const blockData = BlockData[this.mapping as keyof typeof BlockData] ?? [];
+        const blockData = this.entry.BlockDataArgs ?? [];
         this.data.length = 0;
 
         for (const dataType of blockData) {
@@ -581,7 +587,7 @@ export default class Block {
             buffer.push(idBuffer);
         }
 
-        const blockData = BlockData[this.mapping as keyof typeof BlockData] ?? [];
+        const blockData = this.entry.BlockDataArgs ?? [];
         let idx = 0;
 
         for (const dataType of blockData) {

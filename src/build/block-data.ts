@@ -9,6 +9,7 @@
 
 import fs from "node:fs";
 import CONFIG from "../config.js";
+import { ComponentTypeHeader } from "../util/buffer.js";
 
 const response = await fetch(CONFIG.GAME_SERVER_HTTP + "/listblocks");
 
@@ -17,9 +18,13 @@ const response = await fetch(CONFIG.GAME_SERVER_HTTP + "/listblocks");
  */
 export type BlockEntry = {
     Id: number;
+
     PaletteId: string;
     Layer: number;
+    BlockDataArgs?: ComponentTypeHeader[];
+
     MinimapColor?: number;
+
     LegacyMorph?: number[];
     LegacyId?: number;
 };

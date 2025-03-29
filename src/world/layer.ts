@@ -1,4 +1,4 @@
-import { Palette } from "../build/block-mappings.js";
+import { Palette } from "../build/block-data.js";
 import LayerPosition from "../types/layer-position.js";
 import BufferReader from "../util/buffer.js";
 

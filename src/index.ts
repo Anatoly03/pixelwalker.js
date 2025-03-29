@@ -7,7 +7,7 @@ export { default as StructureParser } from "./world/parser/index.js";
 export { default as Structure } from "./world/structure.js";
 export { default as World } from "./world/world.js";
 
-export { Palette, BlockItems } from "./build/block-mappings.js";
+export { Palette, BlockItems } from "./build/block-data.js";
 
 export type { GamePlayer } from "./types/game-player.js";
 export type { JoinData } from "./types/join-data.js";
