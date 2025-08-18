@@ -243,6 +243,7 @@ export default class Layer {
                 this[x][y] = Block.deserialize(buffer, options);
             } catch (e) {
                 console.error(`error deserializing at ${x}, ${y}`);
+                console.error(`buffer length = ${buffer.length}`);
                 throw e;
             }
         }

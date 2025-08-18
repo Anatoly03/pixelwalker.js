@@ -106,8 +106,8 @@ game.registerCommand({
         try {
             const file = fs.readFileSync(name).toString('utf-8');
             structure = parser.fromString(file);
-        }  catch(_) {
-            game.sendChat(`${player.properties.username}: File not found.`);
+        }  catch(e) {
+            game.sendChat(`${player.properties.username}: ${e}`);
         }
 
         game.sendChat(`${player.properties.username}: Loaded.`);

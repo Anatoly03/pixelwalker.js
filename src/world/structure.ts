@@ -47,7 +47,7 @@ export default class Structure<Meta extends Record<string, any> = {}> {
      *
      * @since 1.4.3
      */
-    public static readonly LAYER_COUNT = 2;
+    public static readonly LAYER_COUNT = 3;
 
     /**
      *
@@ -85,6 +85,15 @@ export default class Structure<Meta extends Record<string, any> = {}> {
      */
     public get foreground(): Layer {
         return this[1];
+    }
+
+    /**
+     * Reference to the overlay layer of the structure.
+     *
+     * @since 1.4.14
+     */
+    public get overlay(): Layer {
+        return this[2];
     }
 
     //
@@ -256,9 +265,16 @@ export default class Structure<Meta extends Record<string, any> = {}> {
             try {
                 this[i].deserialize(buffer, options);
             } catch (e) {
-                console.error(`error deserializing at ${i == 0 ? "background" : "foreground"} layer`);
+                console.error(`error deserializing at ${i} layer`);
                 throw e;
             }
+
+            // Escapde condition: If we perfectly reach a buffer frame,
+            // we are done and assume other layers are simply omitted.
+            // This was added in 1.4.14 to adjust for overlay migration
+            // changes.
+            if (!buffer.length)
+                return this;
         }
 
         if (buffer.length) {

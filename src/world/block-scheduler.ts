@@ -251,7 +251,6 @@ export default class BlockScheduler {
         // Send the block to the server.
         this.game.connection.send("worldBlockPlacedPacket", {
             blockId: event.block.id,
-            isFillOperation: false,
             positions: positions.map((p) => create(PointIntegerSchema, p)),
             layer: event.position.layer,
             extraFields: event.block.serialize({ endian: "big", writeId: false, writeTypeByte: true }),

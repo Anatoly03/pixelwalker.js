@@ -5,11 +5,13 @@
  *
  * This is the v2 parser for the world structure. It is used to parse and stringify
  * the structure.
+ * 
+ * MIGRATION TO V3: Add overlay and rename gold pack to gilded pack.
  *
  * @module
  */
 
-import { Structure } from "../../index.js";
+import { Block, Structure } from "../../index.js";
 import { StructureData } from "./index.js";
 
 /**
@@ -89,8 +91,32 @@ export function toStructure(input: StructureData): Structure {
     const { data, width, height, palette, meta } = input;
     const structure = new Structure(width, height);
 
+    // Migration: Palette rename to the new naming convention.
+    for (let i = 0; i < palette.length; i++) {
+        switch (palette[i]) {
+            case "gold_basic":
+            case "gold_brick":
+            case "gold_chiseled":
+            case "gold_tile":
+            case "gold_mantle_oneway_top":
+            case "gold_basic_bg":
+            case "gold_brick_bg":
+            case "gold_chiseled_bg":
+                palette[i] = "gilded_" + palette[i];
+        }
+    }
+
     structure.meta = meta;
     structure.deserialize(Buffer.from(data, "base64"), { endian: "big", readTypeByte: true, palette });
+
+    // Migration: Add overlay layer.
+    for (const [x, y, block] of structure.foreground.blocks()) {
+        // Move liquid blocks to the overlay layer.
+        if (block.mapping.startsWith("liquid_")) {
+            structure.foreground[x][y] = Block.fromId(0);
+            structure.overlay[x][y] = block;
+        }
+    }
 
     return structure;
 }

@@ -19,7 +19,7 @@ export default {
      */
     get GAME_SERVER_SOCKET() {
         if (globalThis.process?.env.LOCALHOST) return "ws://127.0.0.1:5148";
-        return "wss://game.pixelwalker.net";
+        return "wss://server.pixelwalker.net";
     },
     
     /**
@@ -30,6 +30,6 @@ export default {
      */
     get GAME_SERVER_HTTP() {
         if (globalThis.process?.env.LOCALHOST) return "http://localhost:5148";
-        return "https://game.pixelwalker.net";
+        return "https://server.pixelwalker.net";
     },
 };

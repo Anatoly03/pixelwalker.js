@@ -81,7 +81,7 @@ export default class Block {
      * @since 1.4.2
      */
     public static fromId(id: number): Block {
-        if (id < 0 || this.Palette.length <= id) throw new Error(`block id ${id} is out of range: expected 0-${this.Palette.length - 1}`);
+        // if (id < 0 || this.Palette.length <= id) throw new Error(`block id ${id} is out of range: expected 0-${this.Palette.length - 1}`);
         return new Block(id);
     }
 
@@ -251,7 +251,7 @@ export default class Block {
      * @since 1.4.14
      */
     public get properties() {
-        return Properties[this.id];
+        return Properties.find(p => p.id === this.id)!;
     }
 
     //

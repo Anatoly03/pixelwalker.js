@@ -275,13 +275,13 @@ export default class GameConnection {
      * @since 1.4.1
      */
     public bind() {
-        let url = CONFIG.GAME_SERVER_SOCKET + "/room/" + this.joinKey;
+        let url = CONFIG.GAME_SERVER_SOCKET + "/ws?joinKey=" + this.joinKey;
 
         // If join data is set, append it to the url.
         if (Object.keys(this.joinData).length) {
             // Encode the join data to base64 and append it to the url.
             // This is how the server accepts the join data.
-            url += `?joinData=${btoa(JSON.stringify(this.joinData))}`;
+            url += `&joinData=${btoa(JSON.stringify(this.joinData))}`;
         }
 
         // TODO append join data to url
